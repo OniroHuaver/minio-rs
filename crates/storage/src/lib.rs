@@ -12,8 +12,21 @@
 
 use base::error::MinioResult;
 
+// 子模块
+pub mod format;
+pub mod xl_storage;
+
 #[cfg(test)]
 mod tests;
+
+// 类型重导出
+pub use format::{
+    calculate_part_size_from_idx, hash_deterministic_string, is_xl_meta_erasure_info_valid,
+    is_xl_meta_format_valid, read_xl_meta, write_xl_meta, write_xl_meta_no_data, ChecksumInfo,
+    ErasureInfo, ObjectPartInfo, StatInfo, XlMetaDataDirDecoder, XlMetaV1Object,
+    XlMetaV2DeleteMarker, XlMetaV2Object, XlMetaV2Version, XlMetaV2VersionHeader,
+};
+pub use xl_storage::XlStorage;
 
 /// 磁盘信息
 #[derive(Debug, Clone)]
@@ -73,12 +86,7 @@ pub trait StorageAPI: Send + Sync {
     async fn write_all(&self, volume: &str, path: &str, data: &[u8]) -> MinioResult<()>;
 
     /// 追加写入文件
-    async fn append_file(
-        &self,
-        volume: &str,
-        path: &str,
-        data: &[u8],
-    ) -> MinioResult<()>;
+    async fn append_file(&self, volume: &str, path: &str, data: &[u8]) -> MinioResult<()>;
 
     /// 删除文件
     async fn delete(&self, volume: &str, path: &str) -> MinioResult<()>;

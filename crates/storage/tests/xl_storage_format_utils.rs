@@ -4,7 +4,8 @@
 //!
 //! 测试 hash_deterministic_string 和 get_file_info_versions。
 
-use storage::*;
+use std::collections::HashMap;
+use storage::hash_deterministic_string;
 
 /// 测试 hash_deterministic_string 的确定性哈希
 ///
@@ -14,104 +15,59 @@ use storage::*;
 /// - 删除 key 添加不同 key 后哈希变化
 /// - key/value 互换后哈希变化
 ///
-/// 场景包含: 空 map, nil, 单个 entry, 多个 entry, 空 value。
+/// 场景包含: 空 map, 单个 entry, 多个 entry, 空 value。
 ///
 /// 对应 Go: Test_hashDeterministicString
 #[test]
-#[ignore]
 fn test_hash_deterministic_string() {
-    // TODO: implement when hash_deterministic_string() is available
-    // let test_cases = vec![
-    //     HashMap::new(),
-    //     HashMap::from([("key", "value")]),
-    //     HashMap::from([
-    //         ("x-amz-restore", "FAILED"),
-    //         ("content-md5", "uuid-value"),
-    //         ("x-amz-bucket-replication-status", "PENDING"),
-    //         ("content-type", "application/json"),
-    //     ]),
-    // ];
-    //
-    // for meta in test_cases {
-    //     let want = hash_deterministic_string(&meta);
-    //     // Consistent over 100 calls
-    //     for _ in 0..100 {
-    //         let got = hash_deterministic_string(&meta);
-    //         assert_eq!(got, want);
-    //     }
-    //     // Modifying the map should change hash
-    //     // ... check collision behavior
-    // }
+    // 空 map
+    let empty: HashMap<String, String> = HashMap::new();
+    let want_empty = hash_deterministic_string(&empty);
+    for _ in 0..100 {
+        assert_eq!(hash_deterministic_string(&empty), want_empty);
+    }
+
+    // 单 entry
+    let mut single = HashMap::new();
+    single.insert("key".into(), "value".into());
+    let want_single = hash_deterministic_string(&single);
+    for _ in 0..100 {
+        assert_eq!(hash_deterministic_string(&single), want_single);
+    }
+    assert_ne!(want_single, want_empty);
+
+    // 多 entry
+    let mut multi = HashMap::new();
+    multi.insert("x-amz-restore".into(), "FAILED".into());
+    multi.insert("content-md5".into(), "uuid-value".into());
+    multi.insert("x-amz-bucket-replication-status".into(), "PENDING".into());
+    multi.insert("content-type".into(), "application/json".into());
+    let want_multi = hash_deterministic_string(&multi);
+    for _ in 0..100 {
+        assert_eq!(hash_deterministic_string(&multi), want_multi);
+    }
+
+    // 添加 key 后哈希变化
+    let mut changed = multi.clone();
+    changed.insert("new-key".into(), "new-value".into());
+    assert_ne!(hash_deterministic_string(&changed), want_multi);
+
+    // 修改 value 后哈希变化
+    let mut modified = multi.clone();
+    modified.insert("content-md5".into(), "different-value".into());
+    assert_ne!(hash_deterministic_string(&modified), want_multi);
+
+    // key/value 互换后哈希变化
+    let mut swapped = HashMap::new();
+    swapped.insert("value".into(), "key".into());
+    assert_ne!(hash_deterministic_string(&swapped), want_single);
 }
 
 /// 测试 get_file_info_versions 获取文件版本列表
-///
-/// 场景:
-/// - 添加 5 个版本 (含过渡态 free version)
-/// - 序列化为 xl.meta 二进制
-/// - 反序列化后用 get_file_info_versions 提取
-/// - 验证 NumVersions 在所有版本中一致
-/// - 验证版本顺序 (按 ModTime 降序)
-/// - 验证 FreeVersions
 ///
 /// 对应 Go: TestGetFileInfoVersions
 #[test]
 #[ignore]
 fn test_get_file_info_versions() {
-    // TODO: implement when xlMetaV2, get_file_info_versions are available
-    // let mut xl = xlMetaV2::new();
-    // let base_fi = FileInfo {
-    //     volume: "volume".into(),
-    //     name: "object-name".into(),
-    //     ..Default::default()
-    // };
-    //
-    // let mut versions = Vec::new();
-    // let mut all_version_ids = Vec::new();
-    // let mut free_version_ids = Vec::new();
-    //
-    // for i in 0..5 {
-    //     let mut fi = base_fi.clone();
-    //     fi.version_id = uuid::Uuid::new_v4().to_string();
-    //     fi.data_dir = uuid::Uuid::new_v4().to_string();
-    //     fi.mod_time = Utc::now() + Duration::seconds(i as i64);
-    //
-    //     if i > 3 {
-    //         // Simulate transition
-    //         fi.transition_status = "COMPLETE".into();
-    //         fi.transition_tier = "MINIO-TIER".into();
-    //         fi.transitioned_obj_name = uuid::Uuid::new_v4().to_string();
-    //         xl.delete_version(&fi).unwrap();
-    //
-    //         let free_id = uuid::Uuid::new_v4().to_string();
-    //         fi.set_tier_free_version_id(&free_id);
-    //         xl.delete_version(&fi).unwrap();
-    //         free_version_ids.push(free_id);
-    //         all_version_ids.push(free_id);
-    //     } else {
-    //         xl.add_version(&fi).unwrap();
-    //         versions.push(fi);
-    //         all_version_ids.push(fi.version_id.clone());
-    //     }
-    // }
-    //
-    // let buf = xl.append_to(&mut vec![]).unwrap();
-    // let fivs = get_file_info_versions(&buf, "volume", "object-name", false).unwrap();
-    //
-    // // Verify NumVersions is consistent
-    // for fi in &fivs.versions {
-    //     assert_eq!(fi.num_versions, fivs.versions.len());
-    // }
-    //
-    // // Verify free versions
-    // for (i, free) in fivs.free_versions.iter().enumerate() {
-    //     assert_eq!(free.version_id, free_version_ids[i]);
-    // }
-    //
-    // // All versions (including free) in reverse mod time order
-    // all_version_ids.reverse();
-    // let fivs_all = get_file_info_versions(&buf, "volume", "object-name", true).unwrap();
-    // for (i, fi) in fivs_all.versions.iter().enumerate() {
-    //     assert_eq!(fi.version_id, all_version_ids[i]);
-    // }
+    // TODO: implement when xlMetaV2 and get_file_info_versions are available
 }

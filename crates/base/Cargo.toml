@@ -18,3 +18,4 @@ uuid = { workspace = true }
 chrono = { workspace = true }
 siphasher = { workspace = true }
 crc32fast = { workspace = true }
+tracing = { workspace = true }

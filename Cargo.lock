@@ -144,6 +144,7 @@ dependencies = [
  "sha2",
  "siphasher",
  "thiserror",
+ "tracing",
  "uuid",
 ]
 
@@ -1385,9 +1386,14 @@ dependencies = [
  "async-trait",
  "base",
  "bytes",
+ "rmp-serde",
+ "serde",
+ "serde_bytes",
+ "sha2",
  "thiserror",
  "tokio",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

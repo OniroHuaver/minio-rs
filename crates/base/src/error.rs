@@ -65,5 +65,58 @@ pub enum MinioError {
     Internal(String),
 }
 
+// std::io::Error 不实现 PartialEq，手动实现以支持测试断言
+impl PartialEq for MinioError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::DiskIO(a), Self::DiskIO(b)) => a.kind() == b.kind(),
+            (Self::DiskNotFound(a), Self::DiskNotFound(b)) => a == b,
+            (Self::CorruptedDisk(a), Self::CorruptedDisk(b)) => a == b,
+            (Self::XlMetaFormat(a), Self::XlMetaFormat(b)) => a == b,
+            (Self::MessagePack(a), Self::MessagePack(b)) => a == b,
+            (Self::EncodeError(a), Self::EncodeError(b)) => a == b,
+            (Self::DecodeError(a), Self::DecodeError(b)) => a == b,
+            (
+                Self::InsufficientReadQuorum {
+                    required: r1,
+                    actual: a1,
+                },
+                Self::InsufficientReadQuorum {
+                    required: r2,
+                    actual: a2,
+                },
+            ) => r1 == r2 && a1 == a2,
+            (
+                Self::InsufficientWriteQuorum {
+                    required: r1,
+                    actual: a1,
+                },
+                Self::InsufficientWriteQuorum {
+                    required: r2,
+                    actual: a2,
+                },
+            ) => r1 == r2 && a1 == a2,
+            (Self::ObjectNotFound(a), Self::ObjectNotFound(b)) => a == b,
+            (Self::BucketNotFound(a), Self::BucketNotFound(b)) => a == b,
+            (Self::ObjectAlreadyExists(a), Self::ObjectAlreadyExists(b)) => a == b,
+            (
+                Self::ChecksumMismatch {
+                    expected: e1,
+                    actual: a1,
+                },
+                Self::ChecksumMismatch {
+                    expected: e2,
+                    actual: a2,
+                },
+            ) => e1 == e2 && a1 == a2,
+            (Self::InvalidSignature(a), Self::InvalidSignature(b)) => a == b,
+            (Self::ExpiredCredentials(a), Self::ExpiredCredentials(b)) => a == b,
+            (Self::AccessDenied(a), Self::AccessDenied(b)) => a == b,
+            (Self::Internal(a), Self::Internal(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
 /// MinIO Result 类型别名
 pub type MinioResult<T> = Result<T, MinioError>;
