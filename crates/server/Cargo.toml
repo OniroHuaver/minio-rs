@@ -1,0 +1,21 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2024"
+description = "MinIO Rust 二进制入口：组装所有子系统，处理启动流程和信号"
+
+[[bin]]
+name = "minio"
+path = "src/main.rs"
+
+[dependencies]
+base = { workspace = true }
+storage = { workspace = true }
+erasure = { workspace = true }
+object = { workspace = true }
+s3 = { workspace = true }
+iam = { workspace = true }
+grid = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

@@ -1,0 +1,20 @@
+[package]
+name = "base"
+version = "0.1.0"
+edition = "2024"
+description = "核心类型定义：存储常量、xl.meta 格式、EC 参数、错误类型"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+rmp-serde = { workspace = true }
+rmpv = { workspace = true }
+serde_bytes = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+bytes = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+siphasher = { workspace = true }
+crc32fast = { workspace = true }

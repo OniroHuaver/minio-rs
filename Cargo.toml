@@ -1,0 +1,70 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/base",
+    "crates/storage",
+    "crates/erasure",
+    "crates/object",
+    "crates/iam",
+    "crates/grid",
+    "crates/s3",
+    "crates/server",
+]
+
+[workspace.dependencies]
+# 异步运行时
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+
+# 序列化
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rmp-serde = "1"         # MessagePack (xl.meta 格式)
+rmpv = "1"              # MessagePack 值操作
+serde_bytes = "0.11"    # serde bytes 序列化优化
+
+# 哈希
+sha2 = "0.10"
+md-5 = "0.10"
+crc32fast = "1"
+siphasher = "1"         # SipHash-2-4 (对象→Set 路由)
+
+# Erasure Coding
+reed-solomon-erasure = "6"
+
+# HTTP (Phase 1+)
+axum = "0.7"
+tower = "0.5"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+hyper = "1"
+bytes = "1"
+
+# gRPC (Phase 2)
+tonic = "0.12"
+prost = "0.13"
+
+# JWT (Phase 3)
+jsonwebtoken = "9"
+
+# 工具
+thiserror = "2"
+async-trait = "0.1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+uuid = { version = "1", features = ["v4", "v7"] }
+chrono = { version = "0.4", features = ["serde"] }
+base64 = "0.22"
+hex = "0.4"
+
+# workspace 内部 crate
+base = { path = "crates/base" }
+storage = { path = "crates/storage" }
+erasure = { path = "crates/erasure" }
+object = { path = "crates/object" }
+iam = { path = "crates/iam" }
+grid = { path = "crates/grid" }
+s3 = { path = "crates/s3" }
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"

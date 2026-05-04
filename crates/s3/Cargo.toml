@@ -1,0 +1,21 @@
+[package]
+name = "s3"
+version = "0.1.0"
+edition = "2024"
+description = "S3 兼容 HTTP API 层 (axum)：路由、中间件、请求解析、响应构造"
+
+[dependencies]
+base = { workspace = true }
+object = { workspace = true }
+iam = { workspace = true }
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+hyper = { workspace = true }
+tokio = { workspace = true }
+bytes = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }

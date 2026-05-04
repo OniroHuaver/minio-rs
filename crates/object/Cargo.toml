@@ -1,0 +1,16 @@
+[package]
+name = "object"
+version = "0.1.0"
+edition = "2024"
+description = "ObjectAPI trait + erasureObjects 实现 (对象操作编排)"
+
+[dependencies]
+base = { workspace = true }
+storage = { workspace = true }
+erasure = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+bytes = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }

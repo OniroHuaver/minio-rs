@@ -1,0 +1,16 @@
+[package]
+name = "erasure"
+version = "0.1.0"
+edition = "2024"
+description = "Reed-Solomon 擦除编码：编解码、Quorum 判定、分片并行读写"
+
+[dependencies]
+base = { workspace = true }
+storage = { workspace = true }
+reed-solomon-erasure = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+bytes = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
