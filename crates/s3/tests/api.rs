@@ -4,8 +4,6 @@
 //!          cmd/api-resources_test.go, cmd/api-response_test.go,
 //!          cmd/api-utils_test.go
 
-use crate::*; // uses common test helpers from tests/lib.rs
-
 /// 验证 Go `toAPIErrorCode()` 的等价实现: 将内部错误类型映射为 S3 APIErrorCode。
 ///
 /// 覆盖: hash 错误、请求体错误、桶/对象不存在、SSE-C 错误、nil/未知错误。
