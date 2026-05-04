@@ -7,7 +7,7 @@
 //! findFileInfoInQuorum, TransitionInfoEquals, SkipTierFreeVersion,
 //! listObjectParities, commonParity 等。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试 FileInfo.AddObjectPart() 和 objectPartIndex()。
 ///

@@ -5,7 +5,7 @@
 //! 测试 msgpack 序列化/反序列化:
 //! rebalanceInfo, rebalanceMeta, rebalanceMetrics, rebalanceStats, rstats。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试 rebalanceInfo 的 Marshal/Unmarshal 往返。
 ///

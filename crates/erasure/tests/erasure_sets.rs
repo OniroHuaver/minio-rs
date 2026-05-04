@@ -5,7 +5,7 @@
 //! 测试 erasureSets 层的哈希分布和初始化:
 //! sipHashMod, crcHashMod, newErasureSets, getHashedSet。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 基准测试: CRC hash 性能。
 ///

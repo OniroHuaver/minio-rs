@@ -7,7 +7,7 @@
 //!
 //! 相关 Issue: <https://github.com/minio/minio/issues/21603>
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试带 if-none-match/if-match 条件的 PutObject
 /// 在 read quorum 失败时的行为。

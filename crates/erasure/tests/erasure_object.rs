@@ -5,7 +5,7 @@
 //! 测试对象层面的擦除编码操作: PutObject, GetObject, DeleteObject,
 //! 多部分上传、quorum 检测、版本化删除、内联数据等。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试重复的 PutObjectPart 操作。
 ///

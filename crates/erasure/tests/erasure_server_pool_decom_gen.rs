@@ -5,7 +5,7 @@
 //! 测试 msgpack 序列化/反序列化:
 //! PoolDecommissionInfo, PoolStatus, decomError, poolMeta, poolSpaceInfo。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试 PoolDecommissionInfo 的 Marshal/Unmarshal 往返。
 ///

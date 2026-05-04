@@ -4,7 +4,7 @@
 //!
 //! 测试 WalkDirOptions 的 msgpack 序列化/反序列化。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试 WalkDirOptions 的 Marshal/Unmarshal 往返。
 ///

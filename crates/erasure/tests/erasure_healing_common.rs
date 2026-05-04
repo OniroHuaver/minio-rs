@@ -5,7 +5,7 @@
 //! 测试修复过程中使用的公共辅助函数：commonTime、
 //! listOnlineDisks、checkObjectWithAllParts、commonParity 等。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试 commonTime 函数，从一组时间戳中找出达到 quorum 的最晚时间。
 ///

@@ -7,7 +7,7 @@
 //! 测试数据来自 `testdata/metacache.s2` (Go 端的压缩样本文件)，
 //! 包含 Go 标准库 `compress/` 目录下的文件和目录列表。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试 metaCacheEntries 的排序。
 ///

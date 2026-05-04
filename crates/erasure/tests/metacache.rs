@@ -4,7 +4,7 @@
 //!
 //! 测试 metacache 的 baseDirFromPrefix、finished、worthKeeping 方法。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试 baseDirFromPrefix 函数。
 ///

@@ -7,7 +7,7 @@
 //! MRF = Metadata Reconciliation Framework,
 //! 用于在磁盘恢复后修复不一致的元数据。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试 PartialOperation 的 Marshal/Unmarshal 往返。
 ///

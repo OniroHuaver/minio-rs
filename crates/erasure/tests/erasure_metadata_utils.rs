@@ -5,7 +5,7 @@
 //! 测试元数据工具函数: diskCount, reduceErrs, hashOrder,
 //! shuffleDisks, evalDisks, Test_hashOrder。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试 diskCount 函数，计算非空磁盘数。
 ///

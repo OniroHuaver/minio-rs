@@ -4,7 +4,7 @@
 //!
 //! 测试存储池的退役 (decommission) 验证逻辑。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试 poolMeta.validate() 函数。
 ///

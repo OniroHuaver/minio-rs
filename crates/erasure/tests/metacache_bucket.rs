@@ -4,7 +4,7 @@
 //!
 //! 测试 bucketMetacache 的 findCache 方法性能。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 基准测试: bucketMetacache.findCache 性能。
 ///

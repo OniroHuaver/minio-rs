@@ -6,7 +6,7 @@
 //! 悬挂对象 (dangling objects)、损坏的 xl.meta 元数据、
 //! 损坏的数据分片、空目录修复等场景。
 
-use minio_erasure::*;
+use erasure::*;
 
 /// 测试 isObjectDangling 函数，判断对象是否为悬挂状态。
 ///
