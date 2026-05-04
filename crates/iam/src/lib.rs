@@ -25,3 +25,9 @@ pub struct IAMUser {
     pub policy: Option<String>,
     pub groups: Vec<String>,
 }
+
+#[cfg(test)]
+mod tests {
+    //! 单元测试（当前为占位）
+    //! 集成测试位于 ../tests/ 目录
+}
