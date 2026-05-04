@@ -12,6 +12,9 @@
 
 use base::error::MinioResult;
 
+#[cfg(test)]
+mod tests;
+
 /// 磁盘信息
 #[derive(Debug, Clone)]
 pub struct DiskInfo {

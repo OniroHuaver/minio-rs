@@ -16,7 +16,7 @@ Offset  Size  Field
 6       2     Minor    3 (big-endian)
 ```
 
-Rust 实现：`core::format::XlMetaHeader`
+Rust 实现：`base::format::XlMetaHeader`
 
 ### 1.2 Body — MessagePack Array
 

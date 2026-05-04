@@ -18,7 +18,7 @@
 
 ### 子任务
 
-- [ ] **1.1** `core`: xl.meta 格式读/写工具 — 能解析磁盘上的 `xl.meta` 文件
+- [ ] **1.1** `base`: xl.meta 格式读/写工具 — 能解析磁盘上的 `xl.meta` 文件
 - [ ] **1.2** `storage`: xlStorage 本地磁盘驱动实现 — 文件 IO、原子 rename、目录管理
 - [ ] **1.3** `erasure`: Reed-Solomon 编解码 + Quorum 判定 + 分片并行读写
 - [ ] **1.4** `object`: erasureObjects — PUT/GET/DELETE 完整调用链

@@ -10,8 +10,6 @@
 //! - Go 中的 `ExecObjectLayerTest` 会同时用 FS 和 Erasure 后端运行测试；
 //!   对应 Rust 侧需要实现类似的多后端测试夹具
 
-use crate as object;
-
 // ============================================================
 // Suite: Object API 核心操作
 // 对应 Go: object_api_suite_test.go

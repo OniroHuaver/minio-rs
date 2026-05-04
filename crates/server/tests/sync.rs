@@ -13,9 +13,14 @@
 // Go: internal/dsync/dsync_test.go (分布式锁集成测试)
 // ============================================================================
 
+// Go 测试常量 (供 TODO 实现时使用)
+#[allow(dead_code)]
 const TEST_DRW_MUTEX_ACQUIRE_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(250);
+#[allow(dead_code)]
 const TEST_DRW_MUTEX_REFRESH_CALL_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(250);
+#[allow(dead_code)]
 const TEST_DRW_MUTEX_UNLOCK_CALL_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(250);
+#[allow(dead_code)]
 const TEST_DRW_MUTEX_REFRESH_INTERVAL: std::time::Duration = std::time::Duration::from_millis(100);
 
 /// 测试简单锁 (Lock / Unlock)

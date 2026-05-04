@@ -40,7 +40,7 @@
 │  ├── xlStorage (本地磁盘)                         │
 │  └── storageClient (远程 RPC, Phase 2)            │
 ├─────────────────────────────────────────────────┤
-│              core (核心类型)                       │
+│              base (核心类型)                       │
 │  xl.meta 格式 · EC 参数 · 常量 · 错误类型          │
 │  SipHash 路由 · 基础类型                          │
 └─────────────────────────────────────────────────┘
@@ -52,13 +52,13 @@
 ### Crate 间依赖关系
 
 ```
-server ──→ s3, object, erasure, storage, core
-s3     ──→ object, iam, core
-object ──→ erasure, storage, core
-erasure ─→ storage, core
-storage ─→ core
-iam    ──→ core
-grid   ──→ core
+server ──→ s3, object, erasure, storage, base
+s3     ──→ object, iam, base
+object ──→ erasure, storage, base
+erasure ─→ storage, base
+storage ─→ base
+iam    ──→ base
+grid   ──→ base
 ```
 
 ---
@@ -68,7 +68,7 @@ grid   ──→ core
 ```
 HTTP (axum)
   ├── 解析 S3 Headers (Authorization, Content-Length, x-amz-*)
-  ├── 签名验证 → core::auth (Phase 3)
+  ├── 签名验证 → base::auth (Phase 3)
   └── PutObjectHandler
         │
         ▼

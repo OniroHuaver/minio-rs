@@ -24,9 +24,14 @@ minio-rs/
 │   ├── s3/           # S3 HTTP API (axum)
 │   └── server/       # 二进制入口
 ├── docs/
-│   ├── ARCHITECTURE.md   # 架构设计
-│   ├── PLAN.md           # 分阶段实施计划
-│   └── STORAGE_SPEC.md   # 存储格式规格
+│   ├── ARCHITECTURE.md    # 分层架构设计
+│   ├── PLAN.md            # 分阶段实施计划
+│   ├── STORAGE_SPEC.md    # 存储格式规格 (xl.meta + EC)
+│   ├── API_REFERENCE.md   # S3/Admin/STS API 完整参考
+│   ├── EDGE_CASES.md      # 极端 Case 处理策略 (待 Agent 完成)
+│   ├── IAM_SPEC.md        # IAM/STS/KMS/Security 安全体系
+│   ├── SUBSYSTEMS.md      # 21 个子系统规格速览
+│   └── DISTRIBUTED.md     # 分布式架构 + EC + S3 Select
 └── tests/
 ```
 
@@ -34,7 +39,7 @@ minio-rs/
 
 | Phase | 内容 | 状态 |
 |-------|------|------|
-| 0     | 项目骨架 + 文档 | ✅ 已完成 |
+| 0     | 项目骨架 + 文档整合 | ✅ 已完成 |
 | 1     | 单机核心存储引擎 | 🔴 待开始 |
 | 2     | 分布式模式 | 🔴 待开始 |
 | 3     | IAM + STS | 🔴 待开始 |
@@ -56,5 +61,5 @@ cargo test --workspace
 ## 参考
 
 - [MinIO 原版架构文档](../minio/docs/ARCHITECTURE.md)
-- [MinIO 存储格式 spec](../minio/docs/STORAGE_IAM_SPEC.md)
+- [MinIO 原版存储/IAM spec](../minio/docs/STORAGE_IAM_SPEC.md)
 - [AWS S3 API Reference](https://docs.aws.amazon.com/AmazonS3/latest/API/)
