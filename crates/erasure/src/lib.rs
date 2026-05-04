@@ -160,6 +160,8 @@ impl Erasure {
     }
 }
 
+//! 集成测试位于 `tests/` 目录，由 Cargo 自动发现。
+
 #[cfg(test)]
 mod tests {
     use super::*;
