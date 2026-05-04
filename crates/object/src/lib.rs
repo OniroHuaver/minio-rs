@@ -101,3 +101,28 @@ pub struct ListObjectsResult {
     pub is_truncated: bool,
     pub next_marker: String,
 }
+
+// ---- 测试模块 ----
+// 对应 Go cmd/ 下的 *_test.go 测试文件迁移
+// 所有测试函数均带有 #[ignore] 标记，待对应类型就绪后启用
+#[cfg(test)]
+mod tests {
+    //! 对象操作测试套件
+    //!
+    //! 模块组织:
+    //! - `object_api`: 核心 ObjectAPI 操作(PUT/GET/DELETE/LIST/Multipart)
+    //! - `utils`:      工具函数(校验、元数据、压缩)
+    //! - `handlers`:   HTTP handler 层测试
+    //! - `bucket`:     Bucket 级操作(handler/策略/加密/复制)
+    //! - `lifecycle`:  生命周期配置解析和评估
+    //! - `replication`: 复制配置解析
+    //! - `encryption`:  加密(SSE-C/SSE-S3/ETag解密/范围读取)
+    //! - `lock`:        命名空间锁和本地锁
+    //! - `object_lock`: 对象锁定(保留/法律保留)
+    //! - `batch`:       批量作业(过期/复制/轮转)
+    //! - `data_usage`:  数据使用扫描和缓存
+    //! - `copy_part`:   Copy part 范围解析
+    //! - `lambda`:      Object Lambda handler
+    //! - `versioning`:  版本控制配置
+    //! - `bandwidth`:   复制带宽监控
+}
