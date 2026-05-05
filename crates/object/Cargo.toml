@@ -2,7 +2,7 @@
 name = "object"
 version = "0.1.0"
 edition = "2024"
-description = "ObjectAPI trait + erasureObjects 实现 (对象操作编排)"
+description = "ObjectAPI trait + erasureObjects implementation (object operation orchestration)"
 
 [dependencies]
 base = { workspace = true }
@@ -11,6 +11,8 @@ erasure = { workspace = true }
 tokio = { workspace = true }
 futures = { workspace = true }
 bytes = { workspace = true }
+async-trait = { workspace = true }
+uuid = { workspace = true }
+sha2 = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }
-async-trait = { workspace = true }

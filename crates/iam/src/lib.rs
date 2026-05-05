@@ -1,21 +1,19 @@
-//! iam: IAM 身份与访问管理子系统
+//! iam: Identity and Access Management subsystem
 //!
-//! 对应 Go: cmd/iam.go + cmd/iam-store.go + cmd/sts-handlers.go
-//!
-//! Phase 3 实现，当前为占位。
+//! Phase 3 implementation, currently a placeholder.
 
-/// 用户类型
+/// User type
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UserType {
-    /// 内部用户 (Admin API 创建)
+    /// Internal user (created via Admin API)
     Regular,
-    /// STS 临时用户
+    /// STS temporary user
     STS,
-    /// 服务账户 (继承父策略)
+    /// Service account (inherits parent policy)
     ServiceAccount,
 }
 
-/// IAM 用户
+/// IAM user
 #[derive(Debug, Clone)]
 pub struct IAMUser {
     pub access_key: String,
@@ -28,6 +26,6 @@ pub struct IAMUser {
 
 #[cfg(test)]
 mod tests {
-    //! 单元测试（当前为占位）
-    //! 集成测试位于 ../tests/ 目录
+    //! Unit tests (currently a placeholder)
+    //! Integration tests live in ../tests/
 }

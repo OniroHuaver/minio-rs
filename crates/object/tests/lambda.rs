@@ -1,21 +1,18 @@
-//! Lambda 函数测试
+//! Lambda function tests
 //!
-//! 对应 Go: `cmd/object-lambda-handlers_test.go`
-//!
-//! 测试 S3 Object Lambda 功能: 通过 Lambda 函数转换请求的 GetObject 响应。
+//! Tests S3 Object Lambda functionality: transforming GetObject responses via Lambda functions.
 
-/// 验证 GetObjectLambdaHandler。
+/// Verifies GetObjectLambdaHandler.
 ///
-/// Go: `TestGetObjectLambdaHandler`
-/// 测试 Object Lambda 功能:
-/// - 200/206 响应携带 Lambda 返回体
-/// - Lambda 返回的状态码透传给客户端
-/// - 请求失败(400+)时正确传递错误
+/// Tests Object Lambda functionality:
+/// - 200/206 responses carry the Lambda return body
+/// - Lambda return status code is passed through to the client
+/// - Request failure (400+) correctly propagates the error
 #[test]
 #[ignore]
 // TODO: implement when lambda handler and test harness are available
 fn test_get_object_lambda_handler() {
-    // // Lambda mock server 返回不同状态码和内容
+    // // Lambda mock server returns different status codes and bodies
     // let lambda_server = mock_server::start(move |req| {
     //     match req.path() {
     //         _ => HttpResponse::builder()
@@ -28,9 +25,9 @@ fn test_get_object_lambda_handler() {
     //     }
     // });
     //
-    // // 配置 Lambda ARN
-    // // 通过 ObjectLambdaHandler 发送 GET 请求
-    // // 验证响应状态码和内容与 Lambda 返回一致
+    // // Configure Lambda ARN
+    // // Send GET request via ObjectLambdaHandler
+    // // Verify response status and body match Lambda return
     //
     // let test_cases = vec![
     //     ("Success 206", 206, "partial-object-data", "text/plain", 206),
@@ -38,7 +35,7 @@ fn test_get_object_lambda_handler() {
     //     ("Client Error 400", 400, "bad-request", "application/xml", 400),
     // ];
     // for (name, lambda_status, lambda_body, content_type, expected_status) in test_cases {
-    //     // 执行测试
+    //     // Execute test
     //     // assert_eq!(response.status(), expected_status, "case: {name}");
     // }
 }

@@ -1,24 +1,20 @@
-//! xlMetaV2 数据格式测试
+//! xlMetaV2 data format tests
 //!
-//! 对应 Go: cmd/xl-storage-format-v2_test.go
-//!
-//! 测试 xlMetaV2 的核心功能:
-//! - xl.meta 数据读写、load/roundtrip
-//! - Data 内联存储、查找、删除、替换、重命名
-//! - xlMetaV2TrimData 裁剪
-//! - UsesDataDir 判定
-//! - 共享 DataDir 的版本删除
-//! - mergeXLV2Versions 多盘版本合并
-//! - 时间戳加载与签名转换
-//! - LoadOrConvert 兼容性
+//! Tests xlMetaV2 core functionality:
+//! - xl.meta data read/write, load/roundtrip
+//! - Data inline storage, lookup, delete, replace, rename
+//! - xlMetaV2TrimData trimming
+//! - UsesDataDir determination
+//! - Shared DataDir version deletion
+//! - mergeXLV2Versions multi-disk version merge
+//! - Timestamp loading and signature conversion
+//! - LoadOrConvert compatibility
 
 use storage::*;
 
-/// 测试 read_xl_meta_no_data 读取损坏的 xl.meta
+/// Tests read_xl_meta_no_data for corrupt xl.meta
 ///
-/// 场景: 读取包含数据的 xl.meta 时如果缺少数据段应报错。
-///
-/// 对应 Go: TestReadXLMetaNoData
+/// Scenarios: Reading a data-containing xl.meta without data segment should error.
 #[test]
 #[ignore]
 fn test_read_xl_meta_no_data() {
@@ -28,21 +24,19 @@ fn test_read_xl_meta_no_data() {
     // assert!(result.is_err(), "expected error but returned success");
 }
 
-/// 测试 xlMetaV2 数据格式: 添加版本、序列化、反序列化、
-/// 数据查找/删除/替换/重命名/裁剪
+/// Tests xlMetaV2 data format: add version, serialize, deserialize,
+/// data lookup/delete/replace/rename/trim
 ///
-/// 场景:
-/// - 添加两个带内联数据的版本
-/// - 序列化后反序列化验证数据完整性
-/// - data.list() 返回 2 条
-/// - data.find() 按 versionID 查询
-/// - data.remove() 删除后 entries=1
-/// - data.replace() 替换数据后 entries=2
-/// - data.rename() 重命名 key
-/// - xlMetaV2TrimData 裁剪数据后 data 长度为 0
-/// - 损坏元数据可被检测
-///
-/// 对应 Go: TestXLV2FormatData
+/// Scenarios:
+/// - Add two versions with inline data
+/// - Serialize then deserialize to verify data integrity
+/// - data.list() returns 2 entries
+/// - data.find() queries by versionID
+/// - data.remove() deletes => entries=1
+/// - data.replace() replaces data => entries=2
+/// - data.rename() renames key
+/// - xlMetaV2TrimData trims => data length = 0
+/// - Corrupt metadata can be detected
 #[test]
 #[ignore]
 fn test_xl_v2_format_data() {
@@ -109,16 +103,14 @@ fn test_xl_v2_format_data() {
     // assert!(xl3.load(&corrupted).is_err());
 }
 
-/// 测试 xlMetaV2Object.UsesDataDir 判断版本是否使用数据目录
+/// Tests xlMetaV2Object.UsesDataDir for data directory usage
 ///
-/// 场景:
-/// - Transitioned 版本 (有 metaTierStatus=COMPLETE) → uses=false
-/// - Transitioned + 正在恢复 (AmzRestore ongoing) → uses=false
-/// - Transitioned + 已恢复 (AmzRestore completed, 未过期) → uses=true
-/// - Transitioned + 恢复已过期 → uses=false
-/// - 无 ILM 的普通版本 → uses=true
-///
-/// 对应 Go: TestUsesDataDir
+/// Scenarios:
+/// - Transitioned version (metaTierStatus=COMPLETE) => uses=false
+/// - Transitioned + restoring (AmzRestore ongoing) => uses=false
+/// - Transitioned + restored (AmzRestore completed, not expired) => uses=true
+/// - Transitioned + restore expired => uses=false
+/// - Normal version without ILM => uses=true
 #[test]
 #[ignore]
 fn test_uses_data_dir() {
@@ -142,17 +134,15 @@ fn test_uses_data_dir() {
     // assert!(meta.uses_data_dir());
 }
 
-/// 测试 DeleteVersion 正确处理共享 DataDir
+/// Tests DeleteVersion handling of shared DataDir
 ///
-/// 场景:
-/// - 内联数据版本不计入共享
-/// - Transitioned 版本不计入共享
-/// - 恢复中的 transitioned 版本不计入共享
-/// - 已恢复版本计入共享
-/// - 普通磁盘版本计入共享
-/// - 删除版本时返回正确的 dataDir (无其他共享者时)
-///
-/// 对应 Go: TestDeleteVersionWithSharedDataDir
+/// Scenarios:
+/// - Inline data versions do not count toward sharing
+/// - Transitioned versions do not count toward sharing
+/// - Restoring transitioned versions do not count toward sharing
+/// - Restored versions count toward sharing
+/// - Normal disk versions count toward sharing
+/// - Returns correct dataDir on delete (when no other sharers)
 #[test]
 #[ignore]
 fn test_delete_version_with_shared_data_dir() {
@@ -173,16 +163,14 @@ fn test_delete_version_with_shared_data_dir() {
     // // Verify DeleteVersion returns expected data dir
 }
 
-/// 测试 xlMetaV2Shallow.Load 加载和索引一致性
+/// Tests xlMetaV2Shallow.Load loading and index consistency
 ///
-/// 从 testdata/xl.meta-v1.2.zst 加载数据，验证:
-/// - 855 个版本正确加载
-/// - sort_by_mod_time 正确排序
-/// - header 与 meta 一致
-/// - Roundtrip (load → append_to → load) 一致
-/// - compressed index 兼容性
-///
-/// 对应 Go: Test_xlMetaV2Shallow_Load
+/// Load data from testdata/xl.meta-v1.2.zst, verify:
+/// - 855 versions loaded correctly
+/// - sort_by_mod_time sorts correctly
+/// - header and meta are consistent
+/// - Roundtrip (load -> append_to -> load) consistency
+/// - Compressed index compatibility
 #[test]
 #[ignore]
 fn test_xl_meta_v2_shallow_load() {
@@ -204,12 +192,10 @@ fn test_xl_meta_v2_shallow_load() {
     // assert_eq!(xl2.versions.len(), 855);
 }
 
-/// 测试时间戳加载和签名转换
+/// Tests timestamp loading and signature conversion
 ///
-/// 验证旧格式 ReplicationTimestamp 和 ReplicaTimestamp 的
-/// 时区转换 (从 +08:00 到 Z) 和签名升级。
-///
-/// 对应 Go: Test_xlMetaV2Shallow_LoadTimeStamp
+/// Verify timezone conversion (from +08:00 to Z) and signature
+/// upgrade for old format ReplicationTimestamp and ReplicaTimestamp.
 #[test]
 #[ignore]
 fn test_xl_meta_v2_shallow_load_timestamp() {
@@ -229,20 +215,18 @@ fn test_xl_meta_v2_shallow_load_timestamp() {
     // assert_eq!(got, want_ts);
 }
 
-/// 测试 mergeXLV2Versions 多盘版本合并
+/// Tests mergeXLV2Versions multi-disk version merge
 ///
-/// 从 testdata/xl-meta-consist.zip 加载多个磁盘的版本列表,
-/// 在不同 quorum 下测试合并结果包含有效版本。
+/// Load version lists from multiple disks via testdata/xl-meta-consist.zip,
+/// test merge results contain valid versions under different quorum values.
 ///
-/// 多项子测试:
+/// Subtests:
 /// - non-strict mode
 /// - strict mode
-/// - 签名变异
-/// - modtime 变异
-/// - flags 变异
-/// - versionID 变异
-///
-/// 对应 Go: Test_mergeXLV2Versions
+/// - signature variation
+/// - modtime variation
+/// - flags variation
+/// - versionID variation
 #[test]
 #[ignore]
 fn test_merge_xl_v2_versions() {
@@ -265,16 +249,14 @@ fn test_merge_xl_v2_versions() {
     // }
 }
 
-/// 测试 mergeXLV2Versions 特定场景: 删除标记与对象的合并
+/// Tests mergeXLV2Versions specific scenarios: delete marker and object merge
 ///
-/// 场景:
-/// - 对象仅出现在 1 个磁盘 → 不满足 quorum → 不包含
-/// - 对象出现在 2+ 磁盘 → 满足 quorum → 包含
-/// - 删除标记出现在 1 个磁盘 → 不满足 quorum → 不包含
-/// - 删除标记出现在 2+ 磁盘 → 满足 quorum → 包含
-/// - 16-stripe 场景验证
-///
-/// 对应 Go: Test_mergeXLV2Versions2
+/// Scenarios:
+/// - Object appears on only 1 disk -> no quorum -> not included
+/// - Object appears on 2+ disks -> quorum met -> included
+/// - Delete marker appears on only 1 disk -> no quorum -> not included
+/// - Delete marker appears on 2+ disks -> quorum met -> included
+/// - 16-stripe scenario verification
 #[test]
 #[ignore]
 fn test_merge_xl_v2_versions2() {
@@ -298,12 +280,10 @@ fn test_merge_xl_v2_versions2() {
     // }
 }
 
-/// 测试 mergeEntryChannels 通道合并
+/// Tests mergeEntryChannels channel merge
 ///
-/// 从 testdata/xl-meta-merge.zip 加载多个 metaCacheEntry，
-/// 打乱顺序后通过 channel 合并，验证结果包含 3 个版本且排序正确。
-///
-/// 对应 Go: Test_mergeEntryChannels
+/// Load multiple metaCacheEntry from testdata/xl-meta-merge.zip,
+/// shuffle then merge via channels, verify result contains 3 versions and is sorted correctly.
 #[test]
 #[ignore]
 fn test_merge_entry_channels() {
@@ -328,14 +308,12 @@ fn test_merge_entry_channels() {
     // }
 }
 
-/// 测试 XMinIOHealingSkip - healing 标记不被保留在 ToFileInfo 中
+/// Tests XMinIOHealingSkip - healing flag is not retained in ToFileInfo
 ///
-/// 场景:
-/// - 在 FileInfo 上设置 Healing 标记
-/// - 添加版本到 xlMetaV2
-/// - 调用 ToFileInfo 后 Healing 应为 false
-///
-/// 对应 Go: TestXMinIOHealingSkip
+/// Scenarios:
+/// - Set Healing flag on FileInfo
+/// - Add version to xlMetaV2
+/// - After ToFileInfo, Healing should be false
 #[test]
 #[ignore]
 fn test_x_min_io_healing_skip() {

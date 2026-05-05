@@ -1,10 +1,8 @@
-//! Grid 连接测试
+//! Grid connection tests
 //!
-//! 对应 Go: internal/grid/connection_test.go
-//!
-//! 测试断连、重连、shouldConnect 连接拓扑。
-//! 已包含于 grid.rs 中, 此处仅作组织备用。
+//! Tests disconnect, reconnect, shouldConnect topology.
+//! Included in grid.rs, organized here for reference.
 
 // ============================================================================
-// 注意: TestDisconnect 和 TestShouldConnect 已在 grid.rs 中实现
+// Note: TestDisconnect and TestShouldConnect are implemented in grid.rs
 // ============================================================================

@@ -1,13 +1,11 @@
-//! 加密相关测试
+//! Encryption related tests
 //!
-//! 对应 Go: `cmd/encryption-v1_test.go`
-//!
-//! 测试 SSE-C 和 SSE-S3 加密的请求/解密/ETag 解密/范围读取。
+//! Tests SSE-C and SSE-S3 encryption request/decryption/ETag decryption/range reads.
 
-/// 验证 EncryptRequest 函数。
+/// Verifies EncryptRequest function.
 ///
-/// Go: `TestEncryptRequest`
-/// 验证 SSE-C 请求头被正确解析，加密元数据被正确设置(Algorithm、IV、SealedKey)。
+/// Verifies SSE-C request headers are correctly parsed and encryption metadata
+/// (Algorithm, IV, SealedKey) is set correctly.
 #[test]
 #[ignore]
 // TODO: implement when encryption primitives are available
@@ -26,10 +24,9 @@ fn test_encrypt_request() {
     // assert!(metadata.contains_key(crypto::META_SEALED_KEY_SSEC));
 }
 
-/// 验证 DecryptObjectInfo 函数。
+/// Verifies DecryptObjectInfo function.
 ///
-/// Go: `TestDecryptObjectInfo`
-/// 验证对象信息中的加密标记检测和校验。
+/// Verifies encryption flag detection and validation in object info.
 #[test]
 #[ignore]
 // TODO: implement when encryption primitives are available
@@ -41,13 +38,13 @@ fn test_decrypt_object_info() {
     //      Request::with_sse(), None),
     //     (ObjectInfo { size: 0, user_defined: map!{crypto::META_ALGORITHM => "..."} },
     //      Request::with_sse(), None),
-    //     // 加密对象但请求无解密头 -> errEncryptedObject
+    //     // Encrypted object but request has no decryption header -> errEncryptedObject
     //     (ObjectInfo { size: 100, user_defined: map!{crypto::META_SEALED_KEY_SSEC => "EAAf..."} },
     //      Request::new(), Some(err_encrypted_object)),
-    //     // 未加密对象但请求要求 SSE-C -> errInvalidEncryptionParameters
+    //     // Unencrypted object but request requires SSE-C -> errInvalidEncryptionParameters
     //     (ObjectInfo { size: 100, user_defined: map!{} },
     //      Request::with_ssec(), Some(err_invalid_encryption_parameters)),
-    //     // 大小不对(31字节但标记加密) -> errObjectTampered
+    //     // Size mismatch (31 bytes but marked encrypted) -> errObjectTampered
     //     (ObjectInfo { size: 31, user_defined: map!{crypto::META_ALGORITHM => "insecure"} },
     //      Request::with_ssec(), Some(err_object_tampered)),
     // ];
@@ -57,10 +54,10 @@ fn test_decrypt_object_info() {
     // }
 }
 
-/// 验证 DecryptETag 函数。
+/// Verifies DecryptETag function.
 ///
-/// Go: `TestDecryptETag`
-/// 测试解密加密对象的 ETag，包括多 part 场景(ETag 以 "-N" 结尾)。
+/// Tests decryption of encrypted object ETags, including multi-part scenarios
+/// (ETag ending with "-N").
 #[test]
 #[ignore]
 // TODO: implement when ETag decryption is available
@@ -69,9 +66,9 @@ fn test_decrypt_etag() {
     // let test_cases = vec![
     //     (ObjectInfo { etag: "20000f00f27834c9a2654927546df57f".to_string(), .. },
     //      "8ad3fe6b84bf38489e95c701c84355b6", false),
-    //     (ObjectInfo { etag: "invalid".to_string(), .. }, "", true), // 无效 hex
+    //     (ObjectInfo { etag: "invalid".to_string(), .. }, "", true), // invalid hex
     //     (ObjectInfo { etag: "916516b396f0f4d4f2a0e7177557bec4-1".to_string(), .. },
-    //      "916516b396f0f4d4f2a0e7177557bec4-1", false), // 多 part
+    //      "916516b396f0f4d4f2a0e7177557bec4-1", false), // multi part
     // ];
     // for (i, (info, expected_etag, should_fail)) in test_cases.iter().enumerate() {
     //     let result = decrypt_etag(&object_key, info);
@@ -82,10 +79,9 @@ fn test_decrypt_etag() {
     // }
 }
 
-/// 验证 GetDecryptedRange (特定 issue 回归测试)。
+/// Verifies GetDecryptedRange (specific issue regression test).
 ///
-/// Go: `TestGetDecryptedRange_Issue50`
-/// 验证多 part 加密对象的范围读取偏移计算正确。
+/// Verifies multi-part encrypted object range read offset calculation is correct.
 #[test]
 #[ignore]
 // TODO: implement when object decrypted range computation is available
@@ -115,23 +111,23 @@ fn test_get_decrypted_range_issue50() {
     // assert_eq!(part_start, 1);
 }
 
-/// 验证 GetDecryptedRange 通用范围读取。
+/// Verifies GetDecryptedRange general range reads.
 ///
-/// Go: `TestGetDecryptedRange`
-/// 验证单 part 和多 part 对象在各种范围下的加密偏移计算。
+/// Verifies encryption offset calculation for single-part and multi-part objects
+/// under various ranges.
 #[test]
 #[ignore]
 // TODO: implement when decrypted range computation is available
 fn test_get_decrypted_range() {
-    // // 单 part 对象: nil range, first N bytes, skip range, across package boundary
-    // // 多 part 对象: nil range, skip+read, last N bytes
-    // // 与参考实现(decryptedRangeRef)对比
+    // // Single part: nil range, first N bytes, skip range, across package boundary
+    // // Multi part: nil range, skip+read, last N bytes
+    // // Compare against reference implementation
 }
 
-/// 验证 getDefaultOpts 函数。
+/// Verifies getDefaultOpts function.
 ///
-/// Go: `TestGetDefaultOpts`
-/// 测试从 HTTP header 解析默认对象选项(SSE-C、SSE-S3、SSE-S3 复制目标)。
+/// Tests parsing default object options (SSE-C, SSE-S3, SSE-S3 replication target)
+/// from HTTP headers.
 #[test]
 #[ignore]
 // TODO: implement when object options parsing is available
@@ -141,19 +137,19 @@ fn test_get_default_opts() {
     //     (header_with_ssec(), false, map!{}, encrypt::Type::SSEC, None),
     //     // SSE-C header + copySource -> nil
     //     (header_with_ssec(), true, map!{}, "", None),
-    //     // 无效 SSE-C key
+    //     // Invalid SSE-C key
     //     (header_with_bad_ssec_key(), false, map!{}, "", Some(crypto::ERR_INVALID_CUSTOMER_KEY)),
     //     // SSE-S3 header
     //     (header_with_sse_s3(), false, map!{}, encrypt::Type::S3, None),
-    //     // 已加密元数据(无 header)
+    //     // Already encrypted metadata (no header)
     //     (Header::new(), false, meta_with_s3_encryption(), encrypt::Type::S3, None),
-    //     // 复制场景下的 SSE-C
+    //     // SSE-C under replication
     //     (header_with_copy_ssec(), true, map!{}, encrypt::Type::SSEC, None),
-    //     // 复制头但非复制请求 -> nil
+    //     // Copy header but not a copy request -> nil
     //     (header_with_copy_ssec(), false, map!{}, "", None),
     // ];
     // for (i, (headers, copy_source, metadata, expected_type, expected_err)) in test_cases.iter().enumerate() {
     //     let opts = get_default_opts(&headers, *copy_source, &metadata);
-    //     // 验证错误和加密类型
+    //     // Verify error and encryption type
     // }
 }

@@ -1,39 +1,35 @@
-//! DeadlineConn 超时连接测试
+//! DeadlineConn timeout connection tests
 //!
-//! 对应 Go: internal/deadlineconn/deadlineconn_test.go
-//!
-//! 测试带读/写超时的网络连接封装。
+//! Tests network connection wrapper with read/write timeouts.
 
-/// 测试 DeadlineConn 读超时后仍可继续读取
+/// Test DeadlineConn read can continue after timeout
 ///
-/// Go: TestBuffConnReadTimeout
-/// 验证: 超过 read deadline 后连接不被关闭, 后续读取仍正常
+/// Verifies: exceeding read deadline does not close the connection, subsequent reads still work
 #[test]
 #[ignore]
 fn test_deadlineconn_read_timeout() {
     // TODO: implement when deadlineconn::Conn available
     //
-    // Go 逻辑:
-    //   TCP server + client 通信
-    //   1. server: WithReadDeadline(1s), 读取 "message one\n"
-    //   2. server: sleep 3s (超过 deadline)
-    //   3. server: 再次读取 "message two\n" → 应成功
-    //   4. server: 回复 "messages received\n"
-    //   5. client: 验证收到正确回复
+    // Steps:
+    //   TCP server + client communication
+    //   1. server: WithReadDeadline(1s), read "message one\n"
+    //   2. server: sleep 3s (exceeds deadline)
+    //   3. server: read "message two\n" again -> should succeed
+    //   4. server: reply "messages received\n"
+    //   5. client: verify correct reply received
 }
 
-/// 测试 DeadlineConn 在 SetReadDeadline 过去后读取失败
+/// Test DeadlineConn read fails after SetReadDeadline in the past
 ///
-/// Go: TestBuffConnReadCheckTimeout
-/// 验证: SetReadDeadline(过去时间) → 读取立即失败
+/// Verifies: SetReadDeadline(past time) -> read immediately fails
 #[test]
 #[ignore]
 fn test_deadlineconn_read_check_timeout() {
     // TODO: implement when deadlineconn::Conn available
     //
-    // Go 逻辑:
-    //   1. server: WithReadDeadline(1s), 读取 "message one\n"
-    //   2. server: SetReadDeadline(time.Unix(1,0)) → 过去时间
+    // Steps:
+    //   1. server: WithReadDeadline(1s), read "message one\n"
+    //   2. server: SetReadDeadline(time::Unix(1,0)) -> past time
     //   3. server: sleep > updateInterval
-    //   4. server: 再次读取 → 应返回错误 (deadline 过期)
+    //   4. server: read again -> should return error (deadline expired)
 }

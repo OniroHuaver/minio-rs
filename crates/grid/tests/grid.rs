@@ -1,279 +1,266 @@
-//! Grid 分布式 RPC 通信层测试
+//! Grid distributed RPC communication layer tests
 //!
-//! 对应 Go: internal/grid/grid_test.go
-//!
-//! 测试 Grid Manager 的单次往返、流式通信、取消、截止时间、拥塞等场景。
-//! 需要完整的 Grid 网络设置，当前 Phase 2 仅作占位。
+//! Tests Grid Manager single round-trip, streaming, cancellation, deadline, congestion scenarios.
+//! Requires full Grid network setup, Phase 2 placeholder.
 
 // ============================================================================
-// Go: internal/grid/grid_test.go
-// ============================================================================
 
-/// 测试单次往返请求 (echo + error)
+/// Tests single round-trip request (echo + error)
 ///
-/// Go: TestSingleRoundtrip
-/// 验证: 请求 → echo 返回; 请求 → RemoteErr 返回; 大负载 (1 MiB) 通过
+/// Verifies: request -> echo response; request -> RemoteErr response; large payload (1 MiB) passing
 #[test]
 #[ignore]
 fn test_grid_single_roundtrip() {
     // TODO: implement when grid::Manager available
     //
-    // Go 逻辑:
-    //   SetupTestGrid(2) → local, remote
-    //   1. localToRemote: RegisterSingleHandler echo → Request "Hello" → 返回 "Hello"
-    //   2. localToRemoteErr: RegisterSingleHandler error → Request → RemoteErr
-    //   3. localToRemoteHuge: 1 MiB payload → echo
-    //   4. localToRemoteErrHuge: 1 KiB payload → RemoteErr
+    // Logic:
+    //   SetupTestGrid(2) -> local, remote
+    //   1. localToRemote: RegisterSingleHandler echo -> Request "Hello" -> returns "Hello"
+    //   2. localToRemoteErr: RegisterSingleHandler error -> Request -> RemoteErr
+    //   3. localToRemoteHuge: 1 MiB payload -> echo
+    //   4. localToRemoteErrHuge: 1 KiB payload -> RemoteErr
 }
 
-/// 测试 handler 未注册时的错误
+/// Tests error when handler is not registered
 ///
-/// Go: TestSingleRoundtripNotReady
-/// 验证: remote 未注册 handler → Request 返回 RemoteErr, NewStream 返回 ErrUnknownHandler
+/// Verifies: remote without registered handler -> Request returns RemoteErr, NewStream returns ErrUnknownHandler
 #[test]
 #[ignore]
 fn test_grid_single_roundtrip_not_ready() {
     // TODO: implement when grid::Manager available
     //
-    // Go 逻辑:
-    //   仅在 local 注册 handler, remote 不注册
-    //   Request → RemoteErr
-    //   NewStream → ErrUnknownHandler
+    // Logic:
+    //   register handler only on local, not on remote
+    //   Request -> RemoteErr
+    //   NewStream -> ErrUnknownHandler
 }
 
-/// 测试带泛型的单次往返
+/// Tests single round-trip with generics
 ///
-/// Go: TestSingleRoundtripGenerics
-/// 使用 NewSingleHandler[*testRequest, *testResponse]
+/// Uses NewSingleHandler[*testRequest, *testResponse]
 #[test]
 #[ignore]
 fn test_grid_single_roundtrip_generics() {
     // TODO: implement when NewSingleHandler available
     //
-    // Go 逻辑:
-    //   1. handler1 echo: testRequest → testResponse (包含 Embedded)
-    //   2. handler2 error: testRequest → RemoteErr(req.String)
-    //   3. h1.Call → 验证 OrgString, Embedding
-    //   4. h2.Call → 验证 RemoteErr
+    // Logic:
+    //   1. handler1 echo: testRequest -> testResponse (with Embedded)
+    //   2. handler2 error: testRequest -> RemoteErr(req.String)
+    //   3. h1.Call -> verify OrgString, Embedding
+    //   4. h2.Call -> verify RemoteErr
 }
 
-/// 测试带泛型的单次往返 (MSS 回收)
+/// Tests single round-trip with generics (MSS recycle)
 ///
-/// Go: TestSingleRoundtripGenericsRecycle
-/// 使用 NewSingleHandler[*MSS, *MSS] 和 Recycle
+/// Uses NewSingleHandler[*MSS, *MSS] and Recycle
 #[test]
 #[ignore]
 fn test_grid_single_roundtrip_generics_recycle() {
     // TODO: implement when NewSingleHandler + MSS available
     //
-    // Go 逻辑:
-    //   h1 echo: MSS → MSS
-    //   h2 error: MSS → RemoteErr
-    //   验证 req.Recycle 被调用
+    // Logic:
+    //   h1 echo: MSS -> MSS
+    //   h2 error: MSS -> RemoteErr
+    //   verify req.Recycle is called
 }
 
-/// 测试流式通信完整套件
+/// Tests streaming communication suite
 ///
-/// Go: TestStreamSuite
-/// 包含: testStreamRoundtrip, testStreamCancel, testStreamDeadline,
+/// Includes: testStreamRoundtrip, testStreamCancel, testStreamDeadline,
 ///       testServerOutCongestion, testServerInCongestion,
 ///       testGenericsStreamRoundtrip, testGenericsStreamRoundtripSubroute,
 ///       testServerStreamResponseBlocked, testServerStreamNoPing (oneway/twoway),
-///       testServerStreamPingRunning 多组合
+///       testServerStreamPingRunning multiple combinations
 #[test]
 #[ignore]
 fn test_grid_stream_suite() {
     // TODO: implement when streaming handlers available
     //
-    // Go 逻辑:
-    //   SetupTestGrid(2) → local, remote
-    //   依次运行 17 个子测试, 每个结束后验证 assertNoActive
+    // Logic:
+    //   SetupTestGrid(2) -> local, remote
+    //   run 17 subtests sequentially, verify assertNoActive after each
 }
 
-/// 测试流式往返: client 发送 10 个请求, server echo
+/// Tests streaming round-trip: client sends 10 requests, server echoes
 ///
-/// Go: testStreamRoundtrip
+/// Verifies testStreamRoundtrip
 #[test]
 #[ignore]
 fn test_grid_stream_roundtrip() {
     // TODO: implement when streaming available
     //
-    // Go 逻辑:
-    //   RegisterStreamingHandler echo: payload + request → response
-    //   NewStream → 发送 10 个请求 → 验证每个响应 = testPayload + str(i)
-    //   发送第 11 个后 close(Requests)
+    // Logic:
+    //   RegisterStreamingHandler echo: payload + request -> response
+    //   NewStream -> send 10 requests -> verify each response = testPayload + str(i)
+    //   send 11th then close(Requests)
 }
 
-/// 测试流取消: cancel ctx → server context canceled
+/// Tests stream cancellation: cancel ctx -> server context canceled
 ///
-/// Go: testStreamCancel
+/// Verifies testStreamCancel
 #[test]
 #[ignore]
 fn test_grid_stream_cancel() {
     // TODO: implement when streaming available
     //
-    // Go 逻辑:
-    //   3 个子测试: unbuffered, buffered (no req), buffered (with req)
-    //   cancel → server 收到 ctx.Done()
-    //   client 收到 context.Canceled
+    // Logic:
+    //   3 subtests: unbuffered, buffered (no req), buffered (with req)
+    //   cancel -> server receives ctx.Done()
+    //   client receives context.Canceled
 }
 
-/// 测试流截止时间: context.WithTimeout → server 和 client 都超时
+/// Tests stream deadline: context.WithTimeout -> server and client both time out
 ///
-/// Go: testStreamDeadline
+/// Verifies testStreamDeadline
 #[test]
 #[ignore]
 fn test_grid_stream_deadline() {
     // TODO: implement when streaming available
     //
-    // Go 逻辑:
-    //   设置 remote debugMsg(debugAddToDeadline, 50ms)
-    //   创建 ctx with 50ms timeout → NewStream
-    //   server 和 client 都超时
+    // Logic:
+    //   set remote debugMsg(debugAddToDeadline, 50ms)
+    //   create ctx with 50ms timeout -> NewStream
+    //   server and client both time out
 }
 
-/// 测试服务端出站拥塞: server 发送 100 响应, 同时请求不受影响
+/// Tests server outbound congestion: server sends 100 responses, requests unaffected
 ///
-/// Go: testServerOutCongestion
+/// Verifies testServerOutCongestion
 #[test]
 #[ignore]
 fn test_grid_server_out_congestion() {
     // TODO: implement when streaming available
     //
-    // Go 逻辑:
-    //   streaming handler 发送 100 响应 (OutCapacity=1)
-    //   同时进行 100 个独立 Request → 不应阻塞
-    //   然后 drain streaming 响应
+    // Logic:
+    //   streaming handler sends 100 responses (OutCapacity=1)
+    //   concurrently run 100 independent Requests -> should not block
+    //   then drain streaming responses
 }
 
-/// 测试服务端入站拥塞: 100 请求等待处理, 同时 request 不受影响
+/// Tests server inbound congestion: 100 requests waiting, requests unaffected
 ///
-/// Go: testServerInCongestion
+/// Verifies testServerInCongestion
 #[test]
 #[ignore]
 fn test_grid_server_in_congestion() {
     // TODO: implement when streaming available
     //
-    // Go 逻辑:
-    //   streaming handler 阻塞 (等待 signal)
-    //   同时进行 100 个独立 Request → 不应阻塞
-    //   signal → 处理队列 → 验证顺序
+    // Logic:
+    //   streaming handler blocks (waiting for signal)
+    //   concurrently run 100 independent Requests -> should not block
+    //   signal -> process queue -> verify order
 }
 
-/// 测试泛型流式往返
+/// Tests generic streaming round-trip
 ///
-/// Go: testGenericsStreamRoundtrip
+/// Verifies testGenericsStreamRoundtrip
 #[test]
 #[ignore]
 fn test_grid_generics_stream_roundtrip() {
     // TODO: implement when NewStream generics available
     //
-    // Go 逻辑:
+    // Logic:
     //   NewStream[*testRequest, *testRequest, *testResponse]
-    //   Call → 发送 10 个请求 → Results 验证 OrgNum/OrgString
+    //   Call -> send 10 requests -> Results verify OrgNum/OrgString
 }
 
-/// 测试泛型流式子路由
+/// Tests generic streaming subroute
 ///
-/// Go: testGenericsStreamRoundtripSubroute
+/// Verifies testGenericsStreamRoundtripSubroute
 #[test]
 #[ignore]
 fn test_grid_generics_stream_roundtrip_subroute() {
     // TODO: implement when Subroute available
     //
-    // Go 逻辑:
-    //   注册 handler 时指定 Subroute "subroute/1"
-    //   Connection.Subroute("subroute/1") → Call
-    //   server 端 GetSubroute(ctx) == "subroute/1"
+    // Logic:
+    //   register handler with Subroute "subroute/1"
+    //   Connection.Subroute("subroute/1") -> Call
+    //   server side GetSubroute(ctx) == "subroute/1"
 }
 
-/// 测试服务端流响应阻塞
+/// Tests server stream response blocking
 ///
-/// Go: testServerStreamResponseBlocked
+/// Verifies testServerStreamResponseBlocked
 #[test]
 #[ignore]
 fn test_grid_server_stream_response_blocked() {
     // TODO: implement when streaming available
     //
-    // Go 逻辑:
-    //   streaming handler 发送 100 响应, 但 client 阻塞读
-    //   等待 channel 满 → cancel → server canceled
-    //   Results 返回 context.Canceled
+    // Logic:
+    //   streaming handler sends 100 responses, but client blocks read
+    //   wait for channel full -> cancel -> server canceled
+    //   Results returns context.Canceled
 }
 
-/// 测试无 Ping 的流 (oneway/twoway)
+/// Tests stream without ping (oneway/twoway)
 ///
-/// Go: testServerStreamNoPing
+/// Verifies testServerStreamNoPing
 #[test]
 #[ignore]
 fn test_grid_server_stream_no_ping() {
     // TODO: implement when streaming available
     //
-    // Go 逻辑:
-    //   设置 clientPingInterval=100ms, 然后模拟阻塞
-    //   停止 inbound 消息处理 → server 检测到超时 → ctx canceled
+    // Logic:
+    //   set clientPingInterval=100ms, then simulate blocking
+    //   stop inbound message processing -> server detects timeout -> ctx canceled
 }
 
-/// 测试带 Ping 的流 (多种组合)
+/// Tests stream with ping (multiple combinations)
 ///
-/// Go: testServerStreamPingRunning
+/// Verifies testServerStreamPingRunning
 #[test]
 #[ignore]
 fn test_grid_server_stream_ping_running() {
     // TODO: implement when streaming + ping available
     //
-    // Go 逻辑: 6 种组合:
-    //   oneway/twoway × (blockResp/blockReq/none)
-    //   Ping 确保连接存活 → 1s 后 cancel
-    //   验证 server 和 client 均 canceled
+    // Logic: 6 combinations:
+    //   oneway/twoway x (blockResp/blockReq/none)
+    //   Ping keeps connection alive -> 1s later cancel
+    //   verify server and client both canceled
 }
 
-/// 辅助: 验证无活跃流
+/// Helper: verify no active streams
 ///
-/// Go: assertNoActive
+/// Verifies assertNoActive
 #[test]
 #[ignore]
 fn test_grid_assert_no_active() {
     // TODO: implement when Connection.Stats available
     //
-    // Go 逻辑:
-    //   轮询 10 次 (每次 100ms sleep)
-    //   验证 IncomingStreams=0, OutgoingStreams=0
+    // Logic:
+    //   poll 10 times (100ms sleep each)
+    //   verify IncomingStreams=0, OutgoingStreams=0
 }
 
 // ============================================================================
-// Go: internal/grid/connection_test.go
-// ============================================================================
 
-/// 测试断连和重连
+/// Tests disconnect and reconnect
 ///
-/// Go: TestDisconnect
-/// 验证: 杀死 inbound/outbound 连接后, 请求重连并正常工作
+/// Verifies: killing inbound/outbound connections, reconnection and normal operation
 #[test]
 #[ignore]
 fn test_grid_disconnect() {
     // TODO: implement when Manager + Connection available
     //
-    // Go 逻辑:
-    //   1. 建立 local ↔ remote 连接
-    //   2. 发送 blocking handler 请求 → 中途杀 inbound
-    //   3. 验证请求完成, 连接重新建立
-    //   4. 建立 stream → 杀 outbound → 等待重连
-    //   5. 服务器被 kill → ctx canceled
+    // Logic:
+    //   1. establish local <-> remote connection
+    //   2. send blocking handler request -> kill inbound mid-way
+    //   3. verify request completes, connection re-established
+    //   4. establish stream -> kill outbound -> wait for reconnect
+    //   5. server killed -> ctx canceled
 }
 
-/// 测试 shouldConnect 连接拓扑对称性
+/// Tests shouldConnect connection topology symmetry
 ///
-/// Go: TestShouldConnect
-/// 验证: shouldConnect(a,b) != shouldConnect(b,a) (单向连接)
+/// Verifies: shouldConnect(a,b) != shouldConnect(b,a) (unidirectional)
 #[test]
 #[ignore]
 fn test_grid_should_connect() {
     // TODO: implement when Connection.shouldConnect available
     //
-    // Go 逻辑:
-    //   36 个 host 测试:
+    // Logic:
+    //   36 host test:
     //   for x in hosts: for y in hosts: x!=y
-    //   c.shouldConnect() != cReverse.shouldConnect() (对称性)
-    //   每个 host 至少连接 10 个其他 host
+    //   c.shouldConnect() != cReverse.shouldConnect() (symmetry)
+    //   each host connects to at least 10 other hosts
 }

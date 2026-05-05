@@ -1,22 +1,19 @@
-//! Copy Part Range 测试
-//!
-//! 对应 Go: `cmd/copy-part-range_test.go`
+//! Copy Part Range tests
 
-/// 验证 parseCopyPartRangeSpec 函数。
+/// Verifies parseCopyPartRangeSpec function.
 ///
-/// Go: `TestParseCopyPartRangeSpec`
-/// 测试复制 part 范围解析:
-/// - 成功用例: "bytes=2-5"、"bytes=0000-0006" 等
-/// - 无效格式: "bytes=8"、"bytes=5-2" 等(范围反序)
-/// - 无效格式: 缺失 "bytes=" 前缀、含空格等
-/// - 超出对象大小: "bytes=10-10"(对象大小=10)
+/// Tests copy part range parsing:
+/// - Success cases: "bytes=2-5", "bytes=0000-0006" etc.
+/// - Invalid formats: "bytes=8", "bytes=5-2" (reversed range)
+/// - Invalid formats: missing "bytes=" prefix, contains spaces etc.
+/// - Out of object size: "bytes=10-10" (object_size=10)
 #[test]
 #[ignore]
 // TODO: implement when copy part range parsing is available
 fn test_parse_copy_part_range_spec() {
     // let object_size = 10i64;
     //
-    // // 成功用例
+    // // Success cases
     // let success_cases = vec![
     //     ("bytes=2-5", 2, 5),
     //     ("bytes=2-9", 2, 9),
@@ -30,7 +27,7 @@ fn test_parse_copy_part_range_spec() {
     //     assert_eq!(start + length - 1, expected_end);
     // }
     //
-    // // 无效格式(应解析失败)
+    // // Invalid formats (should fail to parse)
     // let invalid_cases = vec![
     //     "bytes=8", "bytes=5-2", "bytes=+2-5", "bytes=2-+5",
     //     "bytes=2--5", "bytes=-", "2-5", "bytes = 2-5",
@@ -41,7 +38,7 @@ fn test_parse_copy_part_range_spec() {
     //     assert!(result.is_err(), "expected error for range: {range_str}");
     // }
     //
-    // // 超出对象大小(解析成功但验证失败)
+    // // Out of object size (parsed successfully but validation fails)
     // let out_of_range_cases = vec!["bytes=10-10", "bytes=20-30"];
     // for range_str in out_of_range_cases {
     //     let rs = parse_copy_part_range_spec(range_str).unwrap();

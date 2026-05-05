@@ -1,14 +1,10 @@
 //! Auto-generated msgpack serialization tests for listPathOptions type.
 //!
-//! 对应 Go: `cmd/metacache-set_gen_test.go` (msgp 生成)
-//!
-//! 测试 listPathOptions 的 msgpack 序列化/反序列化。
+//! Tests listPathOptions msgpack serialization/deserialization.
 
 use erasure::*;
 
-/// 测试 listPathOptions 的 Marshal/Unmarshal 往返。
-///
-/// Go 源: `TestMarshalUnmarshallistPathOptions`
+/// Tests listPathOptions Marshal/Unmarshal roundtrip.
 #[test]
 #[ignore]
 fn test_marshal_unmarshal_list_path_options() {
@@ -21,7 +17,7 @@ fn test_marshal_unmarshal_list_path_options() {
     */
 }
 
-/// 测试 listPathOptions 的 Encode/Decode 往返。
+/// Tests listPathOptions Encode/Decode roundtrip.
 #[test]
 #[ignore]
 fn test_encode_decode_list_path_options() {

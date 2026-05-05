@@ -1,29 +1,29 @@
-//! 基础类型定义
+//! Basic type definitions
 
 use uuid::Uuid;
 
-/// 版本 ID
+/// Version ID
 pub type VersionId = String;
 
-/// 对象键 (路径)
+/// Object key (path)
 pub type ObjectKey = String;
 
-/// Bucket 名称
+/// Bucket name
 pub type BucketName = String;
 
-/// 磁盘路径
+/// Disk path
 pub type DiskPath = String;
 
-/// 部署 ID (UUID v4)
+/// Deployment ID (UUID v4)
 pub type DeploymentId = Uuid;
 
-/// ETag (对象内容哈希)
+/// ETag (object content hash)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ETag(String);
 
 impl ETag {
     pub fn new(value: String) -> Self {
-        // 去掉引号 (S3 API 常见格式)
+        // Strip surrounding quotes (common S3 API format)
         let cleaned = value.trim_matches('"').to_string();
         Self(cleaned)
     }

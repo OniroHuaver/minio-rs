@@ -1,76 +1,74 @@
-//! ETag 测试: 解析、字符串、比较、Reader、Multipart、加密检测、格式化、
-//!           Content-MD5、解密
-//!
-//! 对应 Go: internal/etag/etag_test.go
+//! ETag tests: parsing, string representation, comparison, Reader, Multipart,
+//! encryption detection, formatting, Content-MD5, decryption
 
-/// 验证 ETag 解析 `Parse()`。
+/// Verifies `Parse()` ETag parsing from various string formats.
 #[test]
 #[ignore]
 fn test_etag_parse() {
-    // Go: 各种 ETag 字符串格式解析
+    // various ETag string format parsing
     // TODO: implement when ETag type is available
 }
 
-/// 验证 ETag 字符串表示 `String()`。
+/// Verifies ETag `String()` representation.
 #[test]
 #[ignore]
 fn test_etag_string() {
-    // Go: ETag -> String
+    // ETag -> String
     // TODO: implement when ETag display is available
 }
 
-/// 验证 ETag 相等性 `Equal()`。
+/// Verifies ETag `Equal()` comparison (with quote compatibility).
 #[test]
 #[ignore]
 fn test_etag_equal() {
-    // Go: 两个 ETag 比较（含双引号兼容）
+    // two ETag comparison (with quote compatibility)
     // TODO: implement when ETag equality is available
 }
 
-/// 验证 ETag Reader。
+/// Verifies ETag Reader.
 #[test]
 #[ignore]
 fn test_etag_reader() {
-    // Go: ETag Reader 包装
+    // ETag Reader wrapper
     // TODO: implement when ETag reader is available
 }
 
-/// 验证 Multipart ETag。
+/// Verifies Multipart ETag.
 #[test]
 #[ignore]
 fn test_etag_multipart() {
-    // Go: 多部分上传的 ETag 格式
+    // multipart upload ETag format
     // TODO: implement when multipart ETag is available
 }
 
-/// 验证 ETag 加密检测 `IsEncrypted()`。
+/// Verifies ETag encryption detection `IsEncrypted()`.
 #[test]
 #[ignore]
 fn test_etag_is_encrypted() {
-    // Go: 加密 ETag 格式检测
+    // encrypted ETag format detection
     // TODO: implement when ETag encryption detection is available
 }
 
-/// 验证 ETag 格式化 `Format()`。
+/// Verifies ETag `Format()` normalization.
 #[test]
 #[ignore]
 fn test_etag_format() {
-    // Go: ETag 格式标准化
+    // ETag format standardization
     // TODO: implement when ETag formatting is available
 }
 
-/// 验证从 Content-MD5 生成 ETag `FromContentMD5()`。
+/// Verifies `FromContentMD5()` generates ETag from Content-MD5.
 #[test]
 #[ignore]
 fn test_etag_from_content_md5() {
-    // Go: base64 Content-MD5 -> ETag
+    // base64 Content-MD5 -> ETag
     // TODO: implement when ETag from MD5 is available
 }
 
-/// 验证 ETag 解密 `Decrypt()`。
+/// Verifies ETag `Decrypt()`.
 #[test]
 #[ignore]
 fn test_etag_decrypt() {
-    // Go: 密封 ETag -> 明文 ETag
+    // sealed ETag -> plaintext ETag
     // TODO: implement when ETag decryption is available
 }

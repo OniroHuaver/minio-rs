@@ -1,21 +1,17 @@
-//! 系统错误判断函数测试
+//! System error check function tests
 //!
-//! 对应 Go: cmd/xl-storage-errors_test.go
-//!
-//! 测试 is_sys_err_too_long, is_sys_err_not_dir,
-//! is_sys_err_not_empty, is_sys_err_path_not_found 等函数。
+//! Tests is_sys_err_too_long, is_sys_err_not_dir,
+//! is_sys_err_not_empty, is_sys_err_path_not_found, and related functions.
 
 use storage::*;
 
-/// 测试系统错误类型判断函数
+/// Tests system error type checking functions
 ///
-/// 验证:
-/// - ENAMETOOLONG → is_sys_err_too_long 返回 true
-/// - ENOTDIR → is_sys_err_not_dir 返回 true
-/// - ENOTEMPTY → is_sys_err_not_empty 返回 true (Unix)
-/// - Windows 特定错误码 → is_sys_err_not_empty 和 is_sys_err_path_not_found
-///
-/// 对应 Go: TestSysErrors
+/// Verify:
+/// - ENAMETOOLONG -> is_sys_err_too_long returns true
+/// - ENOTDIR -> is_sys_err_not_dir returns true
+/// - ENOTEMPTY -> is_sys_err_not_empty returns true (Unix)
+/// - Windows specific error codes -> is_sys_err_not_empty and is_sys_err_path_not_found
 #[test]
 #[ignore]
 fn test_sys_errors() {

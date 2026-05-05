@@ -1,19 +1,15 @@
 //! Erasure metadata utility tests.
 //!
-//! 对应 Go: `cmd/erasure-metadata-utils_test.go`
-//!
-//! 测试元数据工具函数: diskCount, reduceErrs, hashOrder,
-//! shuffleDisks, evalDisks, Test_hashOrder。
+//! Tests metadata utility functions: diskCount, reduceErrs, hashOrder,
+//! shuffleDisks, evalDisks, Test_hashOrder.
 
 use erasure::*;
 
-/// 测试 diskCount 函数，计算非空磁盘数。
+/// Tests diskCount function, counts non-nil disks.
 ///
-/// Go 源: `TestDiskCount`
-///
-/// 验证:
-/// - 4 个有效磁盘 -> count=4
-/// - 3 个有效 + 1 个 nil -> count=3
+/// Verify:
+/// - 4 valid disks -> count=4
+/// - 3 valid + 1 nil -> count=3
 #[test]
 #[ignore]
 fn test_disk_count() {
@@ -30,30 +26,26 @@ fn test_disk_count() {
     */
 }
 
-/// 测试 reduceReadQuorumErrs 和 reduceWriteQuorumErrs 函数。
+/// Tests reduceReadQuorumErrs and reduceWriteQuorumErrs functions.
 ///
-/// Go 源: `TestReduceErrs`
-///
-/// 测试场景:
-/// 1. 全为 errDiskNotFound + errDiskFull -> errErasureReadQuorum
-/// 2. 混合 errDiskFull, errDiskNotFound, nil -> errErasureReadQuorum
-/// 3. errVolumeNotFound 占多数 + errDiskNotFound 被忽略 -> errVolumeNotFound
-/// 4. 空输入 -> errErasureReadQuorum
-/// 5. errFileNotFound 和 nil 混合 -> 无错误 (有足够成功)
-/// 6. 包装的 context.Canceled 错误 -> context.Canceled
+/// Test scenarios:
+/// 1. All errDiskNotFound + errDiskFull -> errErasureReadQuorum
+/// 2. Mixed errDiskFull, errDiskNotFound, nil -> errErasureReadQuorum
+/// 3. errVolumeNotFound majority + errDiskNotFound ignored -> errVolumeNotFound
+/// 4. Empty input -> errErasureReadQuorum
+/// 5. Mixed errFileNotFound and nil -> no error (enough successes)
+/// 6. Wrapped context.Canceled error -> context.Canceled
 #[test]
 #[ignore]
 fn test_reduce_errs() {
     // TODO: implement when reduceReadQuorumErrs and reduceWriteQuorumErrs are available
 }
 
-/// 测试 hashOrder 函数的一致性。
+/// Tests hashOrder function consistency.
 ///
-/// Go 源: `TestHashOrder`
-///
-/// 验证 9 个不同对象名的哈希排序结果与预期一致。
-/// 测试边缘 case: 包含特殊字符、Unicode、路径分隔符、二进制数据。
-/// 同时测试无效参数返回 nil。
+/// Verify hash order results for 9 different object names match expected values.
+/// Test edge cases: special characters, Unicode, path separators, binary data.
+/// Also test invalid parameters return nil.
 #[test]
 #[ignore]
 fn test_hash_order() {
@@ -82,12 +74,10 @@ fn test_hash_order() {
     */
 }
 
-/// 测试 shuffleDisks 函数。
+/// Tests shuffleDisks function.
 ///
-/// Go 源: `TestShuffleDisks` + `testShuffleDisks`
-///
-/// 基于 distribution 数组重排磁盘顺序，
-/// 验证特定索引的映射关系正确:
+/// Reorders disks based on the distribution array,
+/// verifies correct mapping for specific indices:
 /// 1st data block -> 9th disk, 2nd -> 8th, 3rd -> 10th, etc.
 #[test]
 #[ignore]
@@ -95,23 +85,19 @@ fn test_shuffle_disks() {
     // TODO: implement when shuffleDisks and related types are available
 }
 
-/// 测试 evalDisks 函数。
+/// Tests evalDisks function.
 ///
-/// Go 源: `TestEvalDisks`
-///
-/// 调用 testShuffleDisks 验证相同行为。
+/// Calls testShuffleDisks to verify same behavior.
 #[test]
 #[ignore]
 fn test_eval_disks() {
     // TODO: implement when evalDisks is available
 }
 
-/// 测试 hashOrder 的分布均匀性。
+/// Tests hashOrder distribution uniformity.
 ///
-/// Go 源: `Test_hashOrder`
-///
-/// 对 1~16 各分片数，用 10000 个不同对象名验证
-/// hashOrder 首个元素分布的均匀性。
+/// For each shard count from 1 to 16, use 10000 different object names
+/// to verify uniformity of hashOrder's first element distribution.
 #[test]
 #[ignore]
 fn test_hash_order_distribution() {

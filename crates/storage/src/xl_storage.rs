@@ -1,9 +1,7 @@
-//! xlStorage — 本地磁盘驱动
+//! xlStorage -- local disk storage driver
 //!
-//! 对应 Go: cmd/xl-storage.go
-//!
-//! 实现 StorageAPI trait，对本地文件系统执行 IO 操作：
-//! 文件读写、原子 rename、目录管理、磁盘信息。
+//! Implements the StorageAPI trait for local filesystem I/O:
+//! file read/write, atomic rename, directory management, disk info.
 
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
@@ -13,7 +11,7 @@ use base::error::{MinioError, MinioResult};
 
 use crate::{DiskInfo, FileStat, StorageAPI};
 
-/// 本地磁盘存储驱动
+/// Local disk storage driver
 #[derive(Debug, Clone)]
 pub struct XlStorage {
     disk_path: PathBuf,
@@ -40,16 +38,16 @@ impl XlStorage {
         self.disk_path.join(volume)
     }
 
-    /// 校验 volume 名称：非空、不含 `..`、不含 `\`
+    /// Validate volume name: non-empty, no `..`, no `\`
     ///
-    /// `/` 允许 — 用于 `.minio.sys/tmp` 等嵌套卷路径
+    /// `/` is allowed for nested volume paths like `.minio.sys/tmp`
     fn validate_volume(&self, volume: &str) -> MinioResult<()> {
         if volume.is_empty() {
-            return Err(MinioError::Internal("volume 名称为空".into()));
+            return Err(MinioError::Internal("volume name is empty".into()));
         }
         if volume.contains("..") || volume.contains('\\') {
             return Err(MinioError::Internal(format!(
-                "非法的 volume 名称: {volume}"
+                "invalid volume name: {volume}"
             )));
         }
         Ok(())
@@ -66,7 +64,7 @@ impl StorageAPI for XlStorage {
             .exists();
         let online = self.disk_path.exists();
 
-        // TODO: 使用 fs_stat 或 sysinfo crate 获取真实磁盘容量
+        // TODO: use fs_stat or sysinfo crate to get real disk capacity
         Ok(DiskInfo {
             total: 0,
             free: 0,
@@ -200,7 +198,7 @@ impl StorageAPI for XlStorage {
         let mut read_dir = tokio::fs::read_dir(&dir)
             .await
             .map_err(MinioError::DiskIO)?;
-        // count=0 表示无限制，但设置内部上限防止 OOM
+        // count=0 means unlimited, but cap internally to prevent OOM
         const MAX_LIST_LIMIT: usize = 100_000;
         let limit = if count == 0 { MAX_LIST_LIMIT } else { std::cmp::min(count, MAX_LIST_LIMIT) };
         while let Some(entry) = read_dir
@@ -233,7 +231,7 @@ impl StorageAPI for XlStorage {
                 tracing::debug!(
                     volume = volume,
                     dir = %dir.display(),
-                    "delete_volume: 目录已不存在 (幂等)"
+                    "delete_volume: directory already absent (idempotent)"
                 );
                 Ok(())
             }
@@ -254,7 +252,7 @@ impl StorageAPI for XlStorage {
             .unwrap_or_else(|| {
                 tracing::warn!(
                     file = %file_path.display(),
-                    "无法获取文件 mtime，fallback 到 0 (可能影响版本排序)"
+                    "failed to get file mtime, falling back to 0 (may affect version ordering)"
                 );
                 0
             });

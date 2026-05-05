@@ -1,24 +1,20 @@
 //! Object and bucket healing integration tests.
 //!
-//! 对应 Go: `cmd/erasure-healing_test.go`
-//!
-//! 测试完整对象和存储桶级别的修复流程，包括版本化对象、
-//! 悬挂对象 (dangling objects)、损坏的 xl.meta 元数据、
-//! 损坏的数据分片、空目录修复等场景。
+//! Tests full object and bucket-level healing flows, including versioned objects,
+//! dangling objects, corrupted xl.meta metadata,
+//! corrupted data shards, empty directory healing, etc.
 
 use erasure::*;
 
-/// 测试 isObjectDangling 函数，判断对象是否为悬挂状态。
+/// Tests isObjectDangling function, determines if an object is dangling.
 ///
-/// Go 源: `TestIsObjectDangling`
-///
-/// 测试场景 (13 个):
-/// - FileInfoExists: 文件信息在足够磁盘上存在
-/// - FileInfoUndecided: 文件信息不完整但未确定悬挂
-/// - FileInfoDecided: 确定对象为悬挂 (需要清理)
-/// - 包含删除标记 (delete marker) 情况
-/// - 包含数据目录缺失检查
-/// - 包含 errFileCorrupt 错误的处理
+/// Test scenarios (13):
+/// - FileInfoExists: file info exists on enough disks
+/// - FileInfoUndecided: incomplete file info but not confirmed dangling
+/// - FileInfoDecided: confirmed dangling (needs cleanup)
+/// - Cases with delete markers
+/// - Cases with missing data directory
+/// - Cases handling errFileCorrupt
 #[test]
 #[ignore]
 fn test_is_object_dangling() {
@@ -58,17 +54,15 @@ fn test_is_object_dangling() {
     */
 }
 
-/// 测试对象和存储桶的修复流程。
+/// Tests full object and bucket healing flow.
 ///
-/// Go 源: `TestHealing`
-///
-/// 完整场景:
-/// 1. 创建 16 盘 Erasure 后端，上传 1 MiB 对象
-/// 2. 模拟磁盘离线时对象写入 -> 移除对象数据，然后修复
-/// 3. 验证修复后元数据与修复前一致
-/// 4. 模拟 xl.meta 过期 (modtime 不同) -> 深度扫描修复
-/// 5. 写入孤立分片 -> 清理未引用的分片
-/// 6. 删除桶数据 -> 修复桶
+/// Full scenario:
+/// 1. Create 16-disk Erasure backend, upload 1 MiB object
+/// 2. Write object while disks are offline -> remove object data, then heal
+/// 3. Verify healed metadata matches pre-heal state
+/// 4. Simulate stale xl.meta (different modtime) -> deep scan heal
+/// 5. Write orphan shards -> clean up unreferenced shards
+/// 6. Delete bucket data -> heal bucket
 #[test]
 #[ignore]
 fn test_healing() {
@@ -79,127 +73,109 @@ fn test_healing() {
     */
 }
 
-/// 测试版本化对象的修复流程。
+/// Tests healing of versioned objects.
 ///
-/// Go 源: `TestHealingVersioned`
-///
-/// 与 TestHealing 类似，但启用桶版本化，上传两个版本的对象，
-/// 验证版本化场景下修复的正确性。
+/// Similar to TestHealing, but with bucket versioning enabled, uploads two versions
+/// of the object, verifies correct healing under versioned scenarios.
 #[test]
 #[ignore]
 fn test_healing_versioned() {
     // TODO: implement when versioned object healing is available
 }
 
-/// 测试悬挂对象的修复。
+/// Tests healing of dangling objects.
 ///
-/// Go 源: `TestHealingDanglingObject`
-///
-/// 场景:
-/// - 在 EC:4 配置的 16 盘上创建版本化桶
-/// - 上传对象，取 4 个磁盘离线，创建删除标记
-/// - 恢复磁盘后修复，验证版本数正确
-/// - 测试删除标记与活跃版本混合时的修复行为
+/// Scenarios:
+/// - Create versioned bucket on 16 disks with EC:4 configuration
+/// - Upload object, take 4 disks offline, create delete marker
+/// - Restore disks, heal, verify correct version count
+/// - Test healing behavior with delete markers mixed with active versions
 #[test]
 #[ignore]
 fn test_healing_dangling_object() {
     // TODO: implement when dangling object healing is available
 }
 
-/// 测试修复时的正确 Quorum 判定。
+/// Tests correct quorum determination during healing.
 ///
-/// Go 源: `TestHealCorrectQuorum`
-///
-/// 跨两个存储池 (32 盘)，创建多部分上传对象，
-/// 移除部分磁盘上的 xl.meta，验证修复能正确恢复所有元数据。
-/// 同时测试系统配置文件的修复。
+/// Across two storage pools (32 disks), create a multipart upload object,
+/// remove xl.meta on some disks, verify healing correctly restores all metadata.
+/// Also tests system config file healing.
 #[test]
 #[ignore]
 fn test_heal_correct_quorum() {
     // TODO: implement for multi-pool healing with quorum verification
 }
 
-/// 测试损坏的存储池中的对象修复。
+/// Tests object healing in corrupted storage pools.
 ///
-/// Go 源: `TestHealObjectCorruptedPools`
-///
-/// 跨两个存储池，在第二个池中上传多部分对象，
-/// 测试以下损坏场景的修复:
-/// 1. 删除 xl.meta -> 修复
-/// 2. 删除 part.1 并创建空文件 -> 深度扫描修复
-/// 3. 用不同数据覆盖 part.1 -> 深度扫描修复
-/// 4. 删除超过 read quorum 数量的 xl.meta -> 预期对象被删除
+/// Across two storage pools, upload a multipart object in the second pool,
+/// test healing for the following corruption scenarios:
+/// 1. Delete xl.meta -> heal
+/// 2. Delete part.1 and create empty file -> deep scan heal
+/// 3. Overwrite part.1 with different data -> deep scan heal
+/// 4. Delete xl.meta exceeding read quorum -> object expected to be deleted
 #[test]
 #[ignore]
 fn test_heal_object_corrupted_pools() {
     // TODO: implement for corrupted pool healing scenarios
 }
 
-/// 测试损坏的 xl.meta 元数据修复。
+/// Tests healing of corrupted xl.meta metadata.
 ///
-/// Go 源: `TestHealObjectCorruptedXLMeta`
-///
-/// 在 16 盘上创建多部分对象，测试:
-/// 1. 删除 xl.meta -> 正常扫描修复
-/// 2. 用无效内容覆盖 xl.meta -> 正常扫描修复
-/// 3. 删除超过 read quorum 的 xl.meta -> 对象被删除
+/// On 16 disks, create a multipart object, test:
+/// 1. Delete xl.meta -> normal scan heal
+/// 2. Overwrite xl.meta with invalid content -> normal scan heal
+/// 3. Delete xl.meta exceeding read quorum -> object deleted
 #[test]
 #[ignore]
 fn test_heal_object_corrupted_xl_meta() {
     // TODO: implement for corrupted xl.meta healing
 }
 
-/// 测试损坏的数据分片的修复。
+/// Tests healing of corrupted data shards.
 ///
-/// Go 源: `TestHealObjectCorruptedParts`
-///
-/// 在 16 盘上创建多部分对象，测试:
-/// 1. 删除 part.1 -> 修复
-/// 2. 用错误数据覆盖 part.1 -> 修复
-/// 3. 在一个盘上篡改 part.1 并在另一个盘上删除整个对象 -> 同时修复
+/// On 16 disks, create a multipart object, test:
+/// 1. Delete part.1 -> heal
+/// 2. Overwrite part.1 with wrong data -> heal
+/// 3. Tamper part.1 on one disk and delete the entire object on another -> heal both
 #[test]
 #[ignore]
 fn test_heal_object_corrupted_parts() {
     // TODO: implement for corrupted data part healing
 }
 
-/// 测试对象的修复 (多部分上传)。
+/// Tests object healing (multipart upload).
 ///
-/// Go 源: `TestHealObjectErasure`
-///
-/// 创建多部分上传对象 (2 个 part, 降序编号)，
-/// 删除第一个磁盘上的完整对象目录，
-/// 验证修复后 xl.meta 恢复。
-/// 同时测试超过 write quorum 的磁盘损坏场景。
+/// Create a multipart upload object (2 parts, descending numbers),
+/// delete the entire object directory on the first disk,
+/// verify xl.meta is restored after healing.
+/// Also tests disk corruption exceeding write quorum.
 #[test]
 #[ignore]
 fn test_heal_object_erasure() {
     // TODO: implement for object healing after complete data loss on a disk
 }
 
-/// 测试空目录的修复。
+/// Tests healing of empty directories.
 ///
-/// Go 源: `TestHealEmptyDirectoryErasure`
-///
-/// 上传空目录对象，删除第一个磁盘上的目录，
-/// 验证修复后目录恢复，且状态报告正确。
-/// 再次修复时所有磁盘应为 OK 状态。
+/// Upload an empty directory object, delete the directory on the first disk,
+/// verify the directory is restored after healing with correct status report.
+/// All disks should report OK on subsequent healing.
 #[test]
 #[ignore]
 fn test_heal_empty_directory_erasure() {
     // TODO: implement for empty directory healing
 }
 
-/// 测试最后一个数据分片的修复。
+/// Tests healing of the last data shard.
 ///
-/// Go 源: `TestHealLastDataShard`
+/// Since data size may not be evenly divisible by shard count, the last data shard
+/// may be smaller than others. Test at various data sizes:
+/// - Delete data on the disk containing the last shard -> heal and verify SHA256
+/// - Delete another data shard -> heal again and verify
 ///
-/// 由于数据大小可能不整除分片数，最后一个数据分片
-/// 可能比其他分片小。测试在各种数据大小下:
-/// - 删除最后一个数据分片所在磁盘的数据 -> 修复并验证 SHA256
-/// - 再删除另一个数据分片 -> 再次修复并验证
-///
-/// 测试的数据大小: 4KiB, 64KiB, 128KiB, 1MiB, 5MiB, 10MiB,
+/// Tested data sizes: 4KiB, 64KiB, 128KiB, 1MiB, 5MiB, 10MiB,
 /// 5MiB-1KiB, 10MiB-1KiB
 #[test]
 #[ignore]

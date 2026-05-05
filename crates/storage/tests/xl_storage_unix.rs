@@ -1,19 +1,15 @@
-//! xlStorage Unix 特定测试
+//! xlStorage Unix-specific tests
 //!
-//! 对应 Go: cmd/xl-storage_unix_test.go
-//!
-//! 验证 Unix 系统上目录和文件创建时 umask 是否正确。
-//! 仅适用于 linux/darwin/freebsd 等 Unix 系系统。
+//! Verifies correct umask on directory and file creation on Unix systems.
+//! Only applicable to Linux, macOS, FreeBSD, and other Unix-like systems.
 
 use storage::*;
 
-/// 测试 MakeVol 创建的目录使用正确的 umask
+/// Tests MakeVol creates directories with correct umask
 ///
-/// 场景:
-/// - MakeVol 使用 0777 权限创建目录
-/// - 实际权限应为 0777 & ^umask
-///
-/// 对应 Go: TestIsValidUmaskVol
+/// Scenarios:
+/// - MakeVol creates directory with 0777 permissions
+/// - Actual permissions should be 0777 & ^umask
 #[test]
 #[ignore]
 fn test_is_valid_umask_vol() {
@@ -29,13 +25,11 @@ fn test_is_valid_umask_vol() {
     //     "umask check failed expected {:o}, got {:o}", expected_umask, current_umask);
 }
 
-/// 测试 AppendFile 创建的文件使用正确的 umask
+/// Tests AppendFile creates files with correct umask
 ///
-/// 场景:
-/// - AppendFile 使用 0666 权限创建文件
-/// - 实际权限应为 0666 & ^umask
-///
-/// 对应 Go: TestIsValidUmaskFile
+/// Scenarios:
+/// - AppendFile creates file with 0666 permissions
+/// - Actual permissions should be 0666 & ^umask
 #[test]
 #[ignore]
 fn test_is_valid_umask_file() {

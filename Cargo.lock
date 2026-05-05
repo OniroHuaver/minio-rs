@@ -289,6 +289,7 @@ dependencies = [
  "base",
  "bytes",
  "futures",
+ "highway",
  "reed-solomon-erasure",
  "sha2",
  "storage",
@@ -524,6 +525,12 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+name = "highway"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1489f81ead4b71a09ddeab6850c0356c0932587637d753f21ee1010ab875b013"
 
 [[package]]
 name = "http"
@@ -873,10 +880,12 @@ dependencies = [
  "bytes",
  "erasure",
  "futures",
+ "sha2",
  "storage",
  "thiserror",
  "tokio",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

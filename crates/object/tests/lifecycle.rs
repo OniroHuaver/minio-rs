@@ -1,41 +1,28 @@
-//! 生命周期管理测试
+//! Lifecycle management tests
 //!
-//! 对应 Go:
-//!   `internal/bucket/lifecycle/lifecycle_test.go`
-//!   `internal/bucket/lifecycle/rule_test.go`
-//!   `internal/bucket/lifecycle/filter_test.go`
-//!   `internal/bucket/lifecycle/expiration_test.go`
-//!   `internal/bucket/lifecycle/noncurrentversion_test.go`
-//!   `internal/bucket/lifecycle/transition_test.go`
-//!   `internal/bucket/lifecycle/evaluator_test.go`
-//!   `internal/bucket/lifecycle/delmarker-expiration_test.go`
-//!
-//! 也包含部分 `cmd/bucket-lifecycle_test.go` 和 `cmd/data-scanner_test.go`
-//! 中的过期逻辑测试。
+//! Also includes expiration logic tests from the data scanner.
 
 // ============================================================
-// Lifecycle 配置解析与验证
-// 对应 Go: lifecycle_test.go
+// Lifecycle config parsing and validation
 // ============================================================
 
-/// 验证生命周期配置的 ParseLifecycleConfig 和 Validate。
+/// Verifies ParseLifecycleConfig and Validate for lifecycle configuration.
 ///
-/// Go: `TestParseAndValidateLifecycleConfig`
-/// 覆盖:
-/// - 有效配置(多规则)
-/// - ExpiredObjectAllVersions + 对象锁定 -> 错误
-/// - DelMarkerExpiration + 对象锁定 -> 错误
-/// - 无规则 -> 错误
-/// - 重复 XML 标签 -> 解析错误
-/// - 无前缀规则
-/// - 重叠前缀(应合法)
-/// - 重复规则 ID
-/// - 缺少 Tag 的 And 条件
-/// - 空 Filter
-/// - 0 天 Transition
+/// Covers:
+/// - Valid configuration (multiple rules)
+/// - ExpiredObjectAllVersions + object lock -> error
+/// - DelMarkerExpiration + object lock -> error
+/// - No rules -> error
+/// - Duplicate XML tags -> parse error
+/// - No prefix rule
+/// - Overlapping prefixes (should be valid)
+/// - Duplicate rule ID
+/// - And condition missing Tag
+/// - Empty Filter
+/// - 0 day Transition
 /// - NewerNoncurrentVersions
-/// - 有效的 DelMarkerExpiration
-/// - 空的 DelMarkerExpiration Days
+/// - Valid DelMarkerExpiration
+/// - Empty DelMarkerExpiration Days
 #[test]
 #[ignore]
 // TODO: implement when lifecycle config types are available
@@ -46,7 +33,7 @@ fn test_parse_and_validate_lifecycle_config() {
     //      None, Some(err_lifecycle_bucket_locked), Some(lock_retention)),
     //     ("no rules", no_rule_xml, None, Some(err_lifecycle_no_rule), None),
     //     ("duplicate ID", duplicate_id_xml, None, Some(err_lifecycle_duplicate_id), None),
-    //     // ... 更多用例
+    //     // ... more cases
     // ];
     // for (name, xml_input, expected_parse_err, expected_validate_err, lr) in test_cases {
     //     let result = LifecycleConfig::parse(xml_input.as_bytes());
@@ -62,36 +49,30 @@ fn test_parse_and_validate_lifecycle_config() {
 }
 
 // ============================================================
-// Rule 测试
-// 对应 Go: rule_test.go
+// Rule tests
 // ============================================================
 
-/// 验证 Lifecycle Rule 的解析和行为。
-///
-/// Go: `rule_test.go`
+/// Verifies Lifecycle Rule parsing and behavior.
 #[test]
 #[ignore]
 // TODO: implement when lifecycle rule types are available
 fn test_lifecycle_rule() {
-    // // 测试 Rule 的创建、验证、状态判断
+    // // Test rule creation, validation, status check
     // let rule = Rule::new("id", Status::Enabled, Filter::new("prefix"), Expiration::new_days(3));
     // assert!(rule.is_enabled());
     // assert_eq!(rule.filter().prefix(), Some("prefix"));
 }
 
 // ============================================================
-// Filter 测试
-// 对应 Go: filter_test.go
+// Filter tests
 // ============================================================
 
-/// 验证 Lifecycle Filter(前缀 + Tag) 解析。
-///
-/// Go: `filter_test.go`
+/// Verifies Lifecycle Filter (prefix + Tag) parsing.
 #[test]
 #[ignore]
 // TODO: implement when lifecycle filter types are available
 fn test_lifecycle_filter() {
-    // // 测试 Filter::Prefix、Filter::And(Tag 数组)、Filter::Empty、Filter::ObjectSize
+    // // Test Filter::Prefix, Filter::And(Tag array), Filter::Empty, Filter::ObjectSize
     // let f = Filter::new("logs/");
     // assert_eq!(f.prefix(), Some("logs/"));
     //
@@ -100,18 +81,15 @@ fn test_lifecycle_filter() {
 }
 
 // ============================================================
-// Expiration 测试
-// 对应 Go: expiration_test.go
+// Expiration tests
 // ============================================================
 
-/// 验证 Expiration 动作的解析。
-///
-/// Go: `expiration_test.go`
+/// Verifies Expiration action parsing.
 #[test]
 #[ignore]
 // TODO: implement when lifecycle expiration types are available
 fn test_lifecycle_expiration() {
-    // // Days、Date、ExpiredObjectAllVersions、DeleteMarker
+    // // Days, Date, ExpiredObjectAllVersions, DeleteMarker
     // let exp = Expiration::new_days(30);
     // assert_eq!(exp.days(), 30);
     //
@@ -120,13 +98,10 @@ fn test_lifecycle_expiration() {
 }
 
 // ============================================================
-// NoncurrentVersion 测试
-// 对应 Go: noncurrentversion_test.go
+// NoncurrentVersion tests
 // ============================================================
 
-/// 验证 NoncurrentVersionExpiration 和 NoncurrentVersionTransition。
-///
-/// Go: `noncurrentversion_test.go`
+/// Verifies NoncurrentVersionExpiration and NoncurrentVersionTransition.
 #[test]
 #[ignore]
 // TODO: implement when lifecycle noncurrent version types are available
@@ -139,13 +114,10 @@ fn test_lifecycle_noncurrent_version() {
 }
 
 // ============================================================
-// Transition 测试
-// 对应 Go: transition_test.go
+// Transition tests
 // ============================================================
 
-/// 验证 Transition 动作解析。
-///
-/// Go: `transition_test.go`
+/// Verifies Transition action parsing.
 #[test]
 #[ignore]
 // TODO: implement when lifecycle transition types are available
@@ -156,66 +128,60 @@ fn test_lifecycle_transition() {
 }
 
 // ============================================================
-// Lifecycle Evaluator 测试
-// 对应 Go: evaluator_test.go
+// Lifecycle Evaluator tests
 // ============================================================
 
-/// 验证 Lifecycle 规则评估逻辑。
+/// Verifies lifecycle rule evaluation logic.
 ///
-/// Go: `evaluator_test.go`
-/// 测试事件评估器(expiryState、TransitionState)根据不同时间/标签触发动作。
+/// Tests the event evaluator (expiryState, TransitionState) triggering actions
+/// based on time/tags.
 #[test]
 #[ignore]
 // TODO: implement when lifecycle evaluator is available
 fn test_lifecycle_evaluator() {
-    // // 模拟对象信息 + 生命周期配置
-    // // 验证 eval_expiry_action 在对象过期时返回正确的过期动作
-    // // 验证 eval_transition_action 在对象满足转储条件时返回正确的转储动作
+    // // Mock object info + lifecycle config
+    // // Verify eval_expiry_action returns correct expiry action when object expires
+    // // Verify eval_transition_action returns correct transition action when condition met
 }
 
 // ============================================================
-// DelMarkerExpiration 测试
-// 对应 Go: delmarker-expiration_test.go
+// DelMarkerExpiration tests
 // ============================================================
 
-/// 验证删除标记过期逻辑。
-///
-/// Go: `delmarker-expiration_test.go`
+/// Verifies delete marker expiration logic.
 #[test]
 #[ignore]
 // TODO: implement when delmarker expiration types are available
 fn test_delmarker_expiration() {
     // let dme = DelMarkerExpiration::new(Some(1));
     // assert_eq!(dme.days(), 1);
-    // // 验证 DelMarkerExpiration 的谓词函数
+    // // Verify DelMarkerExpiration predicate function
     // assert!(dme.is_expired(now, obj_mod_time));
 }
 
 // ============================================================
-// 集成测试: ApplyNewerNoncurrentVersionsLimit
-// 对应 Go: cmd/data-scanner_test.go - TestApplyNewerNoncurrentVersionsLimit
+// Integration test: ApplyNewerNoncurrentVersionsLimit
 // ============================================================
 
-/// 验证 NoncurrentVersion 上限应用逻辑(含对象锁定和复制保留)。
+/// Verifies NoncurrentVersion limit application logic (with object lock and replication retention).
 ///
-/// Go: `TestApplyNewerNoncurrentVersionsLimit`
-/// 模拟版本化 bucket 中的对象版本栈，应用生命周期规则，
-/// 验证:
-/// - 超过上限的版本被标记为过期
-/// - 对象锁定版本不会被过期
-/// - 复制挂起的版本不会被过期
-/// - 所有版本过期标记正常工作
+/// Simulates version stack in a versioned bucket, applies lifecycle rules.
+/// Verifies:
+/// - Versions exceeding the limit are marked expired
+/// - Object locked versions are not expired
+/// - Replication pending versions are not expired
+/// - All versions expired marker works correctly
 #[test]
 #[ignore]
 // TODO: implement when lifecycle + object lock + replication are available
 fn test_apply_newer_noncurrent_versions_limit() {
-    // // 创建对象层和 bucket
-    // // 设置版本化 + 生命周期配置(NewerNoncurrentVersions=2)
-    // // 创建 5 个版本，验证正确的过期版本被标记
+    // // Create object layer and bucket
+    // // Set versioning + lifecycle config (NewerNoncurrentVersions=2)
+    // // Create 5 versions, verify correct expired versions are marked
     // //
-    // // 对象锁定场景: 版本带 Retention -> 不应被过期
+    // // Object lock scenario: version with Retention -> should not be expired
     // //
-    // // 复制场景: 版本带 VersionPurgePending -> 不应被过期
+    // // Replication scenario: version with VersionPurgePending -> should not be expired
     // //
-    // // 所有版本过期: 带特定 Tag 的对象触发所有版本过期
+    // // All versions expired: object with specific Tag triggers all versions expiration
 }

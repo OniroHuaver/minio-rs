@@ -1,26 +1,22 @@
 //! Server pool decommission tests.
 //!
-//! 对应 Go: `cmd/erasure-server-pool-decom_test.go`
-//!
-//! 测试存储池的退役 (decommission) 验证逻辑。
+//! Tests storage pool decommission validation logic.
 
 use erasure::*;
 
-/// 测试 poolMeta.validate() 函数。
+/// Tests poolMeta.validate() function.
 ///
-/// Go 源: `TestPoolMetaValidate`
-///
-/// 在 32 盘、2 pool 配置上测试各种 pool meta 验证场景:
-/// 1. Correct: meta 与 pools 匹配 -> 不更新
-/// 2. Correct-Update: 不同 pool 配置 -> 需要更新
-/// 3. Correct-Update: 减少 pool -> 需要更新
-/// 4. Invalid-Orderchange: pool 顺序变更 -> 需要更新
-/// 5. Invalid-Completed-Pool-Not-Removed: pool 已完成退役但未移除 -> 不更新
-/// 6. Correct-Decom-Pending: 退役进行中 -> 不更新
-/// 7. Invalid-Decom-Pending-Pool-Removal: 退役中的 pool 被移除 -> 需要更新
-/// 8. Correct-Decom-Pool-Removed: 已完成退役的 pool 被移除 -> 需要更新
-/// 9. Correct-Fresh-Setup: 全新设置 (空 meta) -> 需要更新
-/// 10. Invalid-Orderchange-Decom: 退役中顺序变更 -> 需要更新
+/// On 32 disks, 2-pool configuration, test various pool meta validation scenarios:
+/// 1. Correct: meta matches pools -> no update
+/// 2. Correct-Update: different pool config -> needs update
+/// 3. Correct-Update: reduced pool count -> needs update
+/// 4. Invalid-Orderchange: pool order changed -> needs update
+/// 5. Invalid-Completed-Pool-Not-Removed: pool decommissioned but not removed -> no update
+/// 6. Correct-Decom-Pending: decommission in progress -> no update
+/// 7. Invalid-Decom-Pending-Pool-Removal: pool being decommissioned removed -> needs update
+/// 8. Correct-Decom-Pool-Removed: decommissioned pool removed -> needs update
+/// 9. Correct-Fresh-Setup: fresh setup (empty meta) -> needs update
+/// 10. Invalid-Orderchange-Decom: order changed during decommission -> needs update
 #[test]
 #[ignore]
 fn test_pool_meta_validate() {

@@ -1,16 +1,12 @@
 //! Metacache unit tests.
 //!
-//! 对应 Go: `cmd/metacache_test.go`
-//!
-//! 测试 metacache 的 baseDirFromPrefix、finished、worthKeeping 方法。
+//! Tests metacache baseDirFromPrefix, finished, and worthKeeping methods.
 
 use erasure::*;
 
-/// 测试 baseDirFromPrefix 函数。
+/// Tests baseDirFromPrefix function.
 ///
-/// Go 源: `Test_baseDirFromPrefix`
-///
-/// 验证各种前缀字符串提取基础目录的行为:
+/// Verify base directory extraction from various prefix strings:
 /// - "object.ext" -> ""
 /// - "./object.ext" -> ""
 /// - "/" -> ""
@@ -40,20 +36,18 @@ fn test_base_dir_from_prefix() {
     */
 }
 
-/// 测试 metacache.finished() 方法。
+/// Tests metacache.finished() method.
 ///
-/// Go 源: `Test_metacache_finished`
-///
-/// 验证 9 个预置 metacache 实例的 finished 状态:
-/// - case-1-normal: 已完成 -> true
-/// - case-2-recursive: 已完成 -> true
+/// Verify finished status for 9 pre-configured metacache instances:
+/// - case-1-normal: completed -> true
+/// - case-2-recursive: completed -> true
 /// - case-3-older: fileNotFound -> true
-/// - case-4-error: 错误状态 -> true
-/// - case-5-noupdate: 运行中 -> false
-/// - case-6-404notfound: 已完成 fileNotFound -> true
-/// - case-7-oldcycle: 已完成 -> true
-/// - case-8-running: 运行中 -> false
-/// - case-8-finished-a-week-ago: 已完成 -> true
+/// - case-4-error: error state -> true
+/// - case-5-noupdate: running -> false
+/// - case-6-404notfound: completed fileNotFound -> true
+/// - case-7-oldcycle: completed -> true
+/// - case-8-running: running -> false
+/// - case-8-finished-a-week-ago: completed -> true
 #[test]
 #[ignore]
 fn test_metacache_finished() {
@@ -70,20 +64,18 @@ fn test_metacache_finished() {
     */
 }
 
-/// 测试 metacache.worthKeeping() 方法。
+/// Tests metacache.worthKeeping() method.
 ///
-/// Go 源: `Test_metacache_worthKeeping`
-///
-/// 验证 9 个预置 metacache 实例的 worthKeeping 状态:
-/// - case-1-normal: 正常完成 -> true
-/// - case-2-recursive: 正常完成 -> true
-/// - case-3-older: fileNotFound 但有效 -> true
-/// - case-4-error: 错误状态且过去 20 分钟 -> false
-/// - case-5-noupdate: 运行中但无更新 -> false
-/// - case-6-404notfound: 正常完成 -> true
-/// - case-7-oldcycle: 已完成且过去 8 分钟 -> true
-/// - case-8-running: 运行中 -> false
-/// - case-8-finished-a-week-ago: 已完成一周 -> false
+/// Verify worthKeeping status for 9 pre-configured metacache instances:
+/// - case-1-normal: completed normally -> true
+/// - case-2-recursive: completed normally -> true
+/// - case-3-older: fileNotFound but valid -> true
+/// - case-4-error: error state and 20 min old -> false
+/// - case-5-noupdate: running without updates -> false
+/// - case-6-404notfound: completed normally -> true
+/// - case-7-oldcycle: completed and 8 min old -> true
+/// - case-8-running: running -> false
+/// - case-8-finished-a-week-ago: completed a week ago -> false
 #[test]
 #[ignore]
 fn test_metacache_worth_keeping() {

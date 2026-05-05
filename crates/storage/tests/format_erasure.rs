@@ -1,19 +1,15 @@
-//! Erasure 格式格式化/修复/迁移测试
+//! Erasure format formatting/repair/migration tests
 //!
-//! 对应 Go: cmd/format-erasure_test.go
-//!
-//! 测试 format.json 的修复、迁移、校验和 quorum 检查。
+//! Tests format.json repair, migration, validation, and quorum checks.
 
 use storage::*;
 
-/// 测试 fix_format_erasure_v3 修复损坏格式
+/// Tests fix_format_erasure_v3 repairing broken formats
 ///
-/// 场景:
-/// - 8 个磁盘, 1 个 disk 的格式为 nil (磁盘故障)
-/// - 1 个 disk 的 This UUID 为空
-/// - fixFormatErasureV3 应修复空 This 字段
-///
-/// 对应 Go: TestFixFormatV3
+/// Scenarios:
+/// - 8 disks, 1 disk format is nil (disk failure)
+/// - 1 disk has empty This UUID
+/// - fixFormatErasureV3 should repair the empty This field
 #[test]
 #[ignore]
 fn test_fix_format_v3() {
@@ -41,13 +37,11 @@ fn test_fix_format_v3() {
     // assert_eq!(new_formats[2].erasure.this, exp_this);
 }
 
-/// 测试 format_erasure_v3_this_empty 判断
+/// Tests format_erasure_v3_this_empty check
 ///
-/// 场景:
-/// - nil 格式 (磁盘未找到) → returns false
-/// - 任意 disk 的 This 为空 → returns true
-///
-/// 对应 Go: TestFormatErasureEmpty
+/// Scenarios:
+/// - nil format (disk not found) -> returns false
+/// - any disk has empty This -> returns true
 #[test]
 #[ignore]
 fn test_format_erasure_empty() {
@@ -69,17 +63,15 @@ fn test_format_erasure_empty() {
     // assert!(format_erasure_v3_this_empty(&formats));
 }
 
-/// 测试 format.json v1 → v3 迁移
+/// Tests format.json v1 -> v3 migration
 ///
-/// 场景:
-/// - 写入 v1 格式的 format.json
-/// - 调用 format_erasure_migrate 迁移
-/// - 验证迁移后为 v3 格式
-/// - 验证 This UUID 和 Sets 一致性
-/// - 未知 format 应失败
-/// - 未知 erasure 版本号应失败
-///
-/// 对应 Go: TestFormatErasureMigrate
+/// Scenarios:
+/// - Write a v1 format.json
+/// - Call format_erasure_migrate to migrate
+/// - Verify migrated format is v3
+/// - Verify This UUID and Sets consistency
+/// - Unknown format should fail
+/// - Unknown erasure version should fail
 #[test]
 #[ignore]
 fn test_format_erasure_migrate() {
@@ -116,14 +108,12 @@ fn test_format_erasure_migrate() {
     // // Test with unknown erasure version → should fail
 }
 
-/// 测试 check_format_erasure_value 格式校验
+/// Tests check_format_erasure_value format validation
 ///
-/// 场景:
-/// - 无效 Erasure version "2" → 失败
-/// - 无效 format "Unknown" → 失败
-/// - 无效 Erasure version "0" → 失败
-///
-/// 对应 Go: TestCheckFormatErasureValue
+/// Scenarios:
+/// - Invalid Erasure version "2" -> fails
+/// - Invalid format "Unknown" -> fails
+/// - Invalid Erasure version "0" -> fails
 #[test]
 #[ignore]
 fn test_check_format_erasure_value() {
@@ -143,18 +133,16 @@ fn test_check_format_erasure_value() {
     // }
 }
 
-/// 测试 get_format_erasure_in_quorum quorum 格式获取
+/// Tests get_format_erasure_in_quorum quorum format retrieval
 ///
-/// 场景:
-/// - 正常 quorum → 返回一致格式
-/// - formatErasureV3Check 验证格式一致性
-/// - QuorumFormat 的 This 字段为空 → 验证失败
-/// - Sets 为空 → 验证失败
-/// - UUID 不匹配 → 验证失败
-/// - Set 大小不匹配 → 验证失败
-/// - 超过半数 disk 丢失 → quorum 失败
-///
-/// 对应 Go: TestGetFormatErasureInQuorumCheck
+/// Scenarios:
+/// - Normal quorum -> returns consistent format
+/// - formatErasureV3Check verifies format consistency
+/// - QuorumFormat has empty This field -> validation fails
+/// - Sets is empty -> validation fails
+/// - UUID mismatch -> validation fails
+/// - Set size mismatch -> validation fails
+/// - Over half disks lost -> quorum fails
 #[test]
 #[ignore]
 fn test_get_format_erasure_in_quorum_check() {
@@ -188,14 +176,12 @@ fn test_get_format_erasure_in_quorum_check() {
     // assert!(get_format_erasure_in_quorum(&formats).is_err());
 }
 
-/// 测试 new_heal_format_sets 初始化新格式集
+/// Tests new_heal_format_sets initializing new format sets
 ///
-/// 场景:
-/// - 16 个磁盘中 1 个未格式化
-/// - newHealFormatSets 应成功
-/// - 新格式保留 Deployment ID
-///
-/// 对应 Go: TestNewFormatSets
+/// Scenarios:
+/// - 16 disks, 1 unformatted
+/// - newHealFormatSets should succeed
+/// - New formats preserve Deployment ID
 #[test]
 #[ignore]
 fn test_new_format_sets() {

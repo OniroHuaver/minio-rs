@@ -2,7 +2,7 @@
 name = "grid"
 version = "0.1.0"
 edition = "2024"
-description = "分布式 RPC 通信层 (对应 Go internal/grid)，Phase 2 实现"
+description = "Distributed RPC communication layer, Phase 2 implementation"
 
 [dependencies]
 base = { workspace = true }

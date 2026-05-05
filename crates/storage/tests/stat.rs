@@ -1,20 +1,16 @@
-//! 磁盘 I/O 状态统计测试
+//! Disk I/O stats tests
 //!
-//! 对应 Go: internal/disk/stat_test.go
-//!
-//! 测试从 /sys/block/<dev>/stat 格式的磁盘 I/O 状态解析 (read_drive_stats)。
+//! Tests parsing of /sys/block/<dev>/stat format disk I/O stats (read_drive_stats).
 
 use storage::*;
 
-/// 测试 read_drive_stats 解析磁盘 I/O 状态字符串
+/// Tests read_drive_stats parsing disk I/O stats string
 ///
-/// 场景:
-/// - 完整 18 字段统计 → 正确解析所有字段
-/// - 15 字段统计 (无 discard 列) → 正确解析 (Discard 字段为 0)
-/// - 11 字段统计 (无 discard/flush 列) → 正确解析剩余字段
-/// - 字段不足 → 解析失败
-///
-/// 对应 Go: TestReadDriveStats
+/// Scenarios:
+/// - Full 18-field stats -> correctly parse all fields
+/// - 15-field stats (no discard) -> correctly parse (Discard fields = 0)
+/// - 11-field stats (no discard/flush) -> correctly parse remaining fields
+/// - Insufficient fields -> parse failure
 #[test]
 #[ignore]
 fn test_read_drive_stats() {

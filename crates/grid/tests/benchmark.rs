@@ -1,62 +1,53 @@
-//! Grid 基准测试
+//! Grid benchmark tests
 //!
-//! 对应 Go: internal/grid/benchmark_test.go
-//!
-//! 对 Grid 的 bytes/rpc 请求和 stream (request/responses/twoway) 进行基准测试。
-//! 当前 Phase 2 仅作占位。
+//! Benchmarks for grid bytes/rpc requests and streams (request/responses/twoway).
+//! Phase 2 placeholder only.
 
-/// 基准测试: Grid 字节请求
+/// Benchmark: Grid byte requests
 ///
-/// Go: BenchmarkRequests → benchmarkGridRequests
-/// 测试 2-32 节点网格中 bytes/rpc 原始请求性能
+/// Tests 2-32 node grid bytes/rpc raw request performance
 #[test]
 #[ignore]
 fn bench_grid_requests() {
     // TODO: implement when grid fully available
     //
-    // Go 逻辑:
-    //   SetupTestGrid(n) → 每个 remote 注册 echo handler
-    //   bytes 子测试: 从随机 src → dst 发送 payload (512B), 测量延迟/ops
-    //   rpc 子测试: 使用 SingleHandler[*testRequest, *testResponse]
-    //   并行度 1, 2, 4, 8, 16, 32
-    //   指标: vops/s, ms/op
+    // Logic:
+    //   SetupTestGrid(n) -> register echo handler on each remote
+    //   bytes subtest: send payload (512B) from random src -> dst, measure latency/ops
+    //   rpc subtest: use SingleHandler[*testRequest, *testResponse]
+    //   parallelism 1, 2, 4, 8, 16, 32
+    //   metrics: vops/s, ms/op
 }
 
-/// 基准测试: Grid 流 (响应方向)
-///
-/// Go: BenchmarkStream → benchmarkGridStreamRespOnly
+/// Benchmark: Grid stream (response direction)
 #[test]
 #[ignore]
 fn bench_grid_stream_responses() {
     // TODO: implement when streaming available
     //
-    // Go 逻辑:
-    //   2-32 节点, 注册 echo streaming handler (10x 响应)
-    //   NewStream → Results 验证 10 个响应
+    // Logic:
+    //   2-32 nodes, register echo streaming handler (10x responses)
+    //   NewStream -> Results verify 10 responses
 }
 
-/// 基准测试: Grid 流 (请求方向)
-///
-/// Go: BenchmarkStream → benchmarkGridStreamReqOnly
+/// Benchmark: Grid stream (request direction)
 #[test]
 #[ignore]
 fn bench_grid_stream_requests() {
     // TODO: implement when streaming available
     //
-    // Go 逻辑:
-    //   2-32 节点, 注册 streaming handler 接收 10 个请求
-    //   NewStream → 发送 10 个请求 → 验证
+    // Logic:
+    //   2-32 nodes, register streaming handler receiving 10 requests
+    //   NewStream -> send 10 requests -> verify
 }
 
-/// 基准测试: Grid 流 (双向)
-///
-/// Go: BenchmarkStream → benchmarkGridStreamTwoway
+/// Benchmark: Grid stream (bidirectional)
 #[test]
 #[ignore]
 fn bench_grid_stream_twoway() {
     // TODO: implement when streaming available
     //
-    // Go 逻辑:
-    //   2-32 节点, 注册 streaming handler (echo 每个请求)
-    //   NewStream → 发送 10, 接收 10
+    // Logic:
+    //   2-32 nodes, register streaming handler (echo each request)
+    //   NewStream -> send 10, receive 10
 }

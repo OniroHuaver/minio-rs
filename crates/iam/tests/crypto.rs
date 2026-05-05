@@ -1,252 +1,249 @@
-//! 加密测试: SSE 请求头、密钥衍生、元数据、SSE 类型
-//!
-//! 对应 Go: internal/crypto/header_test.go, key_test.go,
-//!          metadata_test.go, sse_test.go
+//! Crypto tests: SSE request headers, key derivation, metadata, SSE types
 
 // ---- crypto/header ----
 
-/// 验证 SSE 请求检测 `IsRequested()`。
+/// Verifies SSE request detection `IsRequested()`.
 #[test]
 #[ignore]
 fn test_is_requested() {
-    // Go: 检查 SSE-S3/SSE-C/SSE-KMS 请求头
+    // check SSE-S3/SSE-C/SSE-KMS request headers
     // TODO: implement when crypto header parsing is available
 }
 
-/// 验证 SSE-KMS 请求检测 `KMSIsRequested()`。
+/// Verifies SSE-KMS request detection `KMSIsRequested()`.
 #[test]
 #[ignore]
 fn test_kms_is_requested() {
-    // Go: x-amz-server-side-encryption 头
+    // x-amz-server-side-encryption header
     // TODO: implement when crypto header parsing is available
 }
 
-/// 验证 SSE-KMS HTTP 解析 `KMSParseHTTP()`。
+/// Verifies SSE-KMS HTTP parsing `KMSParseHTTP()`.
 #[test]
 #[ignore]
 fn test_kms_parse_http() {
-    // Go: KMS 上下文解析
+    // KMS context parsing
     // TODO: implement when crypto header parsing is available
 }
 
-/// 验证 SSE-S3 请求检测 `S3IsRequested()`。
+/// Verifies SSE-S3 request detection `S3IsRequested()`.
 #[test]
 #[ignore]
 fn test_s3_is_requested() {
-    // Go: SSE-S3 算法头
+    // SSE-S3 algorithm header
     // TODO: implement when crypto header parsing is available
 }
 
-/// 验证 SSE-S3 解析 `S3Parse()`。
+/// Verifies SSE-S3 parsing `S3Parse()`.
 #[test]
 #[ignore]
 fn test_s3_parse() {
-    // Go: SSE-S3 头解析
+    // SSE-S3 header parsing
     // TODO: implement when crypto header parsing is available
 }
 
-/// 验证 SSE-C 请求检测 `SSECIsRequested()`。
+/// Verifies SSE-C request detection `SSECIsRequested()`.
 #[test]
 #[ignore]
 fn test_ssec_is_requested() {
-    // Go: SSE-C 客户算法头
+    // SSE-C customer algorithm header
     // TODO: implement when crypto header parsing is available
 }
 
-/// 验证 SSE-C Copy 请求检测 `SSECopyIsRequested()`。
+/// Verifies SSE-C Copy request detection `SSECopyIsRequested()`.
 #[test]
 #[ignore]
 fn test_ssec_copy_is_requested() {
-    // Go: SSE-C copy 算法头
+    // SSE-C copy algorithm header
     // TODO: implement when crypto header parsing is available
 }
 
-/// 验证 SSE-C 解析 `SSECParse()`。
+/// Verifies SSE-C parsing `SSECParse()`.
 #[test]
 #[ignore]
 fn test_ssec_parse() {
-    // Go: SSE-C 头解析（key、algorithm、MD5）
+    // SSE-C header parsing (key, algorithm, MD5)
     // TODO: implement when crypto header parsing is available
 }
 
-/// 验证 SSE-C Copy 解析 `SSECopyParse()`。
+/// Verifies SSE-C Copy parsing `SSECopyParse()`.
 #[test]
 #[ignore]
 fn test_ssec_copy_parse() {
-    // Go: SSE-C copy 头解析
+    // SSE-C copy header parsing
     // TODO: implement when crypto header parsing is available
 }
 
-/// 验证敏感头移除 `RemoveSensitiveHeaders()`。
+/// Verifies sensitive header removal `RemoveSensitiveHeaders()`.
 #[test]
 #[ignore]
 fn test_remove_sensitive_headers() {
-    // Go: 移除 SSE 密钥相关头
+    // remove SSE key-related headers
     // TODO: implement when crypto header utilities are available
 }
 
 // ---- crypto/key ----
 
-/// 验证对象密钥生成 `GenerateKey()`。
+/// Verifies object key generation `GenerateKey()`.
 #[test]
 #[ignore]
 fn test_generate_key() {
-    // Go: 随机 key + seal 算法
+    // random key + seal algorithm
     // TODO: implement when crypto key generation is available
 }
 
-/// 验证 IV 生成 `GenerateIV()`。
+/// Verifies IV generation `GenerateIV()`.
 #[test]
 #[ignore]
 fn test_generate_iv() {
-    // Go: 随机初始化向量
+    // random initialization vector
     // TODO: implement when crypto IV generation is available
 }
 
-/// 验证密钥密封和解封 `SealUnsealKey()`。
+/// Verifies key seal and unseal `SealUnsealKey()`.
 #[test]
 #[ignore]
 fn test_seal_unseal_key() {
-    // Go: Seal -> Unseal -> 原文
+    // Seal -> Unseal -> original
     // TODO: implement when key sealing is available
 }
 
-/// 验证部分密钥衍生 `DerivePartKey()`。
+/// Verifies part key derivation `DerivePartKey()`.
 #[test]
 #[ignore]
 fn test_derive_part_key() {
-    // Go: 多部分上传的 part key 衍生
+    // multipart upload part key derivation
     // TODO: implement when part key derivation is available
 }
 
-/// 验证 ETag 密封 `SealETag()`。
+/// Verifies ETag sealing `SealETag()`.
 #[test]
 #[ignore]
 fn test_seal_etag() {
-    // Go: 加密 ETag 生成
+    // encrypted ETag generation
     // TODO: implement when ETag sealing is available
 }
 
 // ---- crypto/metadata ----
 
-/// 验证多部分加密检测 `IsMultipart()`。
+/// Verifies multipart encryption detection `IsMultipart()`.
 #[test]
 #[ignore]
 fn test_is_multipart() {
-    // Go: 元数据中 multipart 标记
+    // multipart flag in metadata
     // TODO: implement when crypto metadata parsing is available
 }
 
-/// 验证加密检测 `IsEncrypted()`。
+/// Verifies encryption detection `IsEncrypted()`.
 #[test]
 #[ignore]
 fn test_is_encrypted() {
-    // Go: 元数据中任何加密算法
+    // any encryption algorithm in metadata
     // TODO: implement when crypto metadata parsing is available
 }
 
-/// 验证 SSE-S3 加密检测 `S3IsEncrypted()`。
+/// Verifies SSE-S3 encryption detection `S3IsEncrypted()`.
 #[test]
 #[ignore]
 fn test_s3_is_encrypted() {
-    // Go: SSE-S3 加密元数据
+    // SSE-S3 encryption metadata
     // TODO: implement when crypto metadata parsing is available
 }
 
-/// 验证 SSE-C 加密检测 `SSECIsEncrypted()`。
+/// Verifies SSE-C encryption detection `SSECIsEncrypted()`.
 #[test]
 #[ignore]
 fn test_ssec_is_encrypted() {
-    // Go: SSE-C 加密元数据
+    // SSE-C encryption metadata
     // TODO: implement when crypto metadata parsing is available
 }
 
-/// 验证 SSE-S3 元数据解析 `S3ParseMetadata()`。
+/// Verifies SSE-S3 metadata parsing `S3ParseMetadata()`.
 #[test]
 #[ignore]
 fn test_s3_parse_metadata() {
-    // Go: SSE-S3 -> ObjectKey
+    // SSE-S3 -> ObjectKey
     // TODO: implement when crypto metadata parsing is available
 }
 
-/// 验证多部分元数据创建 `CreateMultipartMetadata()`。
+/// Verifies multipart metadata creation `CreateMultipartMetadata()`.
 #[test]
 #[ignore]
 fn test_create_multipart_metadata() {
-    // Go: 创建 multipart 加密元数据
+    // create multipart encryption metadata
     // TODO: implement when crypto metadata creation is available
 }
 
-/// 验证 SSE-C 元数据解析 `SSECParseMetadata()`。
+/// Verifies SSE-C metadata parsing `SSECParseMetadata()`.
 #[test]
 #[ignore]
 fn test_ssec_parse_metadata() {
-    // Go: SSE-C -> ObjectKey
+    // SSE-C -> ObjectKey
     // TODO: implement when crypto metadata parsing is available
 }
 
-/// 验证 SSE-S3 元数据创建 `S3CreateMetadata()`。
+/// Verifies SSE-S3 metadata creation `S3CreateMetadata()`.
 #[test]
 #[ignore]
 fn test_s3_create_metadata() {
-    // Go: 创建 SSE-S3 加密元数据
+    // create SSE-S3 encryption metadata
     // TODO: implement when crypto metadata creation is available
 }
 
-/// 验证 SSE-C 元数据创建 `SSECCreateMetadata()`。
+/// Verifies SSE-C metadata creation `SSECCreateMetadata()`.
 #[test]
 #[ignore]
 fn test_ssec_create_metadata() {
-    // Go: 创建 SSE-C 加密元数据
+    // create SSE-C encryption metadata
     // TODO: implement when crypto metadata creation is available
 }
 
-/// 验证 ETag 密封检测 `IsETagSealed()`。
+/// Verifies ETag seal detection `IsETagSealed()`.
 #[test]
 #[ignore]
 fn test_is_etag_sealed() {
-    // Go: ETag 是否被密封
+    // check whether ETag is sealed
     // TODO: implement when ETag seal detection is available
 }
 
-/// 验证内部元数据条目移除 `RemoveInternalEntries()`。
+/// Verifies internal metadata entry removal `RemoveInternalEntries()`.
 #[test]
 #[ignore]
 fn test_remove_internal_entries() {
-    // Go: 移除 X-Minio-Internal-* 元数据
+    // remove X-Minio-Internal-* metadata
     // TODO: implement when metadata cleanup is available
 }
 
 // ---- crypto/sse ----
 
-/// 验证 SSE-S3 字符串表示。
+/// Verifies SSE-S3 string representation.
 #[test]
 #[ignore]
 fn test_s3_string() {
-    // Go: SSE-S3 -> "SSE-S3"
+    // SSE-S3 -> "SSE-S3"
     // TODO: implement when SSE type is available
 }
 
-/// 验证 SSE-C 字符串表示。
+/// Verifies SSE-C string representation.
 #[test]
 #[ignore]
 fn test_ssec_string() {
-    // Go: SSE-C -> "SSE-C"
+    // SSE-C -> "SSE-C"
     // TODO: implement when SSE type is available
 }
 
-/// 验证 SSE-C 对象密钥解封 `SSECUnsealObjectKey()`。
+/// Verifies SSE-C object key unseal `SSECUnsealObjectKey()`.
 #[test]
 #[ignore]
 fn test_ssec_unseal_object_key() {
-    // Go: SSE-C 密封密钥 -> 明文密钥
+    // SSE-C sealed key -> plaintext key
     // TODO: implement when SSE key unsealing is available
 }
 
-/// 验证 SSE-C Copy 对象密钥解封 `SSECopyUnsealObjectKey()`。
+/// Verifies SSE-C Copy object key unseal `SSECopyUnsealObjectKey()`.
 #[test]
 #[ignore]
 fn test_ssec_copy_unseal_object_key() {
-    // Go: SSE-C copy 密钥解封
+    // SSE-C copy key unseal
     // TODO: implement when SSE key unsealing is available
 }

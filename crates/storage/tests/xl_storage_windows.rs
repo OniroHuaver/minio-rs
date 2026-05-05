@@ -1,20 +1,16 @@
-//! xlStorage Windows 特定测试
+//! xlStorage Windows-specific tests
 //!
-//! 对应 Go: cmd/xl-storage_windows_test.go
-//!
-//! 验证 Windows UNC 路径处理和 ENOTDIR 行为。
-//! 这些测试仅在 Windows 平台有意义。
+//! Verifies Windows UNC path handling and ENOTDIR behavior.
+//! These tests are only meaningful on Windows platforms.
 
 use storage::*;
 
-/// 测试 UNC 路径格式下的各种路径是否正常工作
+/// Tests UNC path format handling
 ///
-/// 场景:
-/// - 正常路径 → AppendFile 应成功
-/// - 各段长度 ≤ 255 的路径 → 应成功
-/// - 含超长路径段 (> 255 字节) → 应失败
-///
-/// 对应 Go: TestUNCPaths
+/// Scenarios:
+/// - Normal path -> AppendFile should succeed
+/// - Path with segments <= 255 bytes -> should succeed
+/// - Path with overly long segment (> 255 bytes) -> should fail
 #[test]
 #[ignore]
 fn test_unc_paths() {
@@ -32,13 +28,11 @@ fn test_unc_paths() {
     // assert!(result.is_err(), "Expected error for long path segment");
 }
 
-/// 测试非叶子路径为文件时的 ENOTDIR 处理
+/// Tests ENOTDIR handling when non-leaf path is a file
 ///
-/// 场景:
-/// - 创建文件 "/file"
-/// - 尝试创建 "/file/obj1" (/file 是文件而非目录) → errFileAccessDenied
-///
-/// 对应 Go: TestUNCPathENOTDIR
+/// Scenarios:
+/// - Create file "/file"
+/// - Try to create "/file/obj1" (/file is a file, not a directory) -> errFileAccessDenied
 #[test]
 #[ignore]
 fn test_unc_path_enotdir() {

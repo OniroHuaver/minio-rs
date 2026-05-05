@@ -1,34 +1,28 @@
-//! 缓存值测试
+//! Cache value tests
 //!
-//! 对应 Go: internal/cachevalue/cache_test.go
-//!
-//! 测试 Cache (带过期时间的惰性求值缓存) 功能。
+//! Tests Cache (lazy evaluation with expiry) functionality.
 
-/// 测试 Cache.GetWithCtx (context cancel 传播)
-///
-/// Go: TestCacheCtx
+/// Test Cache::GetWithCtx (context cancel propagation)
 #[test]
 #[ignore]
 fn test_cache_get_with_ctx() {
     // TODO: implement when Cache type available
     //
-    // Go 逻辑:
-    //   1. New[time.Time](), InitOnce(2s, ..., slowCaller)
-    //   2. 已 cancel 的 ctx → 立即返回 context.Canceled
-    //   3. 有效 ctx → t1, t2 在 2s 内应相等
-    //   4. sleep 3s (超 2s TTL) → t3 与 t1 不等
+    // Steps:
+    //   1. New[time::Time](), InitOnce(2s, ..., slowCaller)
+    //   2. Cancelled ctx -> immediately returns context::Canceled
+    //   3. Valid ctx -> t1, t2 should be equal within 2s
+    //   4. sleep 3s (past 2s TTL) -> t3 differs from t1
 }
 
-/// 测试 Cache.Get (简化版, 无 context)
-///
-/// Go: TestCache
+/// Test Cache::Get (simplified, no context)
 #[test]
 #[ignore]
 fn test_cache_get() {
     // TODO: implement when Cache available
     //
-    // Go 逻辑:
+    // Steps:
     //   1. 2s TTL
-    //   2. t1, t2 应相等
-    //   3. sleep 3s → t3 与 t1 不等
+    //   2. t1, t2 should be equal
+    //   3. sleep 3s -> t3 differs from t1
 }

@@ -1,15 +1,11 @@
-//! Storage datatypes 性能基准测试
+//! Storage datatypes benchmark tests
 //!
-//! 对应 Go: cmd/storage-datatypes_test.go
-//!
-//! 测试 VolInfo, DiskInfo, FileInfo 等类型的 MessagePack vs GOB
-//! 编解码性能基准。
+//! Benchmarks MessagePack vs GOB encoding/decoding for VolInfo,
+//! DiskInfo, FileInfo, and other types.
 
 use storage::*;
 
-/// 基准测试: VolInfo MsgPack 解码
-///
-/// 对应 Go: BenchmarkDecodeVolInfoMsgp
+/// Benchmark: VolInfo MsgPack decode
 #[test]
 #[ignore]
 fn benchmark_decode_vol_info_msgp() {
@@ -20,9 +16,7 @@ fn benchmark_decode_vol_info_msgp() {
     // // Benchmark decode speed
 }
 
-/// 基准测试: DiskInfo MsgPack 解码
-///
-/// 对应 Go: BenchmarkDecodeDiskInfoMsgp
+/// Benchmark: DiskInfo MsgPack decode
 #[test]
 #[ignore]
 fn benchmark_decode_disk_info_msgp() {
@@ -39,63 +33,49 @@ fn benchmark_decode_disk_info_msgp() {
     // // Benchmark decode speed
 }
 
-/// 基准测试: DiskInfo GOB 解码
-///
-/// 对应 Go: BenchmarkDecodeDiskInfoGOB
+/// Benchmark: DiskInfo GOB decode
 #[test]
 #[ignore]
 fn benchmark_decode_disk_info_gob() {
     // TODO: implement benchmark using bincode or similar as GOB alternative
 }
 
-/// 基准测试: DiskInfo MsgPack 编码
-///
-/// 对应 Go: BenchmarkEncodeDiskInfoMsgp
+/// Benchmark: DiskInfo MsgPack encode
 #[test]
 #[ignore]
 fn benchmark_encode_disk_info_msgp() {
     // TODO: implement benchmark when DiskInfo is available
 }
 
-/// 基准测试: DiskInfo GOB 编码
-///
-/// 对应 Go: BenchmarkEncodeDiskInfoGOB
+/// Benchmark: DiskInfo GOB encode
 #[test]
 #[ignore]
 fn benchmark_encode_disk_info_gob() {
     // TODO: implement benchmark using bincode or similar as GOB alternative
 }
 
-/// 基准测试: FileInfo MsgPack 解码
-///
-/// 对应 Go: BenchmarkDecodeFileInfoMsgp
+/// Benchmark: FileInfo MsgPack decode
 #[test]
 #[ignore]
 fn benchmark_decode_file_info_msgp() {
     // TODO: implement benchmark when FileInfo is available
 }
 
-/// 基准测试: FileInfo GOB 解码
-///
-/// 对应 Go: BenchmarkDecodeFileInfoGOB
+/// Benchmark: FileInfo GOB decode
 #[test]
 #[ignore]
 fn benchmark_decode_file_info_gob() {
     // TODO: implement benchmark using bincode or similar as GOB alternative
 }
 
-/// 基准测试: FileInfo MsgPack 编码
-///
-/// 对应 Go: BenchmarkEncodeFileInfoMsgp
+/// Benchmark: FileInfo MsgPack encode
 #[test]
 #[ignore]
 fn benchmark_encode_file_info_msgp() {
     // TODO: implement benchmark when FileInfo is available
 }
 
-/// 基准测试: FileInfo GOB 编码
-///
-/// 对应 Go: BenchmarkEncodeFileInfoGOB
+/// Benchmark: FileInfo GOB encode
 #[test]
 #[ignore]
 fn benchmark_encode_file_info_gob() {

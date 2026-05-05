@@ -1,8 +1,6 @@
-//! xl.meta (XL Storage Format V2) 格式定义
+//! xl.meta (XL Storage Format V2) format definition
 //!
-//! 对应 Go: cmd/xl-storage-format-v2.go
-//!
-//! ## 二进制格式
+//! ## Binary format
 //!
 //! ```text
 //! ┌─────────────────────────────────────────────────┐
@@ -13,7 +11,7 @@
 //! │  ┌─────────────────────────────────────────┐    │
 //! │  │ Entry Type 1: Object (VersionData)       │    │
 //! │  │ Entry Type 2: Delete (DeleteMarker)      │    │
-//! │  │ Entry Type 3: Legacy (V1 占位)           │    │
+//! │  │ Entry Type 3: Legacy (V1 placeholder)    │    │
 //! │  └─────────────────────────────────────────┘    │
 //! └─────────────────────────────────────────────────┘
 //! ```
@@ -26,19 +24,19 @@ use sha2::{Digest, Sha256};
 use crate::constants;
 use crate::error::{MinioError, MinioResult};
 
-/// xl.meta 版本条目类型
+/// Version entry type for xl.meta
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum VersionType {
-    /// 版本实体 (包含完整对象数据)
+    /// Version with full object data
     Object = 1,
-    /// 删除标记
+    /// Delete marker
     Delete = 2,
-    /// V1 格式占位
+    /// V1 format placeholder
     Legacy = 3,
 }
 
-/// xl.meta 文件头
+/// xl.meta file header
 #[derive(Debug, Clone)]
 pub struct XlMetaHeader {
     pub magic: [u8; 4], // "XL2 "
@@ -83,15 +81,15 @@ impl XlMetaHeader {
     }
 }
 
-/// xl.meta 内的版本条目 (MessagePack 序列化)
+/// Version entry inside xl.meta (MessagePack serialized)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct XlMetaVersionHeader {
     pub version_id: String,
-    pub mod_time: i64,           // Unix 时间戳 (纳秒)
+    pub mod_time: i64,           // Unix timestamp (nanoseconds)
     pub signature: Vec<u8>,
     pub r#type: u8,              // VersionType
     pub flags: u8,
-    /// 对象总大小 (为 0 时需要遍历 Parts 累加)
+    /// Total object size (0 means sum over Parts)
     #[serde(default)]
     pub size: i64,
     pub erasure_algorithm: u8,
@@ -100,12 +98,12 @@ pub struct XlMetaVersionHeader {
     pub erasure_block_size: i64,
     pub erasure_dist: Vec<u8>,
     pub parts: Vec<ObjectPart>,
-    pub meta_sys: Vec<(String, Vec<u8>)>,   // 系统元数据
-    pub meta_user: Vec<(String, Vec<u8>)>,  // 用户元数据
+    pub meta_sys: Vec<(String, Vec<u8>)>,   // System metadata
+    pub meta_user: Vec<(String, Vec<u8>)>,  // User metadata
 }
 
 impl XlMetaVersionHeader {
-    /// 创建新的版本 header，使用默认 EC 块大小
+    /// Create a new version header with default EC block size
     pub fn new(version_id: String) -> Self {
         Self {
             version_id,
@@ -125,11 +123,11 @@ impl XlMetaVersionHeader {
         }
     }
 
-    /// 计算确定性 SHA256 签名 (跨磁盘一致性校验)
+    /// Compute a deterministic SHA256 signature (cross-disk consistency check)
     ///
-    /// 签名涵盖: VersionID, ModTime, Type, Flags,
+    /// Covers: VersionID, ModTime, Type, Flags,
     /// ErasureAlgorithm, ErasureM/N, ErasureBlockSize, ErasureDist, Parts
-    /// 不涵盖: MetaSys, MetaUser, Data (内联数据)
+    /// Excludes: MetaSys, MetaUser, Data (inline data)
     pub fn compute_signature(&self) -> MinioResult<Vec<u8>> {
         let sig_data = SignatureData {
             version_id: &self.version_id,
@@ -151,7 +149,7 @@ impl XlMetaVersionHeader {
     }
 }
 
-/// 签名计算专用结构 (仅包含确定性字段)
+/// Helper struct for signature computation (deterministic fields only)
 #[derive(Serialize)]
 struct SignatureData<'a> {
     #[serde(rename = "VersionID")]
@@ -176,7 +174,7 @@ struct SignatureData<'a> {
     parts: &'a [ObjectPart],
 }
 
-/// 对象分片信息
+/// Object part information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ObjectPart {
     pub number: u32,
@@ -186,17 +184,17 @@ pub struct ObjectPart {
     pub index: i32,
 }
 
-/// 完整 xl.meta 文件内容 (版本条目列表)
+/// Complete xl.meta file content (list of version entries)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct XlMeta {
     pub versions: Vec<XlMetaEntry>,
 }
 
-/// xl.meta body 最大允许大小 (64 MiB)，防止恶意/损坏输入导致 OOM
+/// Maximum allowed xl.meta body size (64 MiB), prevents OOM from malicious/corrupt input
 pub const MAX_XL_META_SIZE: usize = 64 * 1024 * 1024;
 
 impl XlMeta {
-    /// 序列化为完整 xl.meta 二进制格式：8 字节 header + MessagePack body
+    /// Serialize to full xl.meta binary format: 8-byte header + MessagePack body
     pub fn to_bytes(&self) -> MinioResult<Vec<u8>> {
         let header = XlMetaHeader::default();
         let mut buf = Vec::with_capacity(4096);
@@ -207,29 +205,29 @@ impl XlMeta {
         Ok(buf)
     }
 
-    /// 从 xl.meta 二进制数据反序列化
+    /// Deserialize from xl.meta binary data
     pub fn from_bytes(bytes: &[u8]) -> MinioResult<Self> {
         if bytes.len() < XlMetaHeader::SIZE {
             return Err(MinioError::XlMetaFormat(
-                "数据太短，不足 header 长度".into(),
+                "data too short, insufficient for header length".into(),
             ));
         }
         let header = XlMetaHeader::from_bytes(&bytes[..8])
             .map_err(|e| MinioError::XlMetaFormat(e))?;
         if header.major != constants::XL_VERSION_MAJOR {
             return Err(MinioError::XlMetaFormat(format!(
-                "不支持的主版本: {}.{} (当前: {}.{})",
+                "unsupported major version: {}.{} (current: {}.{})",
                 header.major,
                 header.minor,
                 constants::XL_VERSION_MAJOR,
                 constants::XL_VERSION_MINOR
             )));
         }
-        // minor 版本向后兼容：高于已知版本可安全读取，新字段反序列化时被忽略
+        // Minor version is backward compatible: newer versions can be safely read, new fields are ignored during deserialization
         let body = &bytes[8..];
         if body.len() > MAX_XL_META_SIZE {
             return Err(MinioError::XlMetaFormat(format!(
-                "xl.meta body 过大: {} bytes (上限: {})",
+                "xl.meta body too large: {} bytes (max: {})",
                 body.len(),
                 MAX_XL_META_SIZE
             )));
@@ -237,20 +235,20 @@ impl XlMeta {
         rmp_serde::from_slice(body).map_err(|e| MinioError::MessagePack(e.to_string()))
     }
 
-    /// 从文件路径读取 xl.meta
+    /// Read xl.meta from a file path
     ///
-    /// **注意**: 使用同步 I/O。在 async 上下文中应改用 `spawn_blocking`，
-    /// 或直接调用 `tokio::fs::read` + `XlMeta::from_bytes`。
-    /// 此方法主要用于测试和同步场景。
+    /// **Note**: Uses synchronous I/O. In async contexts, use `spawn_blocking`
+    /// or call `tokio::fs::read` + `XlMeta::from_bytes` directly.
+    /// This method is primarily for testing and synchronous scenarios.
     pub fn read_from_file(path: impl AsRef<Path>) -> MinioResult<Self> {
         let data = std::fs::read(path.as_ref())?;
         Self::from_bytes(&data)
     }
 
-    /// 写入 xl.meta 到文件 (先写临时文件再原子 rename)
+    /// Write xl.meta to file (write to temp file, then atomic rename)
     ///
-    /// **注意**: 使用同步 I/O + 随机临时文件名避免冲突。
-    /// 在 async 上下文中应改用 `spawn_blocking` 包装。
+    /// **Note**: Uses synchronous I/O with random temp file names to avoid conflicts.
+    /// In async contexts, wrap with `spawn_blocking`.
     pub fn write_to_file(&self, path: impl AsRef<Path>) -> MinioResult<()> {
         let data = self.to_bytes()?;
         let path = path.as_ref();
@@ -263,12 +261,12 @@ impl XlMeta {
         let tmp_path = dir.join(tmp_suffix);
         std::fs::write(&tmp_path, &data)?;
         std::fs::rename(&tmp_path, path).map_err(|e| {
-            // 清理临时文件，失败不影响主错误
+            // Clean up temp file; failure does not affect the main error
             if let Err(cleanup_err) = std::fs::remove_file(&tmp_path) {
                 tracing::warn!(
                     tmp_path = %tmp_path.display(),
                     error = %cleanup_err,
-                    "无法清理写入失败的临时文件"
+                    "failed to clean up temporary file after write failure"
                 );
             }
             MinioError::DiskIO(e)
@@ -277,14 +275,14 @@ impl XlMeta {
     }
 }
 
-/// 版本条目 (枚举变体)
+/// Version entry (enum variant)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum XlMetaEntry {
     #[serde(rename = "1")]
     Object {
         header: XlMetaVersionHeader,
-        /// 小文件 (<128KiB) 的数据内联存储于此
+        /// Inline data for small files (<128KiB)
         #[serde(with = "serde_bytes")]
         data: Option<Vec<u8>>,
     },
@@ -354,8 +352,8 @@ mod tests {
     #[test]
     fn test_xl_meta_roundtrip_bytes() {
         let original = make_test_meta();
-        let bytes = original.to_bytes().expect("序列化失败");
-        let decoded = XlMeta::from_bytes(&bytes).expect("反序列化失败");
+        let bytes = original.to_bytes().expect("serialization failed");
+        let decoded = XlMeta::from_bytes(&bytes).expect("deserialization failed");
 
         assert_eq!(decoded.versions.len(), 2);
         match &decoded.versions[0] {
@@ -378,7 +376,7 @@ mod tests {
         assert_eq!(u16::from_be_bytes([bytes[4], bytes[5]]), constants::XL_VERSION_MAJOR);
         assert_eq!(u16::from_be_bytes([bytes[6], bytes[7]]), constants::XL_VERSION_MINOR);
 
-        let parsed = XlMetaHeader::from_bytes(&bytes).expect("header 解析失败");
+        let parsed = XlMetaHeader::from_bytes(&bytes).expect("header parse failed");
         assert_eq!(parsed.major, header.major);
         assert_eq!(parsed.minor, header.minor);
     }
@@ -401,8 +399,8 @@ mod tests {
     fn test_xl_meta_file_write_read_roundtrip() {
         let original = make_test_meta();
         let tmp = std::env::temp_dir().join(format!("test_xl_meta_{}.meta", std::process::id()));
-        original.write_to_file(&tmp).expect("写入文件失败");
-        let loaded = XlMeta::read_from_file(&tmp).expect("读取文件失败");
+        original.write_to_file(&tmp).expect("write to file failed");
+        let loaded = XlMeta::read_from_file(&tmp).expect("read from file failed");
         let _ = std::fs::remove_file(&tmp);
 
         assert_eq!(loaded.versions.len(), original.versions.len());
@@ -422,14 +420,14 @@ mod tests {
             index: 0,
         });
 
-        let sig1 = header.compute_signature().expect("签名计算失败");
-        let sig2 = header.compute_signature().expect("签名计算失败");
+        let sig1 = header.compute_signature().expect("signature computation failed");
+        let sig2 = header.compute_signature().expect("signature computation failed");
         assert_eq!(sig1, sig2);
         assert_eq!(sig1.len(), 32); // SHA256 = 32 bytes
 
-        // 修改一个字段后签名应变化
+        // Signature should change when a field is modified
         header.mod_time = 2000;
-        let sig3 = header.compute_signature().expect("签名计算失败");
+        let sig3 = header.compute_signature().expect("signature computation failed");
         assert_ne!(sig1, sig3);
     }
 
@@ -444,8 +442,8 @@ mod tests {
         h2.meta_user = vec![("z".into(), b"w".to_vec())];
 
         assert_eq!(
-            h1.compute_signature().expect("签名计算失败"),
-            h2.compute_signature().expect("签名计算失败")
+            h1.compute_signature().expect("signature computation failed"),
+            h2.compute_signature().expect("signature computation failed")
         );
     }
 }

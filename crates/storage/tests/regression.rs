@@ -1,21 +1,19 @@
-//! 回归测试 — 已知 Bug 暴露
+//! Regression tests - exposing known bugs
 //!
-//! 本文件的测试用例针对代码审查中发现的已知问题。
-//! 当前这些测试**预期失败**，暴露实现中的 bug。
-//! bug 修复后这些测试将通过。
-//!
-//! 对应 Review 问题编号见各测试注释。
+//! Test cases in this file target known issues found during code review.
+//! These tests are **expected to fail**, exposing bugs in the implementation.
+//! They will pass once the bugs are fixed.
 
 use std::path::PathBuf;
 use storage::{StorageAPI, XlStorage};
 
 // ========================================================================
-// Issue #2: read_range length < 0 触发 panic
+// Issue #2: read_range length < 0 causes panic
 // ========================================================================
-// 文件: crates/storage/src/xl_storage.rs:104
-// offset < 0 有前置检查，但 length < 0 没有。
-// length=-1 时 min(-1, N) = -1，as usize 在 debug 下 panic，
-// release 下产生超大 allocation → OOM。
+// File: crates/storage/src/xl_storage.rs:104
+// offset < 0 has a pre-check, but length < 0 does not.
+// When length=-1, min(-1, N) = -1, as usize panics in debug mode,
+// and produces a huge allocation -> OOM in release mode.
 // ========================================================================
 
 mod issue_02_read_range_negative_length {
@@ -29,41 +27,41 @@ mod issue_02_read_range_negative_length {
         (storage, dir)
     }
 
-    /// read_range 在 length < 0 时不应 panic，应返回错误或空结果
+    /// read_range should not panic when length < 0, should return error or empty result
     ///
-    /// 当前 BUG: length=-1 时 min(-1, N) = -1，as usize 在 debug 下 panic。
-    /// 修复: 在 101 行处同时检查 length <= 0  返回空 Vec。
+    /// Current BUG: length=-1 causes min(-1, N) = -1, as usize panics in debug mode.
+    /// Fix: Also check length <= 0 at line 101 and return empty Vec.
     #[tokio::test]
     async fn read_range_negative_length_should_not_panic() {
         let (storage, dir) = setup();
         storage.make_volume("bucket").await.unwrap();
         storage.write_all("bucket", "data.bin", b"hello world").await.unwrap();
 
-        // 直接调用 — 如果 panic 了，测试框架会报告 FAILED
-        // 正确行为: 返回 Err 或 空 Vec
+        // Direct call -- if it panics, test framework reports FAILED
+        // Expected behavior: return Err or empty Vec
         let result = storage.read_range("bucket", "data.bin", 0, -1).await;
 
         match result {
             Ok(data) => {
-                // 没有 panic！但需要确认没有触发 OOM (data 应该为空)
+                // No panic! But verify no OOM triggered (data should be empty)
                 assert!(
                     data.is_empty(),
-                    "length < 0 应返回空数据或错误，不应返回非空数据"
+                    "length < 0 should return empty data or error, not non-empty data"
                 );
                 eprintln!(
-                    "read_range(length=-1) 没有 panic 但返回了 Ok。\n\
-                     如果数据量为空说明恰好没触发 OOM，但 length 校验仍缺失。"
+                    "read_range(length=-1) did not panic but returned Ok.\n\
+                     Empty data means OOM was not triggered, but length validation is still missing."
                 );
             }
             Err(_) => {
-                // 返回了错误 — 虽然不是最理想的行为，但至少没 panic
+                // Returned an error -- not ideal but at least no panic
             }
         }
 
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// read_range 在 offset=0, length=0 时应返回空 Vec (边界行为)
+    /// read_range with offset=0, length=0 should return empty Vec (edge case)
     #[tokio::test]
     async fn read_range_zero_length_should_return_empty() {
         let (storage, dir) = setup();
@@ -71,7 +69,7 @@ mod issue_02_read_range_negative_length {
         storage.write_all("bucket", "data.bin", b"hello").await.unwrap();
 
         let result = storage.read_range("bucket", "data.bin", 0, 0).await;
-        assert!(result.is_ok(), "length=0 应正常返回空数据");
+        assert!(result.is_ok(), "length=0 should return empty data normally");
         assert_eq!(result.unwrap().len(), 0);
 
         let _ = std::fs::remove_dir_all(&dir);
@@ -79,11 +77,11 @@ mod issue_02_read_range_negative_length {
 }
 
 // ========================================================================
-// Issue #7: delete_volume 无路径约束 — "" 或 ".." 可删除磁盘根
+// Issue #7: delete_volume has no path constraints -- "" or ".." can delete disk root
 // ========================================================================
-// 文件: crates/storage/src/xl_storage.rs:209-214
-// volume="" → volume_path 返回 disk_path 本身 → remove_dir_all 删除整个根
-// volume=".." → 穿越出磁盘根目录
+// File: crates/storage/src/xl_storage.rs:209-214
+// volume="" -> volume_path returns disk_path itself -> remove_dir_all deletes entire root
+// volume=".." -> traverses out of the disk root directory
 // ========================================================================
 
 mod issue_07_delete_volume_path_traversal {
@@ -97,39 +95,39 @@ mod issue_07_delete_volume_path_traversal {
         (storage, dir)
     }
 
-    /// delete_volume("") 不应删除磁盘根目录
+    /// delete_volume("") should not delete the disk root directory
     ///
-    /// 当前实现: volume_path("") = disk_path.join("") = disk_path
-    /// 这会直接删除整个测试目录，是严重的安全隐患。
+    /// Current implementation: volume_path("") = disk_path.join("") = disk_path
+    /// This would delete the entire test directory, a serious security issue.
     #[tokio::test]
     async fn delete_volume_empty_string_should_be_rejected() {
         let (storage, dir) = setup();
 
-        // 先在磁盘根下创建一个标记文件
+        // Create a marker file under the disk root first
         let marker = dir.join(".safeguard");
         std::fs::write(&marker, b"protect me").unwrap();
 
-        // 尝试删除空 volume 名 — 应该被拒绝 (Err)，而不是删除整个目录
+        // Try to delete empty volume name -- should be rejected (Err), not delete entire directory
         let result = storage.delete_volume("").await;
 
-        // 标记文件必须仍然存在 — 如果 delete_volume("") 删了根目录，这个 assert 会失败
+        // Marker file must still exist -- if delete_volume("") deleted the root, this assert will fail
         assert!(
             marker.exists(),
-            "BUG 确认: delete_volume(\"\") 删除了磁盘根目录！\n\
-             原因: volume_path(\"\") = disk_path.join(\"\") = disk_path\n\
-             修复: 拒绝空字符串和含 .. 的 volume 名。"
+            "BUG CONFIRMED: delete_volume(\"\") deleted the disk root directory!\n\
+             Cause: volume_path(\"\") = disk_path.join(\"\") = disk_path\n\
+             Fix: Reject empty strings and volume names containing \"..\"."
         );
 
-        // 正确行为: 应返回错误
+        // Expected behavior: should return error
         assert!(
             result.is_err(),
-            "delete_volume(\"\") 应返回错误，当前返回 Ok (可能已删除根目录)"
+            "delete_volume(\"\") should return error, currently returns Ok (may have deleted root)"
         );
 
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// delete_volume("..") 应被拒绝，不能穿越出磁盘根目录
+    /// delete_volume("..") should be rejected, path traversal out of disk root not allowed
     #[tokio::test]
     async fn delete_volume_dot_dot_should_be_rejected() {
         let (storage, dir) = setup();
@@ -137,37 +135,38 @@ mod issue_07_delete_volume_path_traversal {
         let result = storage.delete_volume("..").await;
         assert!(
             result.is_err(),
-            "delete_volume(\"..\") 应返回错误，路径穿越不应被允许"
+            "delete_volume(\"..\") should return error, path traversal should not be allowed"
         );
 
-        // 磁盘根目录应仍然存在
-        assert!(dir.exists(), "磁盘根目录被 delete_volume(\"..\") 删除了！");
+        // Disk root directory should still exist
+        assert!(dir.exists(), "Disk root directory was deleted by delete_volume(\"..\")!");
 
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
 
 // ========================================================================
-// Issue #1: XlMeta::from_bytes 版本校验过严 — 拒绝更高 minor 版本
+// Issue #1: XlMeta::from_bytes version check too strict -- rejects higher minor versions
 // ========================================================================
-// 文件: crates/base/src/format.rs:215-216
-// 当前要求 major/minor 精确匹配。minor 应向后兼容——
-// 更高的 minor 表明新格式添加了可选字段，旧代码应能忽略。
-// 当前行为会在滚动升级时导致旧节点无法读取新节点写入的 xl.meta。
+// File: crates/base/src/format.rs:215-216
+// Currently requires exact major/minor match. Minor should be backward compatible --
+// a higher minor indicates new format added optional fields, old code should ignore them.
+// Current behavior causes old nodes to fail reading xl.meta written by newer nodes
+// during rolling upgrades.
 // ========================================================================
 
 mod issue_01_xl_meta_version_too_strict {
 
     use base::format::XlMeta;
 
-    /// 构造一个 minor 版本更高的 xl.meta 二进制数据
+    /// Construct xl.meta binary data with a higher minor version
     fn make_xl_meta_with_version(major: u16, minor: u16) -> Vec<u8> {
         let header = base::format::XlMetaHeader {
             magic: *b"XL2 ",
             major,
             minor,
         };
-        // Body: XlMeta struct (1-element msgpack array) 包含空的 versions 数组
+        // Body: XlMeta struct (1-element msgpack array) containing empty versions array
         let body: &[u8] = &[0x91, 0x90]; // 91: 1-element array; 90: empty versions array
         let mut buf = Vec::new();
         buf.extend_from_slice(&header.to_bytes());
@@ -175,14 +174,14 @@ mod issue_01_xl_meta_version_too_strict {
         buf
     }
 
-    /// 更高 minor 版本应被接受（向后兼容）
+    /// Higher minor version should be accepted (backward compatible)
     ///
-    /// 当前行为: XlMeta::from_bytes 拒绝 minor != XL_VERSION_MINOR
-    /// 正确行为: 只拒接 major 不匹配；minor 高于已知值应 warn 但接受
+    /// Current behavior: XlMeta::from_bytes rejects minor != XL_VERSION_MINOR
+    /// Expected behavior: Only reject major mismatch; warn but accept higher minor
     #[test]
     fn higher_minor_version_should_be_accepted() {
         let current_minor = base::constants::XL_VERSION_MINOR;
-        let future_minor = current_minor + 1; // 模拟未来版本
+        let future_minor = current_minor + 1; // Simulate future version
 
         let data = make_xl_meta_with_version(
             base::constants::XL_VERSION_MAJOR,
@@ -191,18 +190,18 @@ mod issue_01_xl_meta_version_too_strict {
 
         let result = XlMeta::from_bytes(&data);
 
-        // 当前预期失败 — 因为版本校验过严
+        // Currently expected to fail -- version check is too strict
         assert!(
             result.is_ok(),
-            "BUG 确认: XlMeta::from_bytes 拒绝了 minor={} 的 xl.meta（当前要求={}）。\n\
-             原因: 版本校验要求 major/minor 精确匹配。\n\
-             修复: 只拒绝 major 不匹配；minor 更高时 warn 但接受。",
+            "BUG CONFIRMED: XlMeta::from_bytes rejected xl.meta with minor={} (currently requires={}).\n\
+             Cause: Version check requires exact major/minor match.\n\
+             Fix: Only reject major mismatch; warn but accept higher minor.",
             future_minor,
             current_minor,
         );
     }
 
-    /// 相同版本的 xl.meta 应正常读取（sanity check）
+    /// Same version xl.meta should be readable (sanity check)
     #[test]
     fn same_version_should_be_accepted() {
         let data = make_xl_meta_with_version(
@@ -210,10 +209,10 @@ mod issue_01_xl_meta_version_too_strict {
             base::constants::XL_VERSION_MINOR,
         );
         let result = XlMeta::from_bytes(&data);
-        assert!(result.is_ok(), "当前版本的 xl.meta 应该能被读取");
+        assert!(result.is_ok(), "current version xl.meta should be readable");
     }
 
-    /// 不同 major 版本应被拒绝
+    /// Different major version should be rejected
     #[test]
     fn different_major_version_should_be_rejected() {
         let data = make_xl_meta_with_version(
@@ -223,17 +222,17 @@ mod issue_01_xl_meta_version_too_strict {
         let result = XlMeta::from_bytes(&data);
         assert!(
             result.is_err(),
-            "不同 major 版本的 xl.meta 应被拒绝"
+            "xl.meta with different major version should be rejected"
         );
     }
 }
 
 // ========================================================================
-// Issue #4: read_xl_meta 跳过了版本兼容性检查
+// Issue #4: read_xl_meta skips version compatibility check
 // ========================================================================
-// 文件: crates/storage/src/format.rs:11-22
-// XlMeta::from_bytes 做了版本号校验，但 read_xl_meta 只校验 magic，
-// 跳过了版本检查。两条路径行为不一致。
+// File: crates/storage/src/format.rs:11-22
+// XlMeta::from_bytes performs version validation, but read_xl_meta only
+// checks the magic, skipping version check. The two code paths are inconsistent.
 // ========================================================================
 
 mod issue_04_read_xl_meta_skips_version_check {
@@ -241,14 +240,14 @@ mod issue_04_read_xl_meta_skips_version_check {
     use base::format::{XlMeta, XlMetaHeader};
     use storage::read_xl_meta;
 
-    /// read_xl_meta 应和 XlMeta::from_bytes 行为一致：
-    /// 对不兼容的 major 版本也返回错误
+    /// read_xl_meta should behave consistently with XlMeta::from_bytes:
+    /// return an error for incompatible major versions
     #[test]
     fn read_xl_meta_should_reject_incompatible_version() {
-        // 构造 major 版本不兼容的 xl.meta
+        // Construct xl.meta with incompatible major version
         let header = XlMetaHeader {
             magic: *b"XL2 ",
-            major: 99,  // 完全不兼容的 major
+            major: 99,  // Completely incompatible major
             minor: 0,
         };
         let body: &[u8] = &[0x90]; // empty msgpack array
@@ -260,13 +259,13 @@ mod issue_04_read_xl_meta_skips_version_check {
 
         assert!(
             result.is_err(),
-            "BUG 确认: read_xl_meta 跳过了版本号校验，接受了 major=99 的数据。\n\
-             而 XlMeta::from_bytes 会正确拒绝。两条路径行为不一致。\n\
-             修复: read_xl_meta 应委托给 XlMeta::from_bytes。"
+            "BUG CONFIRMED: read_xl_meta skipped version validation, accepted major=99 data.\n\
+             XlMeta::from_bytes correctly rejects it. The two paths are inconsistent.\n\
+             Fix: read_xl_meta should delegate to XlMeta::from_bytes."
         );
     }
 
-    /// sanity: read_xl_meta 应和 XlMeta::from_bytes 对相同数据产生相同结果
+    /// Sanity: read_xl_meta should produce same result as XlMeta::from_bytes for same data
     #[test]
     fn read_xl_meta_and_from_bytes_should_be_consistent() {
         let meta = XlMeta { versions: vec![] };
@@ -275,64 +274,64 @@ mod issue_04_read_xl_meta_skips_version_check {
         let result_read = read_xl_meta(&data_via_to_bytes);
         let result_from = XlMeta::from_bytes(&data_via_to_bytes);
 
-        // 两条路径应该都成功或都失败
+        // Both paths should succeed or both fail
         assert_eq!(
             result_read.is_ok(),
             result_from.is_ok(),
-            "read_xl_meta 和 XlMeta::from_bytes 行为不一致"
+            "read_xl_meta and XlMeta::from_bytes behavior is inconsistent"
         );
     }
 }
 
 // ========================================================================
-// Issue #8: is_xl_meta_erasure_info_valid 注释与实现不一致
+// Issue #8: is_xl_meta_erasure_info_valid comment vs implementation mismatch
 // ========================================================================
-// 文件: crates/storage/src/format.rs:50-56
-// 注释说 "data 必须与 parity 相等"，但 Go 版 MinIO 约束是 data >= parity。
-// 代码实现的是 data >= parity (正确)，但注释误导。
+// File: crates/storage/src/format.rs:50-56
+// Comment says "data must equal parity", but the actual MinIO constraint is data >= parity.
+// Code implements data >= parity (correct), but the comment is misleading.
 // ========================================================================
 
 mod issue_08_erasure_info_valid_comment_mismatch {
 
     use storage::is_xl_meta_erasure_info_valid;
 
-    /// 验证 data > parity 的情况合法（如 EC 4+2 配置）
+    /// Verify data > parity is valid (e.g., EC 4+2 configuration)
     ///
-    /// 注释说"必须相等"，但实际 MinIO 支持 data > parity。
+    /// Comment says "must be equal", but MinIO actually supports data > parity.
     #[test]
     fn data_greater_than_parity_should_be_valid() {
-        // EC 4+2: 4 个数据块，2 个校验块
+        // EC 4+2: 4 data blocks, 2 parity blocks
         assert!(
             is_xl_meta_erasure_info_valid(4, 2),
-            "BUG: is_xl_meta_erasure_info_valid(4, 2) 返回 false。\n\
-             但 EC(4,2) 是合法的 MinIO erasure code 配置。\n\
-             注释说 '必须相等' 是错误的——代码检查的是 data >= parity (正确)。\n\
-             修复: 纠正注释。"
+            "BUG: is_xl_meta_erasure_info_valid(4, 2) returned false.\n\
+             EC(4,2) is a valid MinIO erasure code configuration.\n\
+             The comment saying 'must be equal' is wrong -- code checks data >= parity (correct).\n\
+             Fix: Correct the comment."
         );
     }
 
-    /// EC 8+4 也应合法
+    /// EC 8+4 should also be valid
     #[test]
     fn data_greater_than_parity_8_plus_4_should_be_valid() {
         assert!(
             is_xl_meta_erasure_info_valid(8, 4),
-            "EC(8,4) 是合法的配置"
+            "EC(8,4) is a valid configuration"
         );
     }
 
-    /// EC 4+4 应合法 (data == parity)
+    /// EC 4+4 should be valid (data == parity)
     #[test]
     fn data_equal_to_parity_should_be_valid() {
         assert!(is_xl_meta_erasure_info_valid(4, 4));
     }
 
-    /// data=0 不合法
+    /// data=0 is invalid
     #[test]
     fn data_zero_should_be_invalid() {
         assert!(!is_xl_meta_erasure_info_valid(0, 2));
     }
 
-    /// parity=0 (无校验) 合法
+    /// parity=0 (no parity) is valid
     #[test]
     fn parity_zero_should_be_valid() {
         assert!(is_xl_meta_erasure_info_valid(4, 0));
@@ -340,17 +339,17 @@ mod issue_08_erasure_info_valid_comment_mismatch {
 }
 
 // ========================================================================
-// Issue #17: read_range offset 越界返回空 Vec，无法区分"越界"和"空数据"
+// Issue #17: read_range offset out-of-bounds returns empty Vec, cannot distinguish "out of bounds" from "empty data"
 // ========================================================================
-// 文件: crates/storage/src/xl_storage.rs:101-103
+// File: crates/storage/src/xl_storage.rs:101-103
 // ========================================================================
 
 mod issue_17_read_range_oob_ambiguous {
 
     use super::*;
 
-    /// read_range offset >= file_len 返回空 Vec，
-    /// 调用者无法区分"offset 越界"和"恰好读了 0 字节"
+    /// read_range offset >= file_len returns empty Vec,
+    /// caller cannot distinguish "offset out of bounds" from "read 0 bytes"
     #[tokio::test]
     async fn read_range_beyond_eof_returns_empty_not_error() {
         let dir = std::env::temp_dir().join(format!("reg_17_{}", uuid::Uuid::new_v4()));
@@ -359,24 +358,24 @@ mod issue_17_read_range_oob_ambiguous {
         storage.make_volume("bucket").await.unwrap();
         storage.write_all("bucket", "small.bin", b"hi").await.unwrap();
 
-        // offset = 100 (远超文件大小 2)
+        // offset = 100 (far beyond file size 2)
         let result = storage.read_range("bucket", "small.bin", 100, 10).await;
 
-        // 当前实现: 返回 Ok(vec![]) — 与 offset=2, length=0 无法区分
-        // 正确行为: 返回 Err 以区分"越界"和"空数据"
+        // Current implementation: returns Ok(vec![]) -- indistinguishable from offset=2, length=0
+        // Expected behavior: return Err to distinguish "out of bounds" from "empty data"
         match result {
             Ok(data) if data.is_empty() => {
-                // 当前行为 — 静默返回空，上层无法判断是越界还是空数据
+                // Current behavior -- silently returns empty, caller cannot distinguish
                 eprintln!(
-                    "ISSUE #17 仍在: read_range(offset=100) 返回 Ok([])。\n\
-                     调用者无法区分\"offset 越界\"和\"读了 0 字节有效数据\"。\n\
-                     建议: 越界时返回 Err 或在文档中明确说明。"
+                    "ISSUE #17 still present: read_range(offset=100) returned Ok([]).\n\
+                     Caller cannot distinguish \"offset out of bounds\" from \"read 0 bytes of valid data\".\n\
+                     Suggestion: Return Err on out-of-bounds or document the behavior explicitly."
                 );
             }
-            Ok(_) => panic!("不应该返回非空数据"),
+            Ok(_) => panic!("should not return non-empty data"),
             Err(_) => {
-                // 如果返回了错误 — 说明 bug 已修复！
-                // 这是我们期待的行为
+                // If error is returned -- bug is fixed!
+                // This is the expected behavior
             }
         }
 
@@ -385,16 +384,16 @@ mod issue_17_read_range_oob_ambiguous {
 }
 
 // ========================================================================
-// Issue #25: disk_info 返回硬编码的 total: 0, free: 0, used: 0
+// Issue #25: disk_info returns hardcoded total: 0, free: 0, used: 0
 // ========================================================================
-// 文件: crates/storage/src/xl_storage.rs:54-56
+// File: crates/storage/src/xl_storage.rs:54-56
 // ========================================================================
 
 mod issue_25_disk_info_hardcoded_zeros {
 
     use super::*;
 
-    /// disk_info 应该返回真实的磁盘空间信息，而非硬编码 0
+    /// disk_info should return real disk space info, not hardcoded 0
     #[tokio::test]
     async fn disk_info_should_return_real_disk_space() {
         let dir = std::env::temp_dir().join(format!("reg_25_{}", uuid::Uuid::new_v4()));
@@ -403,18 +402,18 @@ mod issue_25_disk_info_hardcoded_zeros {
 
         let info = storage.disk_info().await.unwrap();
 
-        // 临时目录所在磁盘不可能 total 为 0
+        // The disk where the temp dir resides cannot have total=0
         if info.total == 0 && info.free == 0 {
             eprintln!(
-                "ISSUE #25 仍在: disk_info 返回 total={}, free={}, used={}。\n\
-                 这些值被硬编码为 0。\n\
-                 修复: 使用 statvfs/statfs 获取真实磁盘空间。",
+                "ISSUE #25 still present: disk_info returned total={}, free={}, used={}.\n\
+                 These values are hardcoded to 0.\n\
+                 Fix: Use statvfs/statfs to get real disk space.",
                 info.total, info.free, info.used
             );
         }
 
-        // 至少 online 应该是 true
-        assert!(info.online, "磁盘应在线");
+        // At least online should be true
+        assert!(info.online, "disk should be online");
         assert_eq!(info.healing, false);
 
         let _ = std::fs::remove_dir_all(&dir);
@@ -422,37 +421,37 @@ mod issue_25_disk_info_hardcoded_zeros {
 }
 
 // ========================================================================
-// Issue #14: is_online 过于简陋 — 仅检查目录存在
+// Issue #14: is_online is too simplistic -- only checks directory existence
 // ========================================================================
-// 文件: crates/storage/src/xl_storage.rs:66-68
-// 仅检查 disk_path.exists() 不意味着磁盘可读写。
-// NFS stale mount、权限变更、磁盘只读重挂等情况不会被检测。
+// File: crates/storage/src/xl_storage.rs:66-68
+// Checking disk_path.exists() alone does not mean the disk is readable/writable.
+// NFS stale mounts, permission changes, read-only remounts, etc. are not detected.
 // ========================================================================
 
 mod issue_14_is_online_too_simplistic {
 
     use super::*;
 
-    /// is_online 对不存在的路径返回 false
+    /// is_online should return false for non-existent paths
     #[tokio::test]
     async fn is_online_should_return_false_for_nonexistent_path() {
         let nonexistent = std::env::temp_dir().join(format!("reg_14_nonexistent_{}", uuid::Uuid::new_v4()));
         let storage = XlStorage::new(&nonexistent, "test");
-        assert!(!storage.is_online().await, "不存在的路径 is_online 应返回 false");
+        assert!(!storage.is_online().await, "non-existent path should return false from is_online");
     }
 
-    /// is_online 对存在的目录返回 true (但可能不可读写)
+    /// is_online should return true for existing directories (but may not be writable)
     #[tokio::test]
     async fn is_online_should_return_true_for_existing_dir() {
         let dir = std::env::temp_dir().join(format!("reg_14_{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let storage = XlStorage::new(&dir, "test");
-        assert!(storage.is_online().await, "存在的目录 is_online 应返回 true");
+        assert!(storage.is_online().await, "existing directory should return true from is_online");
 
-        // 但注意：即使 is_online 返回 true，目录也不一定可读写
-        // 例如 NFS stale mount、只读文件系统等场景。
-        // 当前实现无法检测这些情况。
-        // 建议: 添加周期性 IO 健康检查 (如 .minio.sys/.healthcheck)
+        // Note: even if is_online returns true, the directory may not be readable/writable.
+        // e.g., NFS stale mount, read-only filesystem, etc.
+        // The current implementation cannot detect these cases.
+        // Suggestion: add periodic IO health checks (e.g., .minio.sys/.healthcheck)
 
         let _ = std::fs::remove_dir_all(&dir);
     }

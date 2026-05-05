@@ -2,7 +2,7 @@
 name = "storage"
 version = "0.1.0"
 edition = "2024"
-description = "StorageAPI trait + 本地磁盘驱动 (xlStorage)"
+description = "StorageAPI trait + local disk driver (XlStorage)"
 
 [dependencies]
 base = { workspace = true }

@@ -1,74 +1,56 @@
-//! server: MinIO Rust 二进制入口 (库形式)
+//! server: MinIO Rust binary entry point (library form)
 //!
-//! 对应 Go: cmd/ 下的全部功能
+//! This crate provides both [[bin]] (main.rs) and [lib] (lib.rs) targets,
+//! so that integration tests (tests/) can reference the library's public API.
 //!
-//! 本 crate 同时提供 [[bin]] (main.rs) 和 [lib] (lib.rs) 目标，
-//! 以便集成测试 (tests/) 可以引用库中的公开 API。
-//!
-//! Phase 1: 仅定义模块骨架，实际功能逐步实现。
+//! Phase 1: module skeleton only; actual functionality is implemented incrementally.
 
 // ============================================================================
-// 模块声明 — 每个模块对应 Go cmd/ 下的一个功能域
+// Module declarations
 // ============================================================================
 
-/// 端点 (Endpoint) 类型与端点解析
-///
-/// 对应 Go: cmd/endpoint.go (+ endpoint_test.go, endpoint_contrib_test.go, endpoint-ellipses_test.go)
+/// Endpoint types and endpoint resolution
 pub mod endpoint {
-    // TODO: Phase 2 - 实现 Endpoint, Endpoints, 省略号展开
+    // TODO: Phase 2 - implement Endpoint, Endpoints, ellipsis expansion
 }
 
-/// 存储池布局
-///
-/// 对应 Go: cmd/storage-*.go, cmd/erasure-*.go
+/// Storage pool layout
 pub mod layout {
-    // TODO: Phase 2 - 存储池、Set 划分、EC 布局
+    // TODO: Phase 2 - storage pool, set partitioning, EC layout
 }
 
-/// 网络工具
-///
-/// 对应 Go: cmd/net.go (+ net_test.go)
+/// Network utilities
 pub mod net {
-    // TODO: Phase 2 - IP 排序、Host:Port 解析、本地地址判断
+    // TODO: Phase 2 - IP sorting, Host:Port parsing, local address detection
 }
 
-/// 通用工具函数
-///
-/// 对应 Go: cmd/utils.go (+ utils_test.go)
+/// General utility functions
 pub mod utils {
-    // TODO: Phase 2 - 对象大小检查、路径解析、LCP、ETag 等
+    // TODO: Phase 2 - object size validation, path parsing, LCP, ETag, etc.
 }
 
-/// 服务器启动流程与配置
-///
-/// 对应 Go: cmd/server-main.go, cmd/server-startup-msg.go
+/// Server startup flow and configuration
 pub mod server {
-    // TODO: Phase 2 - Server 启动、global config、启动消息
+    // TODO: Phase 2 - Server startup, global config, startup messages
 }
 
-/// 管理员处理
-///
-/// 对应 Go: cmd/admin-handlers.go
+/// Admin handlers
 pub mod admin {
-    // TODO: Phase 2 - 管理 API 路由和 handler
+    // TODO: Phase 2 - admin API routing and handlers
 }
 
-/// 更新检查
-///
-/// 对应 Go: cmd/update.go, cmd/update-notifier.go
+/// Update checking
 pub mod update {
-    // TODO: Phase 2 - 版本更新检查和通知
+    // TODO: Phase 2 - version update check and notification
 }
 
-/// 操作系统工具
-///
-/// 对应 Go: cmd/os-readdir.go, cmd/os-reliable.go
+/// OS utilities
 pub mod osutil {
     // TODO: Phase 2 - readDir, mkdirAll, renameAll
 }
 
-/// ARN 类型
+/// ARN type
 pub use base::format;
 
-// 版本常量，对应 Go: cmd/version.go
+// Version constant
 pub const VERSION: &str = "DEVELOPMENT.GOGET";

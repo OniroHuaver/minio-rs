@@ -1,49 +1,32 @@
-//! 批量作业(Batch Job)测试
+//! Batch job tests
 //!
-//! 对应 Go:
-//!   `cmd/batch-handlers_test.go`
-//!   `cmd/batch-handlers_gen_test.go`
-//!   `cmd/batch-expire_test.go`
-//!   `cmd/batch-expire_gen_test.go`
-//!   `cmd/batch-replicate_test.go`
-//!   `cmd/batch-replicate_gen_test.go`
-//!   `cmd/batch-rotate_test.go`
-//!   `cmd/batch-job-common-types_gen_test.go`
-//!   `cmd/batch-job-common-types_test.go`
-//!
-//! 测试批量过期、复制、轮转等作业的 YAML 配置解析和执行逻辑。
+//! Tests batch expire, replicate, rotate job YAML config parsing and execution logic.
 
 // ============================================================
-// Batch Job Prefix YAML 解析
-// 对应 Go: batch-job-common-types_test.go
+// Batch Job Prefix YAML parsing
 // ============================================================
 
-/// 验证 BatchJobPrefix 的 YAML 反序列化(字符串和数组形式)。
-///
-/// Go: `TestBatchJobPrefix_UnmarshalYAML`
+/// Verifies BatchJobPrefix YAML deserialization (string and array forms).
 #[test]
 #[ignore]
 // TODO: implement when batch job types are available
 fn test_batch_job_prefix_unmarshal_yaml() {
-    // // 单字符串形式
+    // // Single string form
     // let yaml_str = "prefix: \"foo\"\n";
     // let parsed: BatchJobPrefix = serde_yaml::from_str(yaml_str).unwrap();
     // assert_eq!(parsed.as_slice(), &["foo"]);
     //
-    // // 数组形式
+    // // Array form
     // let yaml_str = "prefix:\n  - \"foo\"\n  - \"bar\"\n";
     // let parsed: BatchJobPrefix = serde_yaml::from_str(yaml_str).unwrap();
     // assert_eq!(parsed.as_slice(), &["foo", "bar"]);
 }
 
 // ============================================================
-// Batch Expire 测试
-// 对应 Go: batch-expire_test.go
+// Batch Expire tests
 // ============================================================
 
-/// 验证批量过期作业的 YAML 配置解析和执行规则。
-///
-/// Go: `batch-expire_test.go`, `batch-expire_gen_test.go`
+/// Verifies batch expire job YAML config parsing and execution rules.
 #[test]
 #[ignore]
 // TODO: implement when batch expire types are available
@@ -65,13 +48,10 @@ fn test_batch_expire_config() {
 }
 
 // ============================================================
-// Batch Replicate 测试
-// 对应 Go: batch-replicate_test.go
+// Batch Replicate tests
 // ============================================================
 
-/// 验证批量复制作业的 YAML 配置解析。
-///
-/// Go: `batch-replicate_test.go`, `batch-replicate_gen_test.go`
+/// Verifies batch replicate job YAML config parsing.
 #[test]
 #[ignore]
 // TODO: implement when batch replicate types are available
@@ -93,13 +73,10 @@ fn test_batch_replicate_config() {
 }
 
 // ============================================================
-// Batch Rotate 测试
-// 对应 Go: batch-rotate_test.go
+// Batch Rotate tests
 // ============================================================
 
-/// 验证批量轮转(密钥轮转)作业的 YAML 配置解析。
-///
-/// Go: `batch-rotate_test.go`
+/// Verifies batch rotate (key rotation) job YAML config parsing.
 #[test]
 #[ignore]
 // TODO: implement when batch rotate types are available
@@ -109,7 +86,7 @@ fn test_batch_rotate_config() {
     //   versioning: "preserve"
     //   prefix: "secrets/"
     //   rules:
-    //     - olderThan: "168h"  # 7 days
+    //     - olderThan: "168h"  // 7 days
     //       encrypt:
     //         type: "SSE-S3"
     // "#;
@@ -118,35 +95,30 @@ fn test_batch_rotate_config() {
 }
 
 // ============================================================
-// Batch 通用类型序列化
-// 对应 Go: batch-job-common-types_gen_test.go
+// Batch common types serialization
 // ============================================================
 
-/// 验证 BatchJobCommonTypes 的序列化/反序列化。
-///
-/// Go: `batch-job-common-types_gen_test.go`
+/// Verifies BatchJobCommonTypes serialization/deserialization.
 #[test]
 #[ignore]
 // TODO: implement when batch job common types are available
 fn test_batch_job_common_types_serde() {
-    // // 验证 BatchJobPrefix, NotificationConfig, TargetInfo 等类型的
-    // // YAML/JSON 序列化 roundtrip
+    // // Verify YAML/JSON serialization roundtrip for
+    // // BatchJobPrefix, NotificationConfig, TargetInfo etc.
 }
 
 // ============================================================
-// Batch Handler 测试
-// 对应 Go: batch-handlers_test.go
+// Batch Handler tests
 // ============================================================
 
-/// 验证批量作业 API handler。
+/// Verifies batch job API handler.
 ///
-/// Go: `batch-handlers_test.go`, `batch-handlers_gen_test.go`
-/// 测试批量作业的启动、状态查询和取消。
+/// Tests batch job start, status query, and cancellation.
 #[test]
 #[ignore]
 // TODO: implement when batch job handler is available
 fn test_batch_job_handlers() {
-    // // POST /batch-job/start (启动新作业)
-    // // GET /batch-job/status/{job_id} (查询作业状态)
-    // // DELETE /batch-job/cancel/{job_id} (取消作业)
+    // // POST /batch-job/start (start new job)
+    // // GET /batch-job/status/{job_id} (query job status)
+    // // DELETE /batch-job/cancel/{job_id} (cancel job)
 }

@@ -1,23 +1,19 @@
 //! Erasure metadata unit tests.
 //!
-//! 对应 Go: `cmd/erasure-metadata_test.go`
-//!
-//! 测试 FileInfo 相关的元数据操作:
+//! Tests FileInfo-related metadata operations:
 //! AddObjectPart, ObjectPartIndex, ObjectToPartOffset,
 //! findFileInfoInQuorum, TransitionInfoEquals, SkipTierFreeVersion,
-//! listObjectParities, commonParity 等。
+//! listObjectParities, commonParity, etc.
 
 use erasure::*;
 
-/// 测试 FileInfo.AddObjectPart() 和 objectPartIndex()。
+/// Tests FileInfo.AddObjectPart() and objectPartIndex().
 ///
-/// Go 源: `TestAddObjectPart`
-///
-/// 验证:
-/// - 按序添加 part (1, 2, 4, 5, 7) 后索引正确
-/// - 插入已存在的 part (3) 后索引正确
-/// - 替换已存在的 part (4) 后索引正确
-/// - 查询不存在的 part (6) 返回 -1
+/// Verify:
+/// - Correct indices after adding parts in order (1, 2, 4, 5, 7)
+/// - Correct index after inserting existing part (3)
+/// - Correct index after replacing existing part (4)
+/// - Querying non-existent part (6) returns -1
 #[test]
 #[ignore]
 fn test_add_object_part() {
@@ -48,98 +44,86 @@ fn test_add_object_part() {
     */
 }
 
-/// 测试 objectPartIndex() 函数。
+/// Tests objectPartIndex() function.
 ///
-/// Go 源: `TestObjectPartIndex`
-///
-/// 按乱序添加 part (2, 1, 5, 4, 7)，验证:
-/// - part 1 的索引为 0
-/// - part 2 的索引为 1
-/// - part 5 的索引为 3
-/// - part 4 的索引为 2
-/// - part 7 的索引为 4
-/// - part 6 的索引为 -1
+/// Add parts in random order (2, 1, 5, 4, 7), verify:
+/// - part 1 index is 0
+/// - part 2 index is 1
+/// - part 5 index is 3
+/// - part 4 index is 2
+/// - part 7 index is 4
+/// - part 6 index is -1
 #[test]
 #[ignore]
 fn test_object_part_index() {
     // TODO: implement when object_part_index is available
 }
 
-/// 测试 FileInfo.ObjectToPartOffset()。
+/// Tests FileInfo.ObjectToPartOffset().
 ///
-/// Go 源: `TestObjectToPartOffset`
-///
-/// 有 5 个 part (大小分别为 1+MiB, 2+MiB, 4+MiB, 5+MiB, 7+MiB)，
-/// 验证各种 offset 的 part 索引和内部偏移:
+/// 5 parts (sizes: 1+MiB, 2+MiB, 4+MiB, 5+MiB, 7+MiB),
+/// verify part index and internal offset for various offsets:
 /// - offset=0 -> part 0, offset=0
 /// - offset=1MiB -> part 0, offset=1MiB
 /// - offset=1+MiB -> part 1, offset=0
 /// - offset=2+MiB -> part 1, offset=1
-/// - offset=-1 -> part 0, offset=-1 (零大小对象边界情况)
-/// - offset=总大小-1 -> 最后一个 part 的正确偏移
-/// - offset=总大小 -> InvalidRange 错误
+/// - offset=-1 -> part 0, offset=-1 (zero-size object edge case)
+/// - offset=total_size-1 -> correct offset in last part
+/// - offset=total_size -> InvalidRange error
 #[test]
 #[ignore]
 fn test_object_to_part_offset() {
     // TODO: implement when FileInfo::object_to_part_offset is available
 }
 
-/// 测试 findFileInfoInQuorum() 函数。
+/// Tests findFileInfoInQuorum() function.
 ///
-/// Go 源: `TestFindFileInfoInQuorum`
-///
-/// 在 16 盘中模拟各种 quorum 场景:
-/// 1. 所有 16 个元数据一致 -> 成功, quorum 8
-/// 2. 只有 7 个元数据一致 -> InsufficientReadQuorum
-/// 3. 所有 16 个一致但请求 quorum=0 -> InsufficientReadQuorum
-/// 4. 含 successor modtime (in quorum) -> 返回正确的 succ mod time
-/// 5. 含 successor modtime (no quorum) -> IsLatest=true
-/// 6. 含 num versions (in quorum) -> 返回正确的版本数
-/// 7. 含 num versions (no quorum) -> 返回 0
+/// Simulate various quorum scenarios on 16 disks:
+/// 1. All 16 metadata consistent -> success, quorum 8
+/// 2. Only 7 metadata consistent -> InsufficientReadQuorum
+/// 3. All 16 consistent but quorum=0 requested -> InsufficientReadQuorum
+/// 4. With successor modtime (in quorum) -> returns correct succ mod time
+/// 5. With successor modtime (no quorum) -> IsLatest=true
+/// 6. With num versions (in quorum) -> returns correct version count
+/// 7. With num versions (no quorum) -> returns 0
 #[test]
 #[ignore]
 fn test_find_file_info_in_quorum() {
     // TODO: implement when findFileInfoInQuorum, FileInfo with SuccessorModTime and NumVersions are available
 }
 
-/// 测试 FileInfo.TransitionInfoEquals()。
+/// Tests FileInfo.TransitionInfoEquals().
 ///
-/// Go 源: `TestTransitionInfoEquals`
-///
-/// 使用两个不同的 tier 配置，通过位掩码枚举 8 种组合
-/// (transition tier, remote obj name, remote version ID 各两种取值)，
-/// 验证 TransitionInfoEquals 的正确性:
-/// - 当所有 4 个字段都匹配时返回 true
-/// - 任一字段不同时返回 false
+/// Uses two different tier configurations, enumerates 8 combinations via bitmask
+/// (transition tier, remote obj name, remote version ID each with two values),
+/// verifies TransitionInfoEquals correctness:
+/// - Returns true when all 4 fields match
+/// - Returns false when any field differs
 #[test]
 #[ignore]
 fn test_transition_info_equals() {
     // TODO: implement when FileInfo::transition_info_equals is available
 }
 
-/// 测试 SkipTierFreeVersion 标记。
+/// Tests SkipTierFreeVersion flag.
 ///
-/// Go 源: `TestSkipTierFreeVersion`
-///
-/// 验证 FileInfo 的 SkipTierFreeVersion 标记可以被设置和检查。
+/// Verifies the SkipTierFreeVersion flag on FileInfo can be set and checked.
 #[test]
 #[ignore]
 fn test_skip_tier_free_version() {
     // TODO: implement when FileInfo::set_skip_tier_free_version and skip_tier_free_version are available
 }
 
-/// 测试 listObjectParities 和 commonParity 函数。
+/// Tests listObjectParities and commonParity functions.
 ///
-/// Go 源: `TestListObjectParities`
+/// Test parity list calculation for tiered and non-tiered objects:
+/// - Tiered objects (with TransitionTier): simple majority consensus only
+/// - Non-tiered objects: EcM (data blocks) majority consensus required
 ///
-/// 测试分层对象和非分层对象的 parity 列表计算:
-/// - 分层对象 (有 TransitionTier): 只需要简单多数共识
-/// - 非分层对象: 需要 EcM (data blocks) 多数共识
-///
-/// 覆盖:
-/// - 15/16 盘, parity 3/4
-/// - 多数共识达成/未达成/正好达成
-/// - 非分层对象精确 EcM 边界
+/// Coverage:
+/// - 15/16 disks, parity 3/4
+/// - Majority reached/not reached/exactly reached
+/// - Precise EcM boundary for non-tiered objects
 #[test]
 #[ignore]
 fn test_list_object_parities() {

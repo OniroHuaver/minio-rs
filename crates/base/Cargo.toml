@@ -2,7 +2,7 @@
 name = "base"
 version = "0.1.0"
 edition = "2024"
-description = "核心类型定义：存储常量、xl.meta 格式、EC 参数、错误类型"
+description = "Core types: storage constants, xl.meta format, EC params, error types"
 
 [dependencies]
 serde = { workspace = true }

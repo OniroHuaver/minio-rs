@@ -1,6 +1,4 @@
-//! server: MinIO Rust 二进制入口
-//!
-//! 对应 Go: cmd/server-main.go + main.go
+//! server: MinIO Rust binary entry point
 
 fn main() {
     tracing_subscriber::fmt::init();

@@ -1,33 +1,29 @@
-//! xl.meta format 工具函数测试
+//! xl.meta format utility function tests
 //!
-//! 对应 Go: cmd/xl-storage-format-utils_test.go
-//!
-//! 测试 hash_deterministic_string 和 get_file_info_versions。
+//! Tests hash_deterministic_string and get_file_info_versions.
 
 use std::collections::HashMap;
 use storage::hash_deterministic_string;
 
-/// 测试 hash_deterministic_string 的确定性哈希
+/// Tests hash_deterministic_string deterministic hashing
 ///
-/// 验证:
-/// - 对同一 map 重复调用 100 次，结果一致
-/// - 添加新 key-value 后哈希变化 (无碰撞)
-/// - 删除 key 添加不同 key 后哈希变化
-/// - key/value 互换后哈希变化
+/// Verify:
+/// - Same map called 100 times produces the same result
+/// - Hash changes after adding new key-value (no collision)
+/// - Hash changes after adding different key
+/// - Hash changes after swapping key/value
 ///
-/// 场景包含: 空 map, 单个 entry, 多个 entry, 空 value。
-///
-/// 对应 Go: Test_hashDeterministicString
+/// Scenarios include: empty map, single entry, multiple entries, empty value.
 #[test]
 fn test_hash_deterministic_string() {
-    // 空 map
+    // Empty map
     let empty: HashMap<String, String> = HashMap::new();
     let want_empty = hash_deterministic_string(&empty);
     for _ in 0..100 {
         assert_eq!(hash_deterministic_string(&empty), want_empty);
     }
 
-    // 单 entry
+    // Single entry
     let mut single = HashMap::new();
     single.insert("key".into(), "value".into());
     let want_single = hash_deterministic_string(&single);
@@ -36,7 +32,7 @@ fn test_hash_deterministic_string() {
     }
     assert_ne!(want_single, want_empty);
 
-    // 多 entry
+    // Multiple entries
     let mut multi = HashMap::new();
     multi.insert("x-amz-restore".into(), "FAILED".into());
     multi.insert("content-md5".into(), "uuid-value".into());
@@ -47,25 +43,23 @@ fn test_hash_deterministic_string() {
         assert_eq!(hash_deterministic_string(&multi), want_multi);
     }
 
-    // 添加 key 后哈希变化
+    // Hash changes after adding key
     let mut changed = multi.clone();
     changed.insert("new-key".into(), "new-value".into());
     assert_ne!(hash_deterministic_string(&changed), want_multi);
 
-    // 修改 value 后哈希变化
+    // Hash changes after modifying value
     let mut modified = multi.clone();
     modified.insert("content-md5".into(), "different-value".into());
     assert_ne!(hash_deterministic_string(&modified), want_multi);
 
-    // key/value 互换后哈希变化
+    // Hash changes after swapping key/value
     let mut swapped = HashMap::new();
     swapped.insert("value".into(), "key".into());
     assert_ne!(hash_deterministic_string(&swapped), want_single);
 }
 
-/// 测试 get_file_info_versions 获取文件版本列表
-///
-/// 对应 Go: TestGetFileInfoVersions
+/// Tests get_file_info_versions for file version listing
 #[test]
 #[ignore]
 fn test_get_file_info_versions() {

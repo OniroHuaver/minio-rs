@@ -1,18 +1,15 @@
-//! 磁盘信息获取测试
+//! Disk info retrieval tests
 //!
-//! 对应 Go: internal/disk/disk_test.go
-//!
-//! 测试 get_disk_info 函数，验证返回的磁盘信息包含有效的 FSType。
+//! Tests the get_disk_info function, verifying the returned disk
+//! info contains a valid FSType.
 
 use storage::*;
 
-/// 测试 get_info 获取磁盘信息
+/// Tests get_info for disk info retrieval
 ///
-/// 场景:
-/// - 对临时目录调用 get_info
-/// - 验证 FSType 不是 "UNKNOWN"
-///
-/// 对应 Go: TestFree
+/// Scenarios:
+/// - Call get_info on a temp directory
+/// - Verify FSType is not "UNKNOWN"
 #[test]
 #[ignore]
 fn test_free() {

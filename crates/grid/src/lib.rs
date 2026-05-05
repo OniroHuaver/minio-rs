@@ -1,10 +1,8 @@
-//! grid: 分布式 RPC 通信层
+//! grid: Distributed RPC communication layer
 //!
-//! 对应 Go: internal/grid/
-//!
-//! Phase 2 实现，当前为占位。
+//! Phase 2 implementation, currently a placeholder.
 
-/// Grid RPC 节点信息
+/// Grid RPC node information
 #[derive(Debug, Clone)]
 pub struct NodeInfo {
     pub id: String,

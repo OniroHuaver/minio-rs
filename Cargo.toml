@@ -28,6 +28,7 @@ sha2 = "0.10"
 md-5 = "0.10"
 crc32fast = "1"
 siphasher = "1"         # SipHash-2-4 (对象→Set 路由)
+highway = "0.8"          # HighwayHash (per-shard bitrot 校验)
 
 # Erasure Coding
 reed-solomon-erasure = "6"

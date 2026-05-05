@@ -2,7 +2,7 @@
 name = "iam"
 version = "0.1.0"
 edition = "2024"
-description = "IAM 子系统：用户/策略/组管理、STS 临时凭证、策略评估，Phase 3 实现"
+description = "IAM subsystem: user/policy/group management, STS temporary credentials, policy evaluation"
 
 [dependencies]
 base = { workspace = true }

@@ -1,85 +1,71 @@
-//! Grid 类型测试
+//! Grid type tests
 //!
-//! 对应 Go: internal/grid/grid_types_test.go, internal/grid/types_test.go
-//!
-//! 测试 testRequest/testResponse MessagePack 序列化, MSS/Bytes 序列化。
+//! Tests testRequest/testResponse MessagePack serialization, MSS/Bytes serialization.
 
-/// 测试 testRequest MessagePack 序列化/反序列化 (含 Encode/Decode)
-///
-/// Go: TestMarshalUnmarshaltestRequest (由 msgp 生成)
+/// Tests testRequest MessagePack serialization/deserialization (including Encode/Decode)
 #[test]
 #[ignore]
 fn test_test_request_msgp() {
     // TODO: implement when testRequest implements MessagePack
     //
-    // Go 逻辑:
+    // Logic:
     //   v := testRequest{}
     //   bts, _ := v.MarshalMsg(nil)
     //   v2 := testRequest{}
     //   left, _ := v2.UnmarshalMsg(bts)
     //   len(left) == 0
-    //   msgp.Skip(bts) 后无剩余
+    //   msgp.Skip(bts) no remainder
 }
 
-/// 测试 testResponse MessagePack 序列化/反序列化 (含 Encode/Decode)
-///
-/// Go: TestMarshalUnmarshaltestResponse (由 msgp 生成)
+/// Tests testResponse MessagePack serialization/deserialization (including Encode/Decode)
 #[test]
 #[ignore]
 fn test_test_response_msgp() {
     // TODO: implement when testResponse implements MessagePack
     //
-    // Go 逻辑: 同上, 但 testResponse 包含 Embedded testRequest
+    // Logic: same as above, but testResponse contains Embedded testRequest
 }
 
-/// 测试 MSS (map[string]string) MessagePack 序列化/反序列化
-///
-/// Go: TestMarshalUnmarshalMSS
+/// Tests MSS (map[string]string) MessagePack serialization/deserialization
 #[test]
 #[ignore]
 fn test_mss_msgp_roundtrip() {
     // TODO: implement when MSS type available
     //
-    // Go 逻辑:
+    // Logic:
     //   v := MSS{"abc": "def", "ghi": "jkl"}
-    //   v.MarshalMsg → v2.UnmarshalMsg
+    //   v.MarshalMsg -> v2.UnmarshalMsg
     //   reflect.DeepEqual(v, v2)
-    //   msgp.Skip 验证
+    //   msgp.Skip verify
 }
 
-/// 测试 MSS nil 序列化
-///
-/// Go: TestMarshalUnmarshalMSSNil
+/// Tests MSS nil serialization
 #[test]
 #[ignore]
 fn test_mss_msgp_nil() {
     // TODO: implement when MSS available
     //
-    // Go 逻辑:
-    //   v := MSS(nil) → marshal → unmarshal into pre-alloc map
+    // Logic:
+    //   v := MSS(nil) -> marshal -> unmarshal into pre-alloc map
     //   reflect.DeepEqual(v, v2)
 }
 
-/// 测试 Bytes MessagePack 序列化
-///
-/// Go: TestMarshalUnmarshalBytes
+/// Tests Bytes MessagePack serialization
 #[test]
 #[ignore]
 fn test_bytes_msgp_roundtrip() {
     // TODO: implement when Bytes type available
     //
-    // Go 逻辑:
+    // Logic:
     //   v := Bytes("abc123123123")
-    //   往返验证 reflect.DeepEqual
+    //   round-trip verify reflect.DeepEqual
 }
 
-/// 测试 Bytes nil 序列化
-///
-/// Go: TestMarshalUnmarshalBytesNil
+/// Tests Bytes nil serialization
 #[test]
 #[ignore]
 fn test_bytes_msgp_nil() {
     // TODO: implement when Bytes available
     //
-    // Go 逻辑: Bytes(nil) → marshal → unmarshal → DeepEqual
+    // Logic: Bytes(nil) -> marshal -> unmarshal -> DeepEqual
 }

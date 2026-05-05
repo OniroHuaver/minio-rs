@@ -1,19 +1,9 @@
-//! 分布式/本地锁测试
+//! Distributed/local lock tests
 //!
-//! 对应 Go: internal/dsync/drwmutex_test.go, internal/dsync/dsync_test.go,
-//!          internal/dsync/dsync-client_test.go, internal/dsync/dsync-server_test.go,
-//!          internal/dsync/lock-args_gen_test.go,
-//!          internal/lsync/lrwmutex_test.go,
-//!          internal/lock/lock_test.go, internal/lock/lock_windows_test.go
-//!
-//! 测试分布式 RWMutex、本地 RWMutex、文件锁等同步原语。
-//! 当前 Phase 1 仅作占位。
+//! Tests distributed RWMutex, local RWMutex, file locks and other synchronization primitives.
+//! Currently Phase 1 placeholder.
 
-// ============================================================================
-// Go: internal/dsync/dsync_test.go (分布式锁集成测试)
-// ============================================================================
-
-// Go 测试常量 (供 TODO 实现时使用)
+// Test constants (for TODO implementation use)
 #[allow(dead_code)]
 const TEST_DRW_MUTEX_ACQUIRE_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(250);
 #[allow(dead_code)]
@@ -23,370 +13,296 @@ const TEST_DRW_MUTEX_UNLOCK_CALL_TIMEOUT: std::time::Duration = std::time::Durat
 #[allow(dead_code)]
 const TEST_DRW_MUTEX_REFRESH_INTERVAL: std::time::Duration = std::time::Duration::from_millis(100);
 
-/// 测试简单锁 (Lock / Unlock)
-///
-/// Go: TestSimpleLock
+/// Test simple lock (Lock / Unlock)
 #[test]
 #[ignore]
 fn test_dsync_simple_lock() {
     // TODO: implement when DRWMutex + Dsync + NetLocker available
     //
-    // Go 逻辑:
+    // Steps:
     //   dm := NewDRWMutex(ds, "test")
     //   dm.Lock(id, source)
-    //   time.Sleep(testDrwMutexRefreshCallTimeout)
+    //   time::sleep(testDrwMutexRefreshCallTimeout)
     //   dm.Unlock(ctx)
 }
 
-/// 测试锁的多次 Lock/Unlock
-///
-/// Go: TestSimpleLockUnlockMultipleTimes
+/// Test multiple Lock/Unlock cycles
 #[test]
 #[ignore]
 fn test_dsync_simple_lock_unlock_multiple_times() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑: 依次 Lock/Unlock 5 次, 每次间隔随机 10-60ms
+    // Steps: Lock/Unlock 5 times sequentially, random 10-60ms intervals
 }
 
-/// 测试两个并发的写锁 (同一资源, 第二个等待第一个释放)
-///
-/// Go: TestTwoSimultaneousLocksForSameResource
+/// Test two concurrent write locks on same resource (second waits for first release)
 #[test]
 #[ignore]
 fn test_dsync_two_simultaneous_locks_same_resource() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑:
-    //   dm1st.Lock → goroutine 5*timeout 后 Unlock
-    //   dm2nd.Lock (等待获取) → 获取后 Unlock
+    // Steps:
+    //   dm1st.Lock -> thread unlocks after 5*timeout
+    //   dm2nd.Lock (waits to acquire) -> acquires then Unlock
 }
 
-/// 测试三个并发的写锁 (同一资源, 排队获取)
-///
-/// Go: TestThreeSimultaneousLocksForSameResource
+/// Test three concurrent write locks on same resource (queued acquisition)
 #[test]
 #[ignore]
 fn test_dsync_three_simultaneous_locks_same_resource() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑:
-    //   dm1st.Lock → goroutine 中 2*timeout 后 Unlock
-    //   dm2nd 和 dm3rd 各自获取锁并交叉释放
-    //   验证总耗时 >= 3 × 2 × testDrwMutexAcquireTimeout
+    // Steps:
+    //   dm1st.Lock -> thread unlocks after 2*timeout
+    //   dm2nd and dm3rd each acquire lock and release alternately
+    //   Verify total time >= 3 x 2 x testDrwMutexAcquireTimeout
 }
 
-/// 测试两个并发的写锁 (不同资源, 同时获取)
-///
-/// Go: TestTwoSimultaneousLocksForDifferentResources
+/// Test two concurrent write locks on different resources (acquire simultaneously)
 #[test]
 #[ignore]
 fn test_dsync_two_simultaneous_locks_different_resources() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑:
-    //   dm1.Lock("aap"), dm2.Lock("noot") → 同时成功
-    //   分别 Unlock
+    // Steps:
+    //   dm1.Lock("aap"), dm2.Lock("noot") -> both succeed simultaneously
+    //   Unlock each
 }
 
-/// 测试锁刷新 (Refresh 应该总是返回 true)
-///
-/// Go: TestSuccessfulLockRefresh
+/// Test lock refresh (Refresh should always return true)
 #[test]
 #[ignore]
 fn test_dsync_successful_lock_refresh() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑:
+    // Steps:
     //   dm.GetLock(ctx, cancel, ..., Timeout: 5min)
-    //   等待 2 × refreshInterval, ctx 不应 canceled
+    //   Wait 2 x refreshInterval, ctx should not be cancelled
     //   dm.Unlock
 }
 
-/// 测试锁刷新失败时 context 被 cancel
-///
-/// Go: TestFailedRefreshLock
+/// Test context cancelled when lock refresh fails
 #[test]
 #[ignore]
 fn test_dsync_failed_refresh_lock() {
     // TODO: implement when DRWMutex + lockServer available
     //
-    // Go 逻辑:
-    //   设置 3 个 lock server 返回 lockNotFound
-    //   dm.GetLock → 成功
-    //   等待 refreshInterval → ctx 被 cancel (quorum 不足)
+    // Steps:
+    //   Set 3 lock servers returning lockNotFound
+    //   dm.GetLock -> succeeds
+    //   Wait refreshInterval -> ctx cancelled (insufficient quorum)
 }
 
-/// 测试 Unlock 不应该超时
-///
-/// Go: TestUnlockShouldNotTimeout
+/// Test Unlock should not timeout
 #[test]
 #[ignore]
 fn test_dsync_unlock_should_not_timeout() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑:
-    //   给 lock 服务器添加 5× 响应延迟
-    //   验证 Unlock 不会因为超时而阻塞
+    // Steps:
+    //   Add 5x response delay to lock servers
+    //   Verify Unlock does not block due to timeout
 }
 
-/// 测试 Mutex (类似 Go sync.Mutex 的 hammer test)
-///
-/// Go: TestMutex
+/// Test Mutex hammer test
 #[test]
 #[ignore]
 fn test_dsync_mutex() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑:
-    //   10 goroutine 各执行 200 次 Lock/Unlock
-    //   验证无死锁
+    // Steps:
+    //   10 threads each executing 200 Lock/Unlock cycles
+    //   Verify no deadlock
 }
 
-// ============================================================================
-// Go: internal/dsync/drwmutex_test.go (读写锁测试)
-// ============================================================================
-
-/// 测试读锁 → 写锁获取 (超时内获取到)
-///
-/// Go: TestSimpleWriteLockAcquired
+/// Test read lock -> write lock acquire (succeeds within timeout)
 #[test]
 #[ignore]
 fn test_drwmutex_simple_write_lock_acquired() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑:
-    //   1. 获取 2 个读锁
-    //   2. goroutine 1: 2s 后释放第一个读锁
-    //   3. goroutine 2: 3s 后释放第二个读锁
-    //   4. 尝试获取写锁 (timeout=10×250ms=2.5s) → 应该成功
+    // Steps:
+    //   1. Acquire 2 read locks
+    //   2. thread 1: release first read lock after 2s
+    //   3. thread 2: release second read lock after 3s
+    //   4. Try acquire write lock (timeout=10x250ms=2.5s) -> should succeed
 }
 
-/// 测试读锁 → 写锁获取 (超时)
-///
-/// Go: TestSimpleWriteLockTimedOut
+/// Test read lock -> write lock acquire (timeout)
 #[test]
 #[ignore]
 fn test_drwmutex_simple_write_lock_timed_out() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑:
-    //   与上面相同但 timeout=250ms → 应该超时失败
+    // Steps:
+    //   Same as above but timeout=250ms -> should timeout
 }
 
-/// 测试双重写锁获取 (超时内获取到)
-///
-/// Go: TestDualWriteLockAcquired
+/// Test dual write lock acquire (succeeds within timeout)
 #[test]
 #[ignore]
 fn test_drwmutex_dual_write_lock_acquired() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑:
-    //   1. 获取写锁
-    //   2. goroutine 2s 后释放
-    //   3. 尝试获取第二个写锁 (timeout=3s) → 应该成功
+    // Steps:
+    //   1. Acquire write lock
+    //   2. Thread releases after 2s
+    //   3. Try acquire second write lock (timeout=3s) -> should succeed
 }
 
-/// 测试双重写锁获取 (超时)
-///
-/// Go: TestDualWriteLockTimedOut
+/// Test dual write lock acquire (timeout)
 #[test]
 #[ignore]
 fn test_drwmutex_dual_write_lock_timed_out() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑: 超时 1s → 失败
+    // Steps: Timeout 1s -> fails
 }
 
-/// 测试并行读者 (类似 Go sync.RWMutex)
-///
-/// Go: TestParallelReaders (borrowed from rwmutex_test.go)
+/// Test parallel readers
 #[test]
 #[ignore]
 fn test_drwmutex_parallel_readers() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑:
+    // Steps:
     //   doTestParallelReaders(1, 4)
     //   doTestParallelReaders(3, 4)
     //   doTestParallelReaders(4, 2)
 }
 
-/// 测试 RWMutex 读写竞争 (hammer test, borrowed from Go stdlib)
-///
-/// Go: TestRWMutex
+/// Test RWMutex read-write contention (hammer test)
 #[test]
 #[ignore]
 fn test_drwmutex_rw_mutex() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑: hammerRWMutex 9 种 gomaxprocs/numReaders 组合, n=100
+    // Steps: hammerRWMutex 9 gomaxprocs/numReaders combos, n=100
 }
 
-/// 测试 Unlock 未锁定时 panic
-///
-/// Go: TestUnlockPanic (borrowed from rwmutex_test.go)
+/// Test Unlock on unlocked mutex panics
 #[test]
 #[ignore]
 fn test_drwmutex_unlock_panic() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑: 对 unlocked mutex 调用 Unlock → panic
+    // Steps: Call Unlock on unlocked mutex -> panic
 }
 
-/// 测试 Unlock 在 RLock 后 panic
-///
-/// Go: TestUnlockPanic2
+/// Test Unlock after RLock panics
 #[test]
 #[ignore]
 fn test_drwmutex_unlock_panic2() {
     // TODO: implement when DRWMutex available
     //
-    // Go 逻辑: RLock 后直接 Unlock → panic (必须用 RUnlock)
+    // Steps: RLock then direct Unlock -> panic (must use RUnlock)
 }
 
-/// 测试 RUnlock 未锁定时 panic
-///
-/// Go: TestRUnlockPanic
+/// Test RUnlock on unlocked mutex panics
 #[test]
 #[ignore]
 fn test_drwmutex_runlock_panic() {
     // TODO: implement when DRWMutex available
 }
 
-/// 测试 RUnlock 在 Lock 后 panic
-///
-/// Go: TestRUnlockPanic2
+/// Test RUnlock after Lock panics
 #[test]
 #[ignore]
 fn test_drwmutex_runlock_panic2() {
     // TODO: implement when DRWMutex available
 }
 
-// ============================================================================
-// Go: internal/dsync/lock-args_gen_test.go (MessagePack 序列化测试)
-// ============================================================================
-
-/// 测试 LockArgs MessagePack 序列化/反序列化
-///
-/// Go: TestMarshalUnmarshalLockArgs
+/// Test LockArgs MessagePack serialization/deserialization
 #[test]
 #[ignore]
 fn test_lock_args_msgp_roundtrip() {
     // TODO: implement when LockArgs + msgp serialization available
     //
-    // Go 逻辑:
+    // Steps:
     //   v := LockArgs{}
-    //   bts, _ := v.MarshalMsg(nil)
+    //   bts, _ := v.MarshalMsg(None)
     //   left, _ := v.UnmarshalMsg(bts)
-    //   验证 left 空, msgp.Skip 后无剩余
+    //   Verify left empty, no remainder after msgp::Skip
 }
 
-/// 测试 LockResp MessagePack 序列化/反序列化
-///
-/// Go: TestMarshalUnmarshalLockResp
+/// Test LockResp MessagePack serialization/deserialization
 #[test]
 #[ignore]
 fn test_lock_resp_msgp_roundtrip() {
     // TODO: implement when LockResp available
 }
 
-/// 测试 LockArgs Encode/Decode
-///
-/// Go: TestEncodeDecodeLockArgs
+/// Test LockArgs Encode/Decode
 #[test]
 #[ignore]
 fn test_lock_args_msgp_encode_decode() {
     // TODO: implement when LockArgs available
 }
 
-/// 测试 LockResp Encode/Decode
-///
-/// Go: TestEncodeDecodeLockResp
+/// Test LockResp Encode/Decode
 #[test]
 #[ignore]
 fn test_lock_resp_msgp_encode_decode() {
     // TODO: implement when LockResp available
 }
 
-// ============================================================================
-// Go: internal/lsync/lrwmutex_test.go (本地 RWMutex 测试)
-// ============================================================================
-
-/// 测试本地 LRWMutex: 读锁 → 写锁获取 (成功)
-///
-/// Go: TestSimpleWriteLockAcquired (lsync)
+/// Test local LRWMutex: read lock -> write lock acquire (succeeds)
 #[test]
 #[ignore]
 fn test_lrwmutex_simple_write_lock_acquired() {
     // TODO: implement when LRWMutex available
     //
-    // Go 逻辑:
-    //   2 个读锁获取, 2s/3s 后释放, 尝试写锁 timeout=5s → 成功
+    // Steps:
+    //   2 read locks acquired, released after 2s/3s, try write lock timeout=5s -> succeeds
 }
 
-/// 测试本地 LRWMutex: 读锁 → 写锁获取 (超时)
-///
-/// Go: TestSimpleWriteLockTimedOut (lsync)
+/// Test local LRWMutex: read lock -> write lock acquire (timeout)
 #[test]
 #[ignore]
 fn test_lrwmutex_simple_write_lock_timed_out() {
     // TODO: implement when LRWMutex available
-    // 超时 1s → 失败
+    // Timeout 1s -> fails
 }
 
-/// 测试本地 LRWMutex: 双重写锁获取 (成功)
-///
-/// Go: TestDualWriteLockAcquired (lsync)
+/// Test local LRWMutex: dual write lock acquire (succeeds)
 #[test]
 #[ignore]
 fn test_lrwmutex_dual_write_lock_acquired() {
     // TODO: implement when LRWMutex available
 }
 
-/// 测试本地 LRWMutex: 双重写锁获取 (超时)
-///
-/// Go: TestDualWriteLockTimedOut (lsync)
+/// Test local LRWMutex: dual write lock acquire (timeout)
 #[test]
 #[ignore]
 fn test_lrwmutex_dual_write_lock_timed_out() {
     // TODO: implement when LRWMutex available
 }
 
-/// 测试本地 LRWMutex: 并行读者
-///
-/// Go: TestParallelReaders (lsync)
+/// Test local LRWMutex: parallel readers
 #[test]
 #[ignore]
 fn test_lrwmutex_parallel_readers() {
     // TODO: implement when LRWMutex available
 }
 
-/// 测试本地 LRWMutex: RWMutex hammer test
-///
-/// Go: TestRWMutex (lsync)
+/// Test local LRWMutex: RWMutex hammer test
 #[test]
 #[ignore]
 fn test_lrwmutex_rw_mutex() {
     // TODO: implement when LRWMutex available
 }
 
-/// 测试本地 LRWMutex: DRLocker
-///
-/// Go: TestDRLocker (lsync)
+/// Test local LRWMutex: DRLocker
 #[test]
 #[ignore]
 fn test_lrwmutex_dr_locker() {
-    // TODO: implement when LRWMutex.DRLocker() available
+    // TODO: implement when LRWMutex::DRLocker() available
     //
-    // Go 逻辑:
-    //   验证 DRLocker 返回的 sync.Locker 行为正确 (读锁读锁不互斥, 写锁排它)
+    // Steps:
+    //   Verify DRLocker returned sync::Locker behaves correctly (read locks don't block each other, write lock is exclusive)
 }
 
-/// 测试本地 LRWMutex: Unlock panic
-///
-/// Go: TestUnlockPanic/TestUnlockPanic2 (lsync)
+/// Test local LRWMutex: Unlock panic
 #[test]
 #[ignore]
 fn test_lrwmutex_unlock_panic() {
@@ -399,9 +315,7 @@ fn test_lrwmutex_unlock_panic2() {
     // TODO: implement when LRWMutex available
 }
 
-/// 测试本地 LRWMutex: RUnlock panic
-///
-/// Go: TestRUnlockPanic/TestRUnlockPanic2 (lsync)
+/// Test local LRWMutex: RUnlock panic
 #[test]
 #[ignore]
 fn test_lrwmutex_runlock_panic() {
@@ -414,80 +328,64 @@ fn test_lrwmutex_runlock_panic2() {
     // TODO: implement when LRWMutex available
 }
 
-// ============================================================================
-// Go: internal/lock/lock_test.go (文件锁测试)
-// ============================================================================
-
-/// 测试文件 Lock 失败 (APPEND 模式不可锁)
-///
-/// Go: TestLockFail
+/// Test file Lock failure (APPEND mode not lockable)
 #[test]
 #[ignore]
 fn test_lock_fail() {
     // TODO: implement when LockedOpenFile available
     //
-    // Go 逻辑:
-    //   os.CreateTemp → close
-    //   LockedOpenFile(name, os.O_APPEND) → should fail
+    // Steps:
+    //   CreateTempFile -> close
+    //   LockedOpenFile(name, APPEND) -> should fail
 }
 
-/// 测试目录 Lock 失败
-///
-/// Go: TestLockDirFail
+/// Test directory Lock failure
 #[test]
 #[ignore]
 fn test_lock_dir_fail() {
     // TODO: implement when LockedOpenFile available
     //
-    // Go 逻辑:
-    //   LockedOpenFile(dir, os.O_APPEND) → should fail
+    // Steps:
+    //   LockedOpenFile(dir, APPEND) -> should fail
 }
 
-/// 测试 RWLockedFile 引用计数
-///
-/// Go: TestRWLockedFile
+/// Test RWLockedFile reference counting
 #[test]
 #[ignore]
 fn test_rw_locked_file() {
     // TODO: implement when RLockedOpenFile + LockedFile available
     //
-    // Go 逻辑:
-    //   1. RLockedOpenFile → IsClosed=false
-    //   2. IncLockRef → ref=2, IsClosed=false
-    //   3. Close → ref=1, IsClosed=false
-    //   4. Close → ref=0, IsClosed=true
-    //   5. Close → os.ErrInvalid
-    //   6. newRLockedFile(nil) → os.ErrInvalid
+    // Steps:
+    //   1. RLockedOpenFile -> IsClosed=false
+    //   2. IncLockRef -> ref=2, IsClosed=false
+    //   3. Close -> ref=1, IsClosed=false
+    //   4. Close -> ref=0, IsClosed=true
+    //   5. Close -> os::ErrInvalid
+    //   6. newRLockedFile(None) -> os::ErrInvalid
 }
 
-/// 测试 Lock/Unlock 语义 (阻塞等待)
-///
-/// Go: TestLockAndUnlock
+/// Test Lock/Unlock semantics (blocking wait)
 #[test]
 #[ignore]
 fn test_lock_and_unlock() {
     // TODO: implement when LockedOpenFile available
     //
-    // Go 逻辑:
-    //   1. Lock → Unlock → 再次 Lock 应成功
-    //   2. Lock 后, goroutine 尝试 Lock 应阻塞 (timeout 100ms)
-    //   3. Unlock → goroutine 应恢复 (timeout 1s)
+    // Steps:
+    //   1. Lock -> Unlock -> Lock again should succeed
+    //   2. Locked, thread tries Lock should block (timeout 100ms)
+    //   3. Unlock -> thread should resume (timeout 1s)
 }
 
-// ============================================================================
-// Go: internal/lock/lock_windows_test.go
-// ============================================================================
-
-/// 测试 Windows fixLongPath 路径修复
+/// Test Windows fixLongPath path fix
 ///
-/// Go: TestFixLongPath (仅 Windows)
+/// Windows only
 #[test]
 #[ignore]
 fn test_fix_long_path() {
     // TODO: implement when fixLongPath is available (Windows only)
     //
-    // Go 逻辑:
-    //   长路径 (>248) 自动加 \\?\ 前缀
-    //   测试短路径不变, UNC 路径不变, 相对路径不变
-    //   清理路径中的 \.. 和 \.
+    // Steps:
+    //   Long path (>248) auto-prepends \\?\
+    //   Test short path unchanged, UNC path unchanged, relative path unchanged
+    //   Clean up \.. and \. in path
 }

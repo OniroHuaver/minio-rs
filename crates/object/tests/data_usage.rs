@@ -1,28 +1,19 @@
-//! 数据使用扫描(Data Usage Scanner)测试
+//! Data usage scanner tests
 //!
-//! 对应 Go:
-//!   `cmd/data-scanner_test.go`
-//!   `cmd/data-usage_test.go`
-//!   `cmd/data-usage-cache_gen_test.go`
-//!   `cmd/data-usage-cache_test.go`
-//!
-//! 测试数据使用扫描器、缓存和过期逻辑。
+//! Tests data usage scanner, cache, and expiration logic.
 
 // ============================================================
-// Data Usage Cache 测试
-// 对应 Go: data-usage-cache_test.go
+// Data Usage Cache tests
 // ============================================================
 
-/// 验证 DataUsageCache 的基本操作(插入、查询、序列化)。
-///
-/// Go: `data-usage-cache_test.go`
+/// Verifies DataUsageCache basic operations (insert, query, serialize).
 #[test]
 #[ignore]
 // TODO: implement when data usage cache types are available
 fn test_data_usage_cache_ops() {
     // let mut cache = DataUsageCache::new("cluster_id");
     //
-    // // 插入 bucket 使用信息
+    // // Insert bucket usage info
     // cache.insert_bucket("bucket1", BucketUsageInfo {
     //     size: 1024,
     //     objects_count: 10,
@@ -34,9 +25,7 @@ fn test_data_usage_cache_ops() {
     // assert_eq!(info.objects_count, 10);
 }
 
-/// 验证 DataUsageCache 的序列化/反序列化。
-///
-/// Go: `data-usage-cache_gen_test.go`
+/// Verifies DataUsageCache serialization/deserialization.
 #[test]
 #[ignore]
 // TODO: implement when data usage cache types are available
@@ -48,13 +37,10 @@ fn test_data_usage_cache_serde() {
 }
 
 // ============================================================
-// Data Usage Info 测试
-// 对应 Go: data-usage_test.go
+// Data Usage Info tests
 // ============================================================
 
-/// 验证 DataUsageInfo 的数据结构。
-///
-/// Go: `data-usage_test.go`
+/// Verifies DataUsageInfo data structure.
 #[test]
 #[ignore]
 // TODO: implement when data usage info types are available
@@ -70,74 +56,62 @@ fn test_data_usage_info() {
 }
 
 // ============================================================
-// Data Scanner 测试
-// 对应 Go: data-scanner_test.go
+// Data Scanner tests
 // ============================================================
 
-/// 验证数据扫描器的循环限速(cycle 时长控制)。
-///
-/// Go: `data-scanner_test.go` (TestScannerCycle)
+/// Verifies data scanner cycle rate limiting (cycle time control).
 #[test]
 #[ignore]
 // TODO: implement when data scanner is available
 fn test_scanner_cycle() {
-    // // 验证扫描器每个 cycle 的时间控制在预期范围内
-    // // 验证扫描器正确处理不同大小的 bucket
+    // // Verify scanner cycle time stays within expected range
+    // // Verify scanner correctly handles buckets of different sizes
 }
 
-/// 验证数据扫描器的磁盘限速。
-///
-/// Go: `data-scanner_test.go` (TestScannerSpeedCheck)
+/// Verifies data scanner disk speed limiting.
 #[test]
 #[ignore]
 // TODO: implement when data scanner is available
 fn test_scanner_speed_check() {
-    // // 验证扫描器读取速度限制逻辑
+    // // Verify scanner read speed limiting logic
 }
 
-/// 验证数据扫描器中生命周期规则的过期对象数量限制。
+/// Verifies lifecycle rule expired object count limit in data scanner.
 ///
-/// Go: `data-scanner_test.go` (TestApplyNewerNoncurrentVersionsLimit)
-/// 已在 lifecycle.rs 中定义。
+/// Already defined in lifecycle.rs.
 #[test]
 #[ignore]
 // TODO: implement when data scanner + lifecycle integration are available
 fn test_scanner_expiry_limit() {
-    // // 已在 test_apply_newer_noncurrent_versions_limit 中覆盖
+    // // Already covered in test_apply_newer_noncurrent_versions_limit
 }
 
-/// 验证 heal 扫描和相关统计信息。
-///
-/// Go: `background-newdisks-heal-ops_gen_test.go`, `bootstrap-peer-server_gen_test.go`
+/// Verifies heal scan and related statistics.
 #[test]
 #[ignore]
 // TODO: implement when heal ops types are available
 fn test_heal_ops_serde() {
-    // // 验证 heal 操作相关数据结构的序列化
+    // // Verify heal operation related data structure serialization
 }
 
-/// 验证 peer server 启动/引导相关数据结构。
-///
-/// Go: `bootstrap-peer-server_gen_test.go`
+/// Verifies peer server startup/bootstrapping related data structures.
 #[test]
 #[ignore]
 // TODO: implement when bootstrap peer server types are available
 fn test_bootstrap_peer_server_serde() {
-    // // 验证启动引导相关数据类型的序列化
+    // // Verify bootstrapping related data type serialization
 }
 
 // ============================================================
-// 数据使用版本化
+// Data usage versioning
 // ============================================================
 
-/// 验证带版本化的数据使用信息。
-///
-/// Go: `data-usage-cache_test.go` (TestDataUsageCache)
+/// Verifies versioned data usage information.
 #[test]
 #[ignore]
 // TODO: implement when data usage cache + versioning are available
 fn test_data_usage_cache_versioning() {
-    // // 验证 DataUsageCache 在版本化 bucket 下的行为
+    // // Verify DataUsageCache behavior under versioned buckets
     // let cache = DataUsageCache::new("cluster");
     // cache.update_version_info("bucket1", "ver1", VersionUsageInfo { size: 100, objects: 2, ..default() });
     // assert_eq!(cache.get_version_info("bucket1", "ver1").unwrap().size, 100);

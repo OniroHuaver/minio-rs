@@ -1,25 +1,21 @@
-//! xl.meta 格式校验与解析测试
+//! xl.meta format validation and parsing tests
 //!
-//! 对应 Go: cmd/xl-storage-format_test.go
-//!
-//! 测试 xl-meta format 的版本/格式校验、JSON 序列化/反序列化、
-//! part size 计算以及 xlMetaV2 的基准测试。
+//! Tests xl-meta format version/format validation, JSON serialization/deserialization,
+//! part size calculation, and xlMetaV2 benchmarks.
 
-use base::error::MinioError;
 use storage::{
     calculate_part_size_from_idx, is_xl_meta_erasure_info_valid, is_xl_meta_format_valid,
+    read_xl_meta, write_xl_meta, write_xl_meta_no_data,
 };
 
-/// 测试 is_xl_meta_format_valid 校验 xl.meta 的 version+format 字段
+/// Tests is_xl_meta_format_valid for xl.meta version+format fields
 ///
-/// 场景:
-/// - ("123", "fs") → false (format 不是 "xl")
-/// - ("123", "xl") → false (version 不是 "1.0.0" 或 "1.0.1")
-/// - ("1.0.0", "test") → false (format 不是 "xl")
-/// - ("1.0.0", "xl") → true
-/// - ("1.0.1", "xl") → true
-///
-/// 对应 Go: TestIsXLMetaFormatValid
+/// Scenarios:
+/// - ("123", "fs") -> false (format is not "xl")
+/// - ("123", "xl") -> false (version is not "1.0.0" or "1.0.1")
+/// - ("1.0.0", "test") -> false (format is not "xl")
+/// - ("1.0.0", "xl") -> true
+/// - ("1.0.1", "xl") -> true
 #[test]
 fn test_is_xl_meta_format_valid() {
     let tests = vec![
@@ -40,17 +36,15 @@ fn test_is_xl_meta_format_valid() {
     }
 }
 
-/// 测试 is_xl_meta_erasure_info_valid 校验擦除码参数
+/// Tests is_xl_meta_erasure_info_valid for erasure code parameters
 ///
-/// 场景:
-/// - data=5, parity=6 → false (不相等且不为零)
-/// - data=5, parity=5 → true
-/// - data=0, parity=5 → false
-/// - data=-1, parity=5 → false
-/// - data=5, parity=0 → true
-/// - data=5, parity=4 → true
-///
-/// 对应 Go: TestIsXLMetaErasureInfoValid
+/// Scenarios:
+/// - data=5, parity=6 -> false (not equal and not zero)
+/// - data=5, parity=5 -> true
+/// - data=0, parity=5 -> false
+/// - data=-1, parity=5 -> false
+/// - data=5, parity=0 -> true
+/// - data=5, parity=4 -> true
 #[test]
 fn test_is_xl_meta_erasure_info_valid() {
     let tests = vec![
@@ -71,23 +65,21 @@ fn test_is_xl_meta_erasure_info_valid() {
     }
 }
 
-/// 测试 calculate_part_size_from_idx 根据 part 索引计算 part 大小
+/// Tests calculate_part_size_from_idx for part size calculation
 ///
-/// 场景:
-/// - 正常 case: total_size=4MiB, part_size=2MiB, part_index=1 → 2MiB
-/// - 最后 part: total_size=5MiB, part_size=2MiB, part_index=3 → 1MiB
-/// - 越界索引: part_index 超出范围 → 0
-/// - 错误 case: part_size=0 → errPartSizeZero
-/// - 错误 case: part_index=0 → errPartSizeIndex
-/// - 错误 case: total_size=-1 → errInvalidArgument
-///
-/// 对应 Go: TestGetPartSizeFromIdx
+/// Scenarios:
+/// - Normal case: total_size=4MiB, part_size=2MiB, part_index=1 -> 2MiB
+/// - Last part: total_size=5MiB, part_size=2MiB, part_index=3 -> 1MiB
+/// - Out of bounds: part_index out of range -> 0
+/// - Error case: part_size=0 -> errPartSizeZero
+/// - Error case: part_index=0 -> errPartSizeIndex
+/// - Error case: total_size=-1 -> errInvalidArgument
 #[test]
 fn test_get_part_size_from_idx() {
     let kib = 1024;
     let mib = 1024 * kib;
 
-    // 正常 case
+    // Normal cases
     let ok_cases = vec![
         (0, 10, 1, 0),
         (4 * mib, 2 * mib, 1, 2 * mib),
@@ -107,7 +99,7 @@ fn test_get_part_size_from_idx() {
         );
     }
 
-    // 错误 case
+    // Error cases
     let result = calculate_part_size_from_idx(10, 0, 1);
     assert!(result.is_err(), "part_size=0 should error");
 
@@ -118,32 +110,98 @@ fn test_get_part_size_from_idx() {
     assert!(result.is_err(), "total_size<0 should error");
 }
 
-/// 测试 JSON 反序列化 (标准库 vs jsoniter) 一致性
+/// Tests JSON deserialization consistency
 ///
-/// 创建 1-part xlMetaV1Object JSON，分别用 serde 反序列化，
-/// 验证结果完全一致。
-///
-/// 对应 Go: TestGetXLMetaV1Jsoniter1
+/// Create a 1-part xlMetaV1Object JSON, deserialize with serde,
+/// verify results match exactly.
 #[test]
 #[ignore]
 fn test_get_xl_meta_v1_json_iter_1() {
     // TODO: implement when xlMetaV1Object and JSON parsing are available
 }
 
-/// 测试 JSON 反序列化一致性 (10-part)
-///
-/// 对应 Go: TestGetXLMetaV1Jsoniter10
+/// Tests JSON deserialization consistency (10-part)
 #[test]
 #[ignore]
 fn test_get_xl_meta_v1_json_iter_10() {
     // TODO: implement when xlMetaV1Object and JSON parsing are available
 }
 
-/// 基准测试: xlMetaV2 浅层操作性能
-///
-/// 对应 Go: BenchmarkXlMetaV2Shallow
+/// Benchmark: xlMetaV2 shallow operation performance
 #[test]
 #[ignore]
 fn benchmark_xl_meta_v2_shallow() {
     // TODO: implement benchmarks when xlMetaV2 is available
+}
+
+/// Tests write_xl_meta / read_xl_meta roundtrip through the storage format API.
+///
+/// Verifies: write → produces valid binary with "XL2 " header,
+/// read → correctly parses the serialized data.
+#[test]
+fn test_write_read_xl_meta_roundtrip() {
+    use base::format::{ObjectPart, XlMeta, XlMetaEntry, XlMetaVersionHeader};
+
+    let header = XlMetaVersionHeader {
+        version_id: "test-roundtrip-1".into(),
+        mod_time: 1_700_000_000_000_000_000i64,
+        signature: vec![0u8; 32],
+        r#type: 1u8,
+        flags: 0,
+        size: 0,
+        erasure_algorithm: 0,
+        erasure_m: 4,
+        erasure_n: 2,
+        erasure_block_size: 4 * 1024 * 1024,
+        erasure_dist: vec![0, 1, 2, 3, 4, 5],
+        parts: vec![ObjectPart {
+            number: 1,
+            etag: "d41d8cd98f00b204e9800998ecf8427e".into(),
+            size: 1024,
+            actual_size: 1024,
+            index: 0,
+        }],
+        meta_sys: vec![],
+        meta_user: vec![],
+    };
+
+    let meta = XlMeta {
+        versions: vec![XlMetaEntry::Object {
+            header,
+            data: None,
+        }],
+    };
+
+    // Write
+    let bytes = write_xl_meta(&meta).expect("write_xl_meta");
+    assert!(&bytes[0..4] == b"XL2 ", "header magic missing");
+
+    // Read — verify roundtrip
+    let loaded = read_xl_meta(&bytes).expect("read_xl_meta");
+    assert_eq!(loaded.versions.len(), 1);
+}
+
+/// Tests write_xl_meta_no_data produces valid serialized xl.meta.
+///
+/// Uses `to_vec_named` (struct-as-map) encoding, useful for signature
+/// computation where field-name stability matters.
+#[test]
+fn test_write_xl_meta_no_data_roundtrip() {
+    use base::format::{XlMeta, XlMetaEntry, XlMetaVersionHeader};
+
+    let header = XlMetaVersionHeader::new("no-data-test".into());
+    let meta = XlMeta {
+        versions: vec![XlMetaEntry::Object {
+            header,
+            data: Some(b"inline payload".to_vec()),
+        }],
+    };
+
+    // Both write modes produce valid xl.meta with "XL2 " header
+    let bytes = write_xl_meta_no_data(&meta).expect("write_xl_meta_no_data");
+    assert!(&bytes[0..4] == b"XL2 ");
+
+    // The no-data variant uses to_vec_named (string keys) — should be parseable
+    let loaded = read_xl_meta(&bytes).expect("read no-data output");
+    assert_eq!(loaded.versions.len(), 1);
 }

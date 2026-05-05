@@ -1,12 +1,10 @@
-//! Storage REST common types MessagePack 序列化测试
+//! Storage REST common types MessagePack serialization tests
 //!
-//! 对应 Go: cmd/storage-rest-common_gen_test.go
-//!
-//! 测试 nsScannerOptions 类型的 MsgPack roundtrip。
+//! Tests MsgPack roundtrip for nsScannerOptions type.
 
 use storage::*;
 
-/// 测试 nsScannerOptions MsgPack roundtrip
+/// Tests nsScannerOptions MsgPack roundtrip
 #[test]
 #[ignore]
 fn test_marshal_unmarshal_ns_scanner_options() {
@@ -17,7 +15,7 @@ fn test_marshal_unmarshal_ns_scanner_options() {
     // assert_eq!(v, decoded);
 }
 
-/// 测试 nsScannerOptions Encode/Decode roundtrip
+/// Tests nsScannerOptions Encode/Decode roundtrip
 #[test]
 #[ignore]
 fn test_encode_decode_ns_scanner_options() {

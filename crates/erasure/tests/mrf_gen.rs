@@ -1,17 +1,13 @@
 //! Auto-generated msgpack serialization tests for PartialOperation type.
 //!
-//! 对应 Go: `cmd/mrf_gen_test.go` (msgp 生成)
-//!
-//! 测试 PartialOperation 的 msgpack 序列化/反序列化。
+//! Tests PartialOperation msgpack serialization/deserialization.
 //!
 //! MRF = Metadata Reconciliation Framework,
-//! 用于在磁盘恢复后修复不一致的元数据。
+//! used to repair inconsistent metadata after disk recovery.
 
 use erasure::*;
 
-/// 测试 PartialOperation 的 Marshal/Unmarshal 往返。
-///
-/// Go 源: `TestMarshalUnmarshalPartialOperation`
+/// Tests PartialOperation Marshal/Unmarshal roundtrip.
 #[test]
 #[ignore]
 fn test_marshal_unmarshal_partial_operation() {
@@ -24,7 +20,7 @@ fn test_marshal_unmarshal_partial_operation() {
     */
 }
 
-/// 测试 PartialOperation 的 Encode/Decode 往返。
+/// Tests PartialOperation Encode/Decode roundtrip.
 #[test]
 #[ignore]
 fn test_encode_decode_partial_operation() {

@@ -1,25 +1,23 @@
-//! storage: 存储抽象层
+//! storage: Storage abstraction layer
 //!
-//! 对应 Go: cmd/storage-interface.go + cmd/xl-storage*.go
-//!
-//! ## 架构
+//! ## Architecture
 //!
 //! ```text
 //! StorageAPI (trait)
-//!   ├── xlStorage      (本地磁盘驱动)
-//!   └── storageClient  (远程磁盘 RPC, Phase 2)
+//!   ├── xlStorage      (local disk driver)
+//!   └── storageClient  (remote disk RPC, Phase 2)
 //! ```
 
 use base::error::MinioResult;
 
-// 子模块
+// Sub-modules
 pub mod format;
 pub mod xl_storage;
 
 #[cfg(test)]
 mod tests;
 
-// 类型重导出
+// Re-exports
 pub use format::{
     calculate_part_size_from_idx, hash_deterministic_string, is_xl_meta_erasure_info_valid,
     is_xl_meta_format_valid, read_xl_meta, write_xl_meta, write_xl_meta_no_data, ChecksumInfo,
@@ -28,52 +26,50 @@ pub use format::{
 };
 pub use xl_storage::XlStorage;
 
-/// 磁盘信息
+/// Disk information
 #[derive(Debug, Clone)]
 pub struct DiskInfo {
-    /// 总容量 (字节)
+    /// Total capacity (bytes)
     pub total: u64,
-    /// 可用容量 (字节)
+    /// Free capacity (bytes)
     pub free: u64,
-    /// 已用容量 (字节)
+    /// Used capacity (bytes)
     pub used: u64,
-    /// 磁盘挂载点
+    /// Disk mount point
     pub mount_path: String,
-    /// 是否在线
+    /// Online status
     pub online: bool,
-    /// 是否经过格式化 (存在 .minio.sys/format.json)
+    /// Whether formatted (.minio.sys/format.json exists)
     pub formatted: bool,
-    /// 修复中状态
+    /// Healing status
     pub healing: bool,
-    /// 磁盘端点
+    /// Endpoint
     pub endpoint: String,
 }
 
-/// StorageAPI trait — 磁盘级 IO 操作的统一抽象
+/// StorageAPI trait -- unified abstraction for disk-level I/O operations
 ///
-/// 对应 Go: `cmd/storage-interface.go StorageAPI`
-///
-/// 本地磁盘由 `xlStorage` 实现，远程磁盘由 `storageRESTClient` 实现。
-/// 上层 (erasureObjects) 不感知底层是本地还是远程。
+/// Local disk is implemented by `xlStorage`, remote disk by `storageRESTClient`.
+/// The upper layer (erasureObjects) does not know whether the backend is local or remote.
 #[async_trait::async_trait]
 pub trait StorageAPI: Send + Sync {
-    // ---- 磁盘基础 ----
+    // ---- Disk basics ----
 
-    /// 返回磁盘信息
+    /// Return disk information
     async fn disk_info(&self) -> MinioResult<DiskInfo>;
 
-    /// 检查磁盘是否在线
+    /// Check whether disk is online
     async fn is_online(&self) -> bool;
 
-    /// 磁盘端点标识
+    /// Disk endpoint identifier
     fn endpoint(&self) -> &str;
 
-    // ---- 文件 IO ----
+    // ---- File I/O ----
 
-    /// 读取文件的全部内容
+    /// Read entire file contents
     async fn read_all(&self, volume: &str, path: &str) -> MinioResult<Vec<u8>>;
 
-    /// 读取文件的指定范围
+    /// Read a byte range from a file
     async fn read_range(
         &self,
         volume: &str,
@@ -82,16 +78,16 @@ pub trait StorageAPI: Send + Sync {
         length: i64,
     ) -> MinioResult<Vec<u8>>;
 
-    /// 写入文件 (覆盖)
+    /// Write to file (overwrite)
     async fn write_all(&self, volume: &str, path: &str, data: &[u8]) -> MinioResult<()>;
 
-    /// 追加写入文件
+    /// Append to file
     async fn append_file(&self, volume: &str, path: &str, data: &[u8]) -> MinioResult<()>;
 
-    /// 删除文件
+    /// Delete file
     async fn delete(&self, volume: &str, path: &str) -> MinioResult<()>;
 
-    /// 原子 Rename (跨目录移动)
+    /// Atomic rename (cross-directory move)
     async fn rename(
         &self,
         src_volume: &str,
@@ -100,9 +96,9 @@ pub trait StorageAPI: Send + Sync {
         dst_path: &str,
     ) -> MinioResult<()>;
 
-    // ---- 目录操作 ----
+    // ---- Directory operations ----
 
-    /// 列出目录内容
+    /// List directory contents
     async fn list_dir(
         &self,
         volume: &str,
@@ -110,22 +106,22 @@ pub trait StorageAPI: Send + Sync {
         count: usize,
     ) -> MinioResult<Vec<String>>;
 
-    /// 创建目录 (递归)
+    /// Create volume (recursive)
     async fn make_volume(&self, volume: &str) -> MinioResult<()>;
 
-    /// 删除目录 (递归)
+    /// Delete volume (recursive)
     async fn delete_volume(&self, volume: &str) -> MinioResult<()>;
 
-    // ---- 统计 ----
+    // ---- Statistics ----
 
-    /// 获取文件状态
+    /// Get file stat
     async fn stat_file(&self, volume: &str, path: &str) -> MinioResult<FileStat>;
 
-    /// 检查文件是否存在
+    /// Check if file exists
     async fn file_exists(&self, volume: &str, path: &str) -> MinioResult<bool>;
 }
 
-/// 文件状态信息
+/// File stat information
 #[derive(Debug, Clone)]
 pub struct FileStat {
     pub size: i64,

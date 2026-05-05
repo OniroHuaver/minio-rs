@@ -2,7 +2,7 @@
 name = "server"
 version = "0.1.0"
 edition = "2024"
-description = "MinIO Rust 二进制入口：组装所有子系统，处理启动流程和信号"
+description = "MinIO Rust binary entrypoint: assembles all subsystems, handles startup and signals"
 
 [[bin]]
 name = "minio"

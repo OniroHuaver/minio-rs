@@ -1,120 +1,94 @@
-//! Grid 消息序列化测试
+//! Grid message serialization tests
 //!
-//! 对应 Go: internal/grid/msg_gen_test.go
-//!
-//! 测试 connectReq, connectResp, message, muxConnectError, pingMsg, pongMsg
-//! 的 MessagePack 序列化/反序列化和编解码。
+//! Tests connectReq, connectResp, message, muxConnectError, pingMsg, pongMsg
+//! MessagePack serialization/deserialization and encode/decode.
 
-/// 测试 connectReq MessagePack 序列化
-///
-/// Go: TestMarshalUnmarshalconnectReq
+/// Tests connectReq MessagePack serialization
 #[test]
 #[ignore]
 fn test_connect_req_msgp() {
     // TODO: implement when connectReq type available
     //
-    // Go 逻辑:
-    //   v.MarshalMsg(nil) → v.UnmarshalMsg(bts)
-    //   left empty → msgp.Skip 后无剩余
+    // Logic:
+    //   v.MarshalMsg(nil) -> v.UnmarshalMsg(bts)
+    //   left empty -> msgp.Skip no remainder
 }
 
-/// 测试 connectReq Encode/Decode/EncodeMsg/DecodeMsg
-///
-/// Go: TestEncodeDecodeconnectReq
+/// Tests connectReq Encode/Decode/EncodeMsg/DecodeMsg
 #[test]
 #[ignore]
 fn test_connect_req_encode_decode() {
     // TODO: implement when connectReq available
     //
-    // Go 逻辑:
-    //   msgp.Encode → msgp.Decode → 验证
-    //   msgp.NewReader.Skip → 验证
+    // Logic:
+    //   msgp.Encode -> msgp.Decode -> verify
+    //   msgp.NewReader.Skip -> verify
 }
 
-/// 测试 connectResp MessagePack 序列化
-///
-/// Go: TestMarshalUnmarshalconnectResp
+/// Tests connectResp MessagePack serialization
 #[test]
 #[ignore]
 fn test_connect_resp_msgp() {
     // TODO: implement when connectResp available
 }
 
-/// 测试 connectResp Encode/Decode
-///
-/// Go: TestEncodeDecodeconnectResp
+/// Tests connectResp Encode/Decode
 #[test]
 #[ignore]
 fn test_connect_resp_encode_decode() {
     // TODO: implement when connectResp available
 }
 
-/// 测试 message MessagePack 序列化
-///
-/// Go: TestMarshalUnmarshalmessage
+/// Tests message MessagePack serialization
 #[test]
 #[ignore]
 fn test_message_msgp() {
     // TODO: implement when message type available
 }
 
-/// 测试 message Encode/Decode
-///
-/// Go: TestEncodeDecodemessage
+/// Tests message Encode/Decode
 #[test]
 #[ignore]
 fn test_message_encode_decode() {
     // TODO: implement when message available
 }
 
-/// 测试 muxConnectError MessagePack 序列化
-///
-/// Go: TestMarshalUnmarshalmuxConnectError
+/// Tests muxConnectError MessagePack serialization
 #[test]
 #[ignore]
 fn test_mux_connect_error_msgp() {
     // TODO: implement when muxConnectError available
 }
 
-/// 测试 muxConnectError Encode/Decode
-///
-/// Go: TestEncodeDecodemuxConnectError
+/// Tests muxConnectError Encode/Decode
 #[test]
 #[ignore]
 fn test_mux_connect_error_encode_decode() {
     // TODO: implement when muxConnectError available
 }
 
-/// 测试 pingMsg MessagePack 序列化
-///
-/// Go: TestMarshalUnmarshalpingMsg
+/// Tests pingMsg MessagePack serialization
 #[test]
 #[ignore]
 fn test_ping_msg_msgp() {
     // TODO: implement when pingMsg available
 }
 
-/// 测试 pingMsg Encode/Decode
-///
-/// Go: TestEncodeDecodepingMsg
+/// Tests pingMsg Encode/Decode
 #[test]
 #[ignore]
 fn test_ping_msg_encode_decode() {
     // TODO: implement when pingMsg available
 }
 
-/// 测试 pongMsg MessagePack 序列化
-///
-/// Go: TestMarshalUnmarshalpongMsg
+/// Tests pongMsg MessagePack serialization
 #[test]
 #[ignore]
 fn test_pong_msg_msgp() {
     // TODO: implement when pongMsg available
 }
 
-/// 测试 pongMsg Encode/Decode
-///
-/// Go: TestEncodeDecodepongMsg
+/// Tests pongMsg Encode/Decode
 #[test]
 #[ignore]
 fn test_pong_msg_encode_decode() {

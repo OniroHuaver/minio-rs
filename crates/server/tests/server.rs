@@ -1,29 +1,21 @@
-//! 服务器启动测试
+//! Server startup tests
 //!
-//! 对应 Go: cmd/server_test.go, cmd/server-main_test.go, cmd/server-startup-msg_test.go,
-//!          cmd/version_test.go, cmd/common-main_test.go
-//!
-//! 这些测试需要完整的 MinIO 服务器运行时环境，当前 Phase 1 仅作占位。
+//! These tests require a full MinIO server runtime environment, currently Phase 1 placeholder.
 
 #[allow(unused_imports)]
 use std::time::SystemTime;
 
-// ============================================================================
-// Go: cmd/server_test.go
-// ============================================================================
-
-/// 测试完整的 MinIO 服务器套件 (ErasureSD, Erasure, ErasureSet)
+/// Test full MinIO server suite (ErasureSD, Erasure, ErasureSet)
 ///
-/// Go: TestServerSuite → runAllTests
-/// 覆盖: CORS, BucketPolicy, DeleteBucket, DeleteMultipleObjects, 等全部 S3 API
+/// Covers: CORS, BucketPolicy, DeleteBucket, DeleteMultipleObjects, all S3 APIs
 ///
-/// 实现条件: 需要 ObjectLayer, 测试 HTTP server, S3 签名
+/// Prerequisites: ObjectLayer, test HTTP server, S3 signing
 #[test]
 #[ignore]
 fn test_server_suite() {
     // TODO: implement when ObjectLayer + TestServer are available
     //
-    // Go 逻辑:
+    // Steps:
     //   testCases := []TestSuiteCommon{
     //     {serverType: "ErasureSD", signer: signerV4},
     //     {serverType: "ErasureSD", signer: signerV2},
@@ -31,770 +23,613 @@ fn test_server_suite() {
     //     {serverType: "Erasure", signer: signerV4},
     //     {serverType: "ErasureSet", signer: signerV4},
     //   }
-    //   for each: runAllTests(suite, c) → SetUpSuite, 全部 TestXxx 方法, TearDownSuite
+    //   for each: runAllTests(suite, c) -> SetUpSuite, all TestXxx methods, TearDownSuite
 }
 
-/// 测试 CORS 头正确性
+/// Test CORS header correctness
 ///
-/// Go: TestSuiteCommon.TestCors
-/// 验证 OPTIONS 请求返回正确的 Access-Control-* 头
+/// Verifies OPTIONS request returns correct Access-Control-* headers
 #[test]
 #[ignore]
 fn test_cors_headers() {
     // TODO: implement when TestServer available
     //
-    // Go 逻辑:
-    //   req, _ := http.NewRequest(http.MethodOptions, s.endPoint, nil)
-    //   req.Header.Set("Origin", "http://foobar.com")
-    //   res, err := s.client.Do(req)
-    //   验证 Access-Control-Allow-Credentials, Access-Control-Allow-Origin 等头
+    // Steps:
+    //   req, _ := http::Request::new(Method::Options, s.endPoint)
+    //   req.header("Origin", "http://foobar.com")
+    //   res, _ := s.client.send(req)
+    //   Verify Access-Control-Allow-Credentials, Access-Control-Allow-Origin headers
 }
 
-/// 测试对象目录 (以 / 结尾的 key)
+/// Test object directory (key ending with /)
 ///
-/// Go: TestSuiteCommon.TestObjectDir
 /// PUT/HEAD/GET/DELETE my-object-directory/
 #[test]
 #[ignore]
 fn test_object_dir() {
     // TODO: implement when TestServer available
     //
-    // Go 逻辑:
-    //   PUT my-object-directory/ → 201
-    //   HEAD my-object-directory/ → 200
-    //   GET my-object-directory/ → 200
-    //   DELETE my-object-directory/ → 204
+    // Steps:
+    //   PUT my-object-directory/ -> 201
+    //   HEAD my-object-directory/ -> 200
+    //   GET my-object-directory/ -> 200
+    //   DELETE my-object-directory/ -> 204
 }
 
-/// 测试 Bucket Policy 的 CRUD
-///
-/// Go: TestSuiteCommon.TestBucketPolicy
+/// Test Bucket Policy CRUD
 #[test]
 #[ignore]
 fn test_bucket_policy() {
     // TODO: implement when TestServer available
     //
-    // Go 逻辑:
-    //   PUT bucket policy → 204
-    //   GET bucket policy → 200, 验证 JSON 内容
-    //   DELETE bucket policy → 204
-    //   GET bucket policy (post-delete) → 404
+    // Steps:
+    //   PUT bucket policy -> 204
+    //   GET bucket policy -> 200, verify JSON content
+    //   DELETE bucket policy -> 204
+    //   GET bucket policy (post-delete) -> 404
 }
 
-/// 测试删除 Bucket
-///
-/// Go: TestSuiteCommon.TestDeleteBucket
+/// Test deleting a bucket
 #[test]
 #[ignore]
 fn test_delete_bucket() {
     // TODO: implement when TestServer available
 }
 
-/// 测试删除非空 Bucket 返回 409
-///
-/// Go: TestSuiteCommon.TestDeleteBucketNotEmpty
+/// Test deleting non-empty bucket returns 409
 #[test]
 #[ignore]
 fn test_delete_bucket_not_empty() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 DeleteMultipleObjects
-///
-/// Go: TestSuiteCommon.TestDeleteMultipleObjects
+/// Test DeleteMultipleObjects
 #[test]
 #[ignore]
 fn test_delete_multiple_objects() {
     // TODO: implement when TestServer available
 }
 
-/// 测试删除对象
-///
-/// Go: TestSuiteCommon.TestDeleteObject
+/// Test deleting an object
 #[test]
 #[ignore]
 fn test_delete_object() {
     // TODO: implement when TestServer available
 }
 
-/// 测试不存在 Bucket 的访问
-///
-/// Go: TestSuiteCommon.TestNonExistentBucket
+/// Test access to non-existent bucket
 #[test]
 #[ignore]
 fn test_non_existent_bucket() {
     // TODO: implement when TestServer available
 }
 
-/// 测试空对象 (0 字节)
-///
-/// Go: TestSuiteCommon.TestEmptyObject
+/// Test empty object (0 bytes)
 #[test]
 #[ignore]
 fn test_empty_object() {
     // TODO: implement when TestServer available
 }
 
-/// 测试基础 Bucket 操作 (HEAD bucket)
-///
-/// Go: TestSuiteCommon.TestBucket
+/// Test basic bucket operations (HEAD bucket)
 #[test]
 #[ignore]
 fn test_bucket_head() {
     // TODO: implement when TestServer available
 }
 
-/// 测试匿名 GET 对象
-///
-/// Go: TestSuiteCommon.TestObjectGetAnonymous
+/// Test anonymous GET object
 #[test]
 #[ignore]
 fn test_object_get_anonymous() {
     // TODO: implement when TestServer available
 }
 
-/// 测试多个对象操作
-///
-/// Go: TestSuiteCommon.TestMultipleObjects
+/// Test multiple object operations
 #[test]
 #[ignore]
 fn test_multiple_objects() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 HTTP Header 处理
-///
-/// Go: TestSuiteCommon.TestHeader
+/// Test HTTP header handling
 #[test]
 #[ignore]
 fn test_header() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 PUT Bucket
-///
-/// Go: TestSuiteCommon.TestPutBucket
+/// Test PUT Bucket
 #[test]
 #[ignore]
 fn test_put_bucket() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 CopyObject
-///
-/// Go: TestSuiteCommon.TestCopyObject
+/// Test CopyObject
 #[test]
 #[ignore]
 fn test_copy_object() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 PutObject
-///
-/// Go: TestSuiteCommon.TestPutObject
+/// Test PutObject
 #[test]
 #[ignore]
 fn test_put_object() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 ListBuckets
-///
-/// Go: TestSuiteCommon.TestListBuckets
+/// Test ListBuckets
 #[test]
 #[ignore]
 fn test_list_buckets() {
     // TODO: implement when TestServer available
 }
 
-/// 测试签名验证
-///
-/// Go: TestSuiteCommon.TestValidateSignature
+/// Test signature validation
 #[test]
 #[ignore]
 fn test_validate_signature() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 SHA256 不匹配
-///
-/// Go: TestSuiteCommon.TestSHA256Mismatch
+/// Test SHA256 mismatch
 #[test]
 #[ignore]
 fn test_sha256_mismatch() {
     // TODO: implement when TestServer available
 }
 
-/// 测试长对象名 PutObject
-///
-/// Go: TestSuiteCommon.TestPutObjectLongName
+/// Test long object name PutObject
 #[test]
 #[ignore]
 fn test_put_object_long_name() {
     // TODO: implement when TestServer available
 }
 
-/// 测试在不存在的 Bucket 中创建对象
-///
-/// Go: TestSuiteCommon.TestNotBeAbleToCreateObjectInNonexistentBucket
+/// Test creating object in non-existent bucket
 #[test]
 #[ignore]
 fn test_not_able_to_create_object_in_nonexistent_bucket() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 HEAD object 的 LastModified
-///
-/// Go: TestSuiteCommon.TestHeadOnObjectLastModified
+/// Test HEAD object LastModified
 #[test]
 #[ignore]
 fn test_head_on_object_last_modified() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 HEAD bucket
-///
-/// Go: TestSuiteCommon.TestHeadOnBucket
+/// Test HEAD bucket
 #[test]
 #[ignore]
 fn test_head_on_bucket() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Content-Type 持久化
-///
-/// Go: TestSuiteCommon.TestContentTypePersists
+/// Test Content-Type persistence
 #[test]
 #[ignore]
 fn test_content_type_persists() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 PartialContent (Range 请求)
-///
-/// Go: TestSuiteCommon.TestPartialContent
+/// Test PartialContent (Range request)
 #[test]
 #[ignore]
 fn test_partial_content() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 ListObjects 处理
-///
-/// Go: TestSuiteCommon.TestListObjectsHandler
+/// Test ListObjects handler
 #[test]
 #[ignore]
 fn test_list_objects_handler() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 ListObjectVersions 输出顺序
-///
-/// Go: TestSuiteCommon.TestListObjectVersionsOutputOrderHandler
+/// Test ListObjectVersions output ordering
 #[test]
 #[ignore]
 fn test_list_object_versions_output_order() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 ListObjects 处理错误情况
-///
-/// Go: TestSuiteCommon.TestListObjectsHandlerErrors
+/// Test ListObjects handler error cases
 #[test]
 #[ignore]
 fn test_list_objects_handler_errors() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 ListObjectsV2 的 Hadoop User-Agent 分支
-///
-/// Go: TestSuiteCommon.TestListObjectsV2HadoopUAHandler
+/// Test ListObjectsV2 Hadoop User-Agent branch
 #[test]
 #[ignore]
 fn test_list_objects_v2_hadoop_ua() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 PUT Bucket 错误
-///
-/// Go: TestSuiteCommon.TestPutBucketErrors
+/// Test PUT Bucket errors
 #[test]
 #[ignore]
 fn test_put_bucket_errors() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 GET Object 大文件 (10 MiB)
-///
-/// Go: TestSuiteCommon.TestGetObjectLarge10MiB
+/// Test GET Object large file (10 MiB)
 #[test]
 #[ignore]
 fn test_get_object_large_10_mib() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 GET Object 大文件 (11 MiB)
-///
-/// Go: TestSuiteCommon.TestGetObjectLarge11MiB
+/// Test GET Object large file (11 MiB)
 #[test]
 #[ignore]
 fn test_get_object_large_11_mib() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 GET PartialObject 未对齐
-///
-/// Go: TestSuiteCommon.TestGetPartialObjectMisAligned
+/// Test GET PartialObject misaligned
 #[test]
 #[ignore]
 fn test_get_partial_object_misaligned() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 GET PartialObject 大文件 (11 MiB)
-///
-/// Go: TestSuiteCommon.TestGetPartialObjectLarge11MiB
+/// Test GET PartialObject large file (11 MiB)
 #[test]
 #[ignore]
 fn test_get_partial_object_large_11_mib() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 GET PartialObject 大文件 (10 MiB)
-///
-/// Go: TestSuiteCommon.TestGetPartialObjectLarge10MiB
+/// Test GET PartialObject large file (10 MiB)
 #[test]
 #[ignore]
 fn test_get_partial_object_large_10_mib() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 GET Object 错误
-///
-/// Go: TestSuiteCommon.TestGetObjectErrors
+/// Test GET Object errors
 #[test]
 #[ignore]
 fn test_get_object_errors() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 GET Object Range 错误
-///
-/// Go: TestSuiteCommon.TestGetObjectRangeErrors
+/// Test GET Object Range errors
 #[test]
 #[ignore]
 fn test_get_object_range_errors() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Multipart Upload Abort
-///
-/// Go: TestSuiteCommon.TestObjectMultipartAbort
+/// Test Multipart Upload Abort
 #[test]
 #[ignore]
 fn test_object_multipart_abort() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Bucket Multipart List
-///
-/// Go: TestSuiteCommon.TestBucketMultipartList
+/// Test Bucket Multipart List
 #[test]
 #[ignore]
 fn test_bucket_multipart_list() {
     // TODO: implement when TestServer available
 }
 
-/// 测试验证 Multipart UploadID
-///
-/// Go: TestSuiteCommon.TestValidateObjectMultipartUploadID
+/// Test Validate Multipart UploadID
 #[test]
 #[ignore]
 fn test_validate_object_multipart_upload_id() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Multipart List 错误
-///
-/// Go: TestSuiteCommon.TestObjectMultipartListError
+/// Test Multipart List errors
 #[test]
 #[ignore]
 fn test_object_multipart_list_error() {
     // TODO: implement when TestServer available
 }
 
-/// 测试有效的 MD5
-///
-/// Go: TestSuiteCommon.TestObjectValidMD5
+/// Test valid MD5
 #[test]
 #[ignore]
 fn test_object_valid_md5() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Multipart 上传
-///
-/// Go: TestSuiteCommon.TestObjectMultipart
+/// Test Multipart upload
 #[test]
 #[ignore]
 fn test_object_multipart() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Metrics V3 Handler
-///
-/// Go: TestSuiteCommon.TestMetricsV3Handler
+/// Test Metrics V3 Handler
 #[test]
 #[ignore]
 fn test_metrics_v3_handler() {
     // TODO: implement when TestServer available
     //
-    // Go 逻辑:
-    //   使用 JWT Bearer token (HS512) 遍历 globalMetricsV3CollectorPaths
-    //   验证每个 path 返回 200
+    // Steps:
+    //   Use JWT Bearer token (HS512) to iterate globalMetricsV3CollectorPaths
+    //   Verify each path returns 200
 }
 
-/// 测试 Bucket SQS WebHook 通知
-///
-/// Go: TestSuiteCommon.TestBucketSQSNotificationWebHook
+/// Test Bucket SQS WebHook notification
 #[test]
 #[ignore]
 fn test_bucket_sqs_notification_webhook() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Unsigned CVE
+/// Test Unsigned CVE
 ///
-/// Go: TestSuiteCommon.TestUnsignedCVE
-/// 验证恶意请求无法绕过签名检查
+/// Verifies malicious requests cannot bypass signature check
 #[test]
 #[ignore]
 fn test_unsigned_cve() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Unsigned QueryString CVE
-///
-/// Go: TestSuiteCommon.TestUnsignedQueryStringCVE
+/// Test Unsigned QueryString CVE
 #[test]
 #[ignore]
 fn test_unsigned_query_string_cve() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Unsigned QueryString CVE Multipart
-///
-/// Go: TestSuiteCommon.TestUnsignedQueryStringCVEMultipart
+/// Test Unsigned QueryString CVE Multipart
 #[test]
 #[ignore]
 fn test_unsigned_query_string_cve_multipart() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Unsigned Trailer 拒绝多认证源
-///
-/// Go: TestSuiteCommon.TestUnsignedTrailerRejectsMultipleAuthSources
+/// Test Unsigned Trailer rejects multiple auth sources
 #[test]
 #[ignore]
 fn test_unsigned_trailer_rejects_multiple_auth_sources() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Unsigned Trailer Snowball 需要签名
-///
-/// Go: TestSuiteCommon.TestUnsignedTrailerSnowballRequiresSignature
+/// Test Unsigned Trailer Snowball requires signature
 #[test]
 #[ignore]
 fn test_unsigned_trailer_snowball_requires_signature() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Unsigned Trailer Snowball 拒绝匿名
-///
-/// Go: TestSuiteCommon.TestUnsignedTrailerSnowballAnonymousDenied
+/// Test Unsigned Trailer Snowball denies anonymous
 #[test]
 #[ignore]
 fn test_unsigned_trailer_snowball_anonymous_denied() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Unsigned Trailer Snowball Extract
-///
-/// Go: TestSuiteCommon.TestUnsignedTrailerSnowballExtract
+/// Test Unsigned Trailer Snowball Extract
 #[test]
 #[ignore]
 fn test_unsigned_trailer_snowball_extract() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 Anonymous Unsigned Trailer
-///
-/// Go: TestSuiteCommon.TestAnonymousUnsignedTrailer
+/// Test Anonymous Unsigned Trailer
 #[test]
 #[ignore]
 fn test_anonymous_unsigned_trailer() {
     // TODO: implement when TestServer available
 }
 
-/// 测试 ListenNotification Handler
-///
-/// Go: TestSuiteCommon.TestListenNotificationHandler
+/// Test ListenNotification Handler
 #[test]
 #[ignore]
 fn test_listen_notification_handler() {
     // TODO: implement when TestServer available
     //
-    // Go 逻辑:
-    //   测试 InvalidBucketName → 400
-    //   测试 invalidEvents → 400
-    //   测试 tooBigPrefix → 400
-    //   测试 bad SHA → 400 (signerV4)
+    // Steps:
+    //   Test InvalidBucketName -> 400
+    //   Test invalidEvents -> 400
+    //   Test tooBigPrefix -> 400
+    //   Test bad SHA -> 400 (signerV4)
 }
 
-/// 测试 Bucket SQS AMQP 通知
-///
-/// Go: TestSuiteCommon.TestBucketSQSNotificationAMQP
+/// Test Bucket SQS AMQP notification
 #[test]
 #[ignore]
 fn test_bucket_sqs_notification_amqp() {
     // TODO: implement when TestServer available
 }
 
-// ============================================================================
-// Go: cmd/version_test.go
-// ============================================================================
-
-/// 测试 Version 是否为有效的 RFC3339 时间字符串
-///
-/// Go: TestVersion
+/// Test Version is a valid RFC3339 time string
 #[test]
 #[ignore]
 fn test_version_format() {
     // TODO: implement when Version constant available
     //
-    // Go 逻辑: Version = "2017-05-07T06:37:49Z"; time.Parse(time.RFC3339, Version)
-    // Rust 对应: 需要 chrono 或 time crate
+    // Steps: Version = "2017-05-07T06:37:49Z"; time::parse(time::RFC3339, Version)
+    // Requires chrono or time crate
 }
 
-// ============================================================================
-// Go: cmd/server-main_test.go
-// ============================================================================
-
-/// 测试剥离标准端口 (80, 443)
-///
-/// Go: TestStripStandardPorts
+/// Test stripping standard ports (80, 443)
 #[test]
 #[ignore]
 fn test_strip_standard_ports() {
     // TODO: implement when stripStandardPorts is available
     //
-    // Go 逻辑:
+    // Steps:
     //   apiEndpoints := ["http://127.0.0.1:9000", "http://127.0.0.2:80", "https://127.0.0.3:443"]
     //   expected := ["http://127.0.0.1:9000", "http://127.0.0.2", "https://127.0.0.3"]
-    //   验证: 无效 URL 原样返回; 非标准端口(443 on http, 80 on https)不剥离
+    //   Verify: invalid URLs returned as-is; non-standard ports (443 on http, 80 on https) not stripped
 }
 
-/// 测试打印 Server 通用消息
-///
-/// Go: TestPrintServerCommonMessage
+/// Test printing server common message
 #[test]
 #[ignore]
 fn test_print_server_common_message() {
     // TODO: implement when TestServer + global config available
     //
-    // Go 逻辑:
-    //   prepareFS → newTestConfig → printServerCommonMsg(apiEndpoints)
-    //   验证控制台输出包含预期的信息
+    // Steps:
+    //   prepareFS -> newTestConfig -> printServerCommonMsg(apiEndpoints)
+    //   Verify console output contains expected info
 }
 
-/// 测试打印 CLI 访问消息
-///
-/// Go: TestPrintCLIAccessMsg
+/// Test printing CLI access message
 #[test]
 #[ignore]
 fn test_print_cli_access_msg() {
     // TODO: implement when TestServer available
 }
 
-/// 测试打印启动消息
-///
-/// Go: TestPrintStartupMessage
+/// Test printing startup message
 #[test]
 #[ignore]
 fn test_print_startup_message() {
     // TODO: implement when TestServer available
 }
 
-// ============================================================================
-// Go: cmd/common-main_test.go
-// ============================================================================
-
-/// 测试从 Secret 文件读取 (去除空白/换行)
-///
-/// Go: Test_readFromSecret
+/// Test reading from Secret file (strip whitespace/newlines)
 #[test]
 #[ignore]
 fn test_read_from_secret() {
     // TODO: implement when readFromSecret is available
     //
-    // Go 逻辑:
-    //   "value\n" → "value"
-    //   " \t\n Hello, Gophers \n\t\r\n" → "Hello, Gophers"
+    // Steps:
+    //   "value\n" -> "value"
+    //   " \t\n Hello, Gophers \n\t\r\n" -> "Hello, Gophers"
 }
 
-/// 测试从环境文件解析 MINIO_ROOT_USER/MINIO_ROOT_PASSWORD
-///
-/// Go: Test_minioEnvironFromFile
+/// Test parsing MINIO_ROOT_USER/MINIO_ROOT_PASSWORD from env file
 #[test]
 #[ignore]
 fn test_minio_environ_from_file() {
     // TODO: implement when minioEnvironFromFile + envKV are available
     //
-    // Go 逻辑:
-    //   测试 export 格式: export MINIO_ROOT_USER=minio
-    //   测试引号: "minio", 'minio'
-    //   测试无 export 前缀
-    //   测试无效行, 注释 (#)
+    // Steps:
+    //   Test export format: export MINIO_ROOT_USER=minio
+    //   Test quotes: "minio", 'minio'
+    //   Test without export prefix
+    //   Test invalid lines, comments (#)
 }
 
-// ============================================================================
-// Go: cmd/update_test.go + cmd/update-notifier_test.go
-// ============================================================================
-
-/// 测试 minioVersionToReleaseTime 解析
-///
-/// Go: TestMinioVersionToReleaseTime
+/// Test minioVersionToReleaseTime parsing
 #[test]
 #[ignore]
 fn test_minio_version_to_release_time() {
     // TODO: implement when minioVersionToReleaseTime is available
     //
-    // Go 逻辑:
-    //   "2017-09-29T19:16:56Z" → ok (official)
-    //   "RELEASE.2017-09-29T19-16-56Z" → err (not official)
-    //   "DEVELOPMENT.GOGET" → err
+    // Steps:
+    //   "2017-09-29T19:16:56Z" -> ok (official)
+    //   "RELEASE.2017-09-29T19-16-56Z" -> err (not official)
+    //   "DEVELOPMENT.GOGET" -> err
 }
 
-/// 测试 releaseTag ↔ releaseTime 双向转换
-///
-/// Go: TestReleaseTagToNFromTimeConversion
+/// Test releaseTag <-> releaseTime bidirectional conversion
 #[test]
 #[ignore]
 fn test_release_tag_to_from_time_conversion() {
     // TODO: implement when releaseTagToReleaseTime / releaseTimeToReleaseTag available
     //
-    // Go 逻辑:
-    //   测试 tag → time → tag 往返
-    //   无效 tag → error
-    //   支持 hotfix 后缀: .hotfix, .hotfix.aaaa
+    // Steps:
+    //   Test tag -> time -> tag round-trip
+    //   Invalid tag -> error
+    //   Support hotfix suffix: .hotfix, .hotfix.aaaa
 }
 
-/// 测试下载 URL 构建
-///
-/// Go: TestDownloadURL
+/// Test download URL construction
 #[test]
 #[ignore]
 fn test_download_url() {
     // TODO: implement when getDownloadURL is available
     //
-    // Go 逻辑:
-    //   非 Docker: URL 指向 MinioReleaseURL + "minio" 或 "minio.exe" (Windows)
-    //   KUBERNETES_SERVICE_HOST 设置 → kubernetesDeploymentDoc
-    //   MESOS_CONTAINER_NAME 设置 → mesosDeploymentDoc
+    // Steps:
+    //   Non-Docker: URL points to MinioReleaseURL + "minio" (or "minio.exe" on Windows)
+    //   KUBERNETES_SERVICE_HOST set -> kubernetesDeploymentDoc
+    //   MESOS_CONTAINER_NAME set -> mesosDeploymentDoc
 }
 
-/// 测试 User-Agent 字符串
-///
-/// Go: TestUserAgent
+/// Test User-Agent string
 #[test]
 #[ignore]
 fn test_user_agent() {
     // TODO: implement when getUserAgent is available
     //
-    // Go 逻辑:
-    //   根据 GOOS/GOARCH/mode 和环境变量 (MESOS, KUBERNETES) 构造 User-Agent
+    // Steps:
+    //   Construct User-Agent based on OS/arch/mode and env vars (MESOS, KUBERNETES)
 }
 
-/// 测试是否在 DCOS 环境
-///
-/// Go: TestIsDCOS
+/// Test DCOS environment detection
 #[test]
 #[ignore]
 fn test_is_dcos() {
     // TODO: implement when IsDCOS is available
     //
-    // Go 逻辑:
-    //   MESOS_CONTAINER_NAME != "" → true
-    //   清除后 → false
+    // Steps:
+    //   MESOS_CONTAINER_NAME != "" -> true
+    //   Cleared -> false
 }
 
-/// 测试是否在 Kubernetes 环境
-///
-/// Go: TestIsKubernetes
+/// Test Kubernetes environment detection
 #[test]
 #[ignore]
 fn test_is_kubernetes() {
     // TODO: implement when IsKubernetes is available
     //
-    // Go 逻辑:
-    //   KUBERNETES_SERVICE_HOST != "" → true
-    //   清除后 → false
+    // Steps:
+    //   KUBERNETES_SERVICE_HOST != "" -> true
+    //   Cleared -> false
 }
 
-/// 测试获取 Helm 版本
-///
-/// Go: TestGetHelmVersion
+/// Test getting Helm version
 #[test]
 #[ignore]
 fn test_get_helm_version() {
     // TODO: implement when getHelmVersion is available
     //
-    // Go 逻辑:
-    //   从 labels 文件解析 chart 版本
-    //   "" → "", 不存在文件 → "", labels 存在 → "minio-0.1.3"
+    // Steps:
+    //   Parse chart version from labels file
+    //   "" -> "", non-existent file -> "", labels exist -> "minio-0.1.3"
 }
 
-/// 测试下载 Release Data (HTTP)
-///
-/// Go: TestDownloadReleaseData
+/// Test downloading Release Data (HTTP)
 #[test]
 #[ignore]
 fn test_download_release_data() {
     // TODO: implement when downloadReleaseURL is available
     //
-    // Go 逻辑:
-    //   空响应 → 空字符串
-    //   有内容的响应 → 内容字符串
-    //   404 → error
+    // Steps:
+    //   Empty response -> empty string
+    //   Response with content -> content string
+    //   404 -> error
 }
 
-/// 测试解析 Release Data
-///
-/// Go: TestParseReleaseData
+/// Test parsing Release Data
 #[test]
 #[ignore]
 fn test_parse_release_data() {
     // TODO: implement when parseReleaseData is available
     //
-    // Go 逻辑:
-    //   解析 "sha256 minio.RELEASE.date" 格式
-    //   返回 sha256, releaseTime, releaseInfo
-    //   支持 hotfix 后缀
+    // Steps:
+    //   Parse "sha256 minio.RELEASE.date" format
+    //   Return sha256, releaseTime, releaseInfo
+    //   Support hotfix suffix
 }
 
-/// 测试 PrepareUpdateMessage 格式化
-///
-/// Go: TestPrepareUpdateMessage
+/// Test PrepareUpdateMessage formatting
 #[test]
 #[ignore]
 fn test_prepare_update_message() {
     // TODO: implement when prepareUpdateMessage is available
     //
-    // Go 逻辑:
-    //   测试各个时间间隔的显示文本:
-    //   72h → "3 days before"
-    //   1h → "1 hour before"
-    //   0s → "now"
-    //   空 dlURL → 空消息
-    //   超时 (≤0) → 空消息
+    // Steps:
+    //   Test display text for various time intervals:
+    //   72h -> "3 days before"
+    //   1h -> "1 hour before"
+    //   0s -> "now"
+    //   Empty dlURL -> empty message
+    //   Timeout (<=0) -> empty message
 }

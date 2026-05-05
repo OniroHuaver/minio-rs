@@ -1,17 +1,13 @@
-//! Storage REST client/server 测试
+//! Storage REST client/server tests
 //!
-//! 对应 Go: cmd/storage-rest_test.go
-//!
-//! 测试 storageRESTClient 通过 REST API 调用远程磁盘的 StorageAPI 行为。
-//! 这些是集成测试，需要启动本地 HTTP server 和 client。
+//! Tests storageRESTClient calling remote disks via REST API.
+//! These are integration tests requiring a local HTTP server and client.
 
 use storage::*;
 
-/// 测试 storageRESTClient.DiskInfo
+/// Tests storageRESTClient.DiskInfo
 ///
-/// 通过 REST client 调用远程 DiskInfo, 预期返回 errUnformattedDisk。
-///
-/// 对应 Go: TestStorageRESTClientDiskInfo
+/// Call remote DiskInfo via REST client, expected to return errUnformattedDisk.
 #[test]
 #[ignore]
 fn test_storage_rest_client_disk_info() {
@@ -22,13 +18,11 @@ fn test_storage_rest_client_disk_info() {
     // assert_eq!(result.unwrap_err(), Error::UnformattedDisk);
 }
 
-/// 测试 storageRESTClient.StatInfoFile
+/// Tests storageRESTClient.StatInfoFile
 ///
-/// 场景:
-/// - 存在的文件 → 返回统计信息
-/// - 不存在的文件 → 返回 error
-///
-/// 对应 Go: TestStorageRESTClientStatInfoFile
+/// Scenarios:
+/// - Existing file -> returns stats
+/// - Non-existent file -> returns error
 #[test]
 #[ignore]
 fn test_storage_rest_client_stat_info_file() {
@@ -43,13 +37,11 @@ fn test_storage_rest_client_stat_info_file() {
     // assert!(result.is_err());
 }
 
-/// 测试 storageRESTClient.ListDir
+/// Tests storageRESTClient.ListDir
 ///
-/// 场景:
-/// - 存在的目录 → 返回子目录列表
-/// - 不存在的目录 → 返回 error
-///
-/// 对应 Go: TestStorageRESTClientListDir
+/// Scenarios:
+/// - Existing directory -> returns subdirectory list
+/// - Non-existent directory -> returns error
 #[test]
 #[ignore]
 fn test_storage_rest_client_list_dir() {
@@ -64,13 +56,11 @@ fn test_storage_rest_client_list_dir() {
     // assert!(result.is_err());
 }
 
-/// 测试 storageRESTClient.ReadAll
+/// Tests storageRESTClient.ReadAll
 ///
-/// 场景:
-/// - 存在的文件 → 返回正确内容
-/// - 不存在的文件 → 返回 error
-///
-/// 对应 Go: TestStorageRESTClientReadAll
+/// Scenarios:
+/// - Existing file -> returns correct content
+/// - Non-existent file -> returns error
 #[test]
 #[ignore]
 fn test_storage_rest_client_read_all() {
@@ -85,14 +75,12 @@ fn test_storage_rest_client_read_all() {
     // assert!(result.is_err());
 }
 
-/// 测试 storageRESTClient.ReadFile
+/// Tests storageRESTClient.ReadFile
 ///
-/// 场景:
-/// - offset=0 → 返回完整内容
-/// - offset=1 → 返回截断内容
-/// - 不存在的文件 → 返回 error
-///
-/// 对应 Go: TestStorageRESTClientReadFile
+/// Scenarios:
+/// - offset=0 -> returns full content
+/// - offset=1 -> returns truncated content
+/// - Non-existent file -> returns error
 #[test]
 #[ignore]
 fn test_storage_rest_client_read_file() {
@@ -108,15 +96,13 @@ fn test_storage_rest_client_read_file() {
     // assert!(result.is_err());
 }
 
-/// 测试 storageRESTClient.AppendFile
+/// Tests storageRESTClient.AppendFile
 ///
-/// 场景:
-/// - 正常追加 → 通过 ReadAll 验证内容一致
-/// - 0 字节数据 → 成功
-/// - 不存在的卷 → 返回 error
-/// - 特殊字符 (换行符、制表符等) → 成功
-///
-/// 对应 Go: TestStorageRESTClientAppendFile
+/// Scenarios:
+/// - Normal append -> verify content via ReadAll
+/// - 0-byte data -> success
+/// - Non-existent volume -> returns error
+/// - Special characters (newline, tab, etc.) -> success
 #[test]
 #[ignore]
 fn test_storage_rest_client_append_file() {
@@ -139,13 +125,11 @@ fn test_storage_rest_client_append_file() {
     // client.append_file("foo", "newline\t", b"foo").await?;
 }
 
-/// 测试 storageRESTClient.Delete 文件删除
+/// Tests storageRESTClient.Delete file deletion
 ///
-/// 场景:
-/// - 删除存在的文件 → 成功
-/// - 删除不存在的文件 → 成功 (幂等)
-///
-/// 对应 Go: TestStorageRESTClientDeleteFile
+/// Scenarios:
+/// - Delete existing file -> success
+/// - Delete non-existent file -> success (idempotent)
 #[test]
 #[ignore]
 fn test_storage_rest_client_delete_file() {
@@ -157,14 +141,12 @@ fn test_storage_rest_client_delete_file() {
     // client.delete("foo", "yourobject", DeleteOptions { recursive: false, immediate: false }).await?;
 }
 
-/// 测试 storageRESTClient.RenameFile 文件重命名
+/// Tests storageRESTClient.RenameFile file rename
 ///
-/// 场景:
-/// - 同一卷内重命名 → 成功
-/// - 跨卷重命名 → 成功
-/// - 覆盖目标 → 成功
-///
-/// 对应 Go: TestStorageRESTClientRenameFile
+/// Scenarios:
+/// - Rename within same volume -> success
+/// - Rename across volumes -> success
+/// - Overwrite destination -> success
 #[test]
 #[ignore]
 fn test_storage_rest_client_rename_file() {

@@ -1,26 +1,22 @@
-//! Hash Reader 测试
+//! Hash Reader tests
 //!
-//! 对应 Go: internal/hash/reader_test.go
-//!
-//! 测试带 MD5/SHA256 校验的 hash reader (Reader):
-//! - 辅助方法 (Size, MD5Current, SHA256HexString 等)
-//! - 校验和验证 (正确/错误 MD5, SHA256)
-//! - 嵌套 reader
-//! - 截断读取
-//! - 非法参数
+//! Tests hash reader with MD5/SHA256 verification:
+//! - Helper methods (Size, MD5Current, SHA256HexString, etc.)
+//! - Checksum verification (correct/incorrect MD5, SHA256)
+//! - Nested reader
+//! - Truncated read
+//! - Invalid arguments
 
 use storage::*;
 
-/// 测试 HashReader 的辅助方法
+/// Tests HashReader helper methods
 ///
-/// 验证:
-/// - Size() 返回 4
-/// - ActualSize() 返回 4
-/// - MD5Current() 返回正确 MD5 hex
-/// - SHA256HexString() 返回正确 SHA256 hex
-/// - MD5 base64 编码正确
-///
-/// 对应 Go: TestHashReaderHelperMethods
+/// Verify:
+/// - Size() returns 4
+/// - ActualSize() returns 4
+/// - MD5Current() returns correct MD5 hex
+/// - SHA256HexString() returns correct SHA256 hex
+/// - MD5 base64 encoding is correct
 #[test]
 #[ignore]
 fn test_hash_reader_helper_methods() {
@@ -39,22 +35,20 @@ fn test_hash_reader_helper_methods() {
     // assert_eq!(r.actual_size(), 4);
 }
 
-/// 测试 HashReader 校验和验证
+/// Tests HashReader checksum verification
 ///
-/// 场景:
-/// - 无校验和 → 成功
-/// - 错误 MD5 → BadDigest
-/// - 错误 SHA256 → SHA256Mismatch
-/// - 嵌套 reader (内部有校验) → 合并校验
-/// - 嵌套 + 错误 SHA256 → SHA256Mismatch
-/// - 嵌套 + 正确 SHA256 → 成功
-/// - 嵌套 + 截断 + 正确 SHA256 → ErrOverread
-/// - 嵌套 + 错误 MD5 → BadDigest
-/// - 正确 SHA256 + 截断 → ErrOverread
-/// - 正确 MD5 + 嵌套 → 成功
-/// - 正确 MD5 + 截断 → ErrOverread
-///
-/// 对应 Go: TestHashReaderVerification
+/// Scenarios:
+/// - No checksum -> success
+/// - Wrong MD5 -> BadDigest
+/// - Wrong SHA256 -> SHA256Mismatch
+/// - Nested reader (inner checksum) -> merged verification
+/// - Nested + wrong SHA256 -> SHA256Mismatch
+/// - Nested + correct SHA256 -> success
+/// - Nested + truncated + correct SHA256 -> ErrOverread
+/// - Nested + wrong MD5 -> BadDigest
+/// - Correct SHA256 + truncated -> ErrOverread
+/// - Correct MD5 + nested -> success
+/// - Correct MD5 + truncated -> ErrOverread
 #[test]
 #[ignore]
 fn test_hash_reader_verification() {
@@ -77,20 +71,18 @@ fn test_hash_reader_verification() {
     // }
 }
 
-/// 测试 HashReader 非法参数
+/// Tests HashReader invalid arguments
 ///
-/// 场景:
-/// - 非法 MD5 hex → 构造失败
-/// - 非法 SHA256 hex → 构造失败
-/// - 嵌套 reader 合并 → 成功
-/// - 内层与外层 SHA256 不匹配 → 构造失败
-/// - 正确 SHA256 → 成功
-/// - 内层与外层 MD5 不匹配 → 构造失败
-/// - 正确 MD5 → 成功
-/// - 无校验 → 成功
-/// - 嵌套 + size 不匹配 → 构造失败
-///
-/// 对应 Go: TestHashReaderInvalidArguments
+/// Scenarios:
+/// - Invalid MD5 hex -> construction fails
+/// - Invalid SHA256 hex -> construction fails
+/// - Nested reader merge -> success
+/// - Inner/outer SHA256 mismatch -> construction fails
+/// - Correct SHA256 -> success
+/// - Inner/outer MD5 mismatch -> construction fails
+/// - Correct MD5 -> success
+/// - No checksum -> success
+/// - Nested + size mismatch -> construction fails
 #[test]
 #[ignore]
 fn test_hash_reader_invalid_arguments() {

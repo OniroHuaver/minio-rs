@@ -1,18 +1,10 @@
-//! 复制(Replication)相关测试
-//!
-//! 对应 Go:
-//!   `internal/bucket/replication/replication_test.go`
-//!   `internal/bucket/replication/rule_test.go`
-//!   `internal/bucket/replication/datatypes_gen_test.go`
+//! Replication related tests
 
 // ============================================================
-// Replication 配置解析
-// 对应 Go: replication_test.go
+// Replication config parsing
 // ============================================================
 
-/// 验证 Replication 配置的解析和验证。
-///
-/// Go: `replication_test.go`
+/// Verifies Replication config parsing and validation.
 #[test]
 #[ignore]
 // TODO: implement when replication config types are available
@@ -38,9 +30,7 @@ fn test_replication_config_parse() {
     // assert!(config.rules[0].is_enabled());
 }
 
-/// 验证 Replication Rule 行为。
-///
-/// Go: `rule_test.go`
+/// Verifies Replication Rule behavior.
 #[test]
 #[ignore]
 // TODO: implement when replication rule types are available
@@ -57,24 +47,19 @@ fn test_replication_rule() {
     // assert!(!rule.delete_marker_replication.is_enabled());
 }
 
-/// 验证复制数据类型序列化/反序列化。
-///
-/// Go: `datatypes_gen_test.go`
+/// Verifies replication data type serialization/deserialization.
 #[test]
 #[ignore]
 // TODO: implement when replication data types are available
 fn test_replication_datatypes_serde() {
-    // // 验证 ReplicationConfig / Rule / Destination 等类型的
-    // // XML 序列化 roundtrip
+    // // Verify XML serialization roundtrip for ReplicationConfig / Rule / Destination etc.
     // let config = ReplicationConfig { rules: vec![] };
     // let xml = quick_xml::to_string(&config).unwrap();
     // let deserialized: ReplicationConfig = quick_xml::from_str(&xml).unwrap();
     // assert_eq!(config, deserialized);
 }
 
-/// 验证复制规则匹配逻辑。
-///
-/// Go: `replication_test.go` 中的规则匹配测试
+/// Verifies replication rule matching logic.
 #[test]
 #[ignore]
 // TODO: implement when replication types are available
@@ -87,14 +72,12 @@ fn test_replication_rule_matching() {
     // assert!(!rule.matches("data/bar.txt"));
 }
 
-/// 验证复制状态和指标。
-///
-/// Go: `replication_test.go` 中的状态测试
+/// Verifies replication status and metrics.
 #[test]
 #[ignore]
 // TODO: implement when replication metrics types are available
 fn test_replication_status() {
-    // // 验证 ReplicationStatus 的解析和比较
+    // // Verify ReplicationStatus parsing and comparison
     // assert_eq!(ReplicationStatus::Pending.to_string(), "PENDING");
     // assert_eq!(ReplicationStatus::Complete.to_string(), "COMPLETE");
     // assert_eq!(ReplicationStatus::Failed.to_string(), "FAILED");

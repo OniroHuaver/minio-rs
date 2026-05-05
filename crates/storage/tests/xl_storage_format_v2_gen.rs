@@ -1,8 +1,6 @@
-//! xlMetaV2 MessagePack 序列化/反序列化测试
+//! xlMetaV2 MessagePack serialization/deserialization tests
 //!
-//! 对应 Go: cmd/xl-storage-format-v2_gen_test.go
-//!
-//! 测试 xlMetaV2 相关类型的 MsgPack (通过 rmp-serde) roundtrip。
+//! Tests MsgPack (via rmp-serde) roundtrip for xlMetaV2 related types.
 
 use storage::{
     XlMetaDataDirDecoder, XlMetaV2DeleteMarker, XlMetaV2Object, XlMetaV2Version,

@@ -1,12 +1,8 @@
-//! 版本控制(Versioning)测试
+//! Versioning tests
 //!
-//! 对应 Go: `internal/bucket/versioning/versioning_test.go`
-//!
-//! 测试版本化配置的 XML 解析、验证和查询。
+//! Tests versioning configuration XML parsing, validation, and query.
 
-/// 验证 Versioning 配置的 XML 解析和序列化。
-///
-/// Go: `versioning_test.go`
+/// Verifies Versioning config XML parsing and serialization.
 #[test]
 #[ignore]
 // TODO: implement when versioning types are available
@@ -21,15 +17,13 @@ fn test_versioning_config_parse() {
     // assert_eq!(config.status, VersioningStatus::Enabled);
     // assert_eq!(config.mfa_delete, MfaDeleteStatus::Disabled);
     //
-    // // 序列化回 XML
+    // // Serialize back to XML
     // let serialized = quick_xml::to_string(&config).unwrap();
     // assert!(serialized.contains("VersioningConfiguration"));
     // assert!(serialized.contains("Enabled"));
 }
 
-/// 验证 Versioning 配置的验证逻辑。
-///
-/// Go: `versioning_test.go`
+/// Verifies Versioning config validation logic.
 #[test]
 #[ignore]
 // TODO: implement when versioning types are available
@@ -44,9 +38,7 @@ fn test_versioning_config_validate() {
     // }
 }
 
-/// 验证版本化状态查询函数。
-///
-/// Go: `versioning_test.go`
+/// Verifies versioning status query functions.
 #[test]
 #[ignore]
 // TODO: implement when versioning status helpers are available

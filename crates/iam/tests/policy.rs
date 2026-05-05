@@ -1,32 +1,31 @@
-//! IAM 策略测试: BucketPolicy 评估、转换
-//!
-//! 对应 Go: cmd/policy_test.go
+//! IAM policy tests: BucketPolicy evaluation, conversion
 
-/// 验证 BucketPolicy.IsAllowed() 权限评估。
+/// Verifies BucketPolicy.IsAllowed() permission evaluation.
 ///
-/// 覆盖: 匿名+允许操作、匿名+资源匹配、匿名+禁止操作、Owner 绕过。
+/// Covers: anonymous + allow action, anonymous + resource match,
+/// anonymous + deny action, Owner bypass.
 #[test]
 #[ignore]
 fn test_policy_sys_is_allowed() {
-    // Go: 构造 BucketPolicy 含 GetBucketLocation + PutObject 允许语句
-    //   测试匿名/owner 各种组合的 IsAllowed
+    // construct BucketPolicy with GetBucketLocation + PutObject allow statements
+    //   test IsAllowed for anonymous/owner combinations
     // TODO: implement when BucketPolicy type is available
 }
 
-/// 验证 PolicyToBucketAccessPolicy() 转换 (内部格式 -> minio-go 格式)。
+/// Verifies PolicyToBucketAccessPolicy() conversion (internal format -> minio-go format).
 #[test]
 #[ignore]
 fn test_policy_to_bucket_access_policy() {
-    // Go: BucketPolicy -> BucketAccessPolicy
-    //   case1: 标准 -> 读权限; case2: 空语句; case3: 版本无效 -> error
+    // BucketPolicy -> BucketAccessPolicy
+    //   case1: standard -> read access; case2: empty statement; case3: invalid version -> error
     // TODO: implement when PolicyToBucketAccessPolicy equivalent is available
 }
 
-/// 验证 BucketAccessPolicyToPolicy() 转换 (minio-go 格式 -> 内部格式)。
+/// Verifies BucketAccessPolicyToPolicy() conversion (minio-go format -> internal format).
 #[test]
 #[ignore]
 fn test_bucket_access_policy_to_policy() {
-    // Go: BucketAccessPolicy -> BucketPolicy
-    //   case1: 标准; case2: 空; case3: 版本无效 -> error
+    // BucketAccessPolicy -> BucketPolicy
+    //   case1: standard; case2: empty; case3: invalid version -> error
     // TODO: implement when BucketAccessPolicyToPolicy equivalent is available
 }

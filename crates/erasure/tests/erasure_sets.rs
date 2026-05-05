@@ -1,41 +1,32 @@
 //! Erasure sets tests - hash-based object-to-set distribution.
 //!
-//! 对应 Go: `cmd/erasure-sets_test.go`
-//!
-//! 测试 erasureSets 层的哈希分布和初始化:
-//! sipHashMod, crcHashMod, newErasureSets, getHashedSet。
+//! Tests erasureSets layer hash distribution and initialization:
+//! sipHashMod, crcHashMod, newErasureSets, getHashedSet.
 
 use erasure::*;
 
-/// 基准测试: CRC hash 性能。
+/// Benchmark: CRC hash performance.
 ///
-/// Go 源: `BenchmarkCrcHash`
-///
-/// 测试不同长度 key (16, 64, 128, 256, 512, 1024 字节) 的
-/// crcHashMod 性能。
+/// Tests crcHashMod performance with different key lengths (16, 64, 128, 256, 512, 1024 bytes).
 #[test]
 #[ignore]
 fn benchmark_crc_hash() {
     // TODO: implement when crcHashMod is available
 }
 
-/// 基准测试: SipHash 性能。
+/// Benchmark: SipHash performance.
 ///
-/// Go 源: `BenchmarkSipHash`
-///
-/// 测试不同长度 key 的 sipHashMod 性能。
+/// Tests sipHashMod performance with different key lengths.
 #[test]
 #[ignore]
 fn benchmark_sip_hash() {
     // TODO: implement when sipHashMod is available
 }
 
-/// 测试 sipHashMod 的一致性。
+/// Tests sipHashMod consistency.
 ///
-/// Go 源: `TestSipHashMod`
-///
-/// 验证 9 个不同对象名的 sipHash 结果与预期一致。
-/// 测试无效参数返回 -1。
+/// Verify sipHash results for 9 different object names match expected values.
+/// Test invalid parameters return -1.
 #[test]
 #[ignore]
 fn test_sip_hash_mod() {
@@ -66,38 +57,32 @@ fn test_sip_hash_mod() {
     */
 }
 
-/// 测试 crcHashMod 的一致性。
+/// Tests crcHashMod consistency.
 ///
-/// Go 源: `TestCrcHashMod`
-///
-/// 验证 9 个不同对象名的 crcHash 结果与预期一致。
-/// 测试无效参数返回 -1。
+/// Verify crcHash results for 9 different object names match expected values.
+/// Test invalid parameters return -1.
 #[test]
 #[ignore]
 fn test_crc_hash_mod() {
     // TODO: implement when hashKey with CRCMOD is available
 }
 
-/// 测试 newErasureSets 初始化。
+/// Tests newErasureSets initialization.
 ///
-/// Go 源: `TestNewErasureSets`
-///
-/// 验证:
-/// - 无效参数 (setCount=0) 返回 errInvalidArgument
-/// - 空 endpoints 返回 errInvalidArgument
-/// - 正确参数成功初始化
+/// Verify:
+/// - Invalid parameters (setCount=0) return errInvalidArgument
+/// - Empty endpoints return errInvalidArgument
+/// - Correct parameters initialize successfully
 #[test]
 #[ignore]
 fn test_new_erasure_sets() {
     // TODO: implement when waitForFormatErasure and newErasureSets are available
 }
 
-/// 测试 getHashedSet 一致性。
+/// Tests getHashedSet consistency.
 ///
-/// Go 源: `TestHashedLayer`
-///
-/// 创建 16 个 erasureObjects 的 sets，使用 CRCMOD 算法，
-/// 验证特定对象名的哈希结果始终映射到同一个 set。
+/// Create 16 erasureObjects sets, use CRCMOD algorithm,
+/// verify that hash results for specific object names consistently map to the same set.
 #[test]
 #[ignore]
 fn test_hashed_layer() {

@@ -1,29 +1,26 @@
-//! 校验和 (Checksum) 测试
+//! Checksum tests
 //!
-//! 对应 Go: internal/hash/checksum_test.go
-//!
-//! 测试 ChecksumType 的 header 序列化/反序列化、
-//! Checksum 结构体的序列化/反序列化以及 multipart checksum。
+//! Tests ChecksumType header serialization/deserialization,
+//! Checksum struct serialization/deserialization, and multipart checksum.
 
 use storage::*;
 
-/// 测试 Checksum 添加/获取 HTTP header
+/// Tests Checksum add/get HTTP header
 ///
-/// 验证各种 ChecksumType (CRC32, CRC32C, CRC64NVME, SHA1, SHA256)
-/// 在 composite 和 full-object 模式下的 header 序列化和反序列化。
+/// Verifies header serialization and deserialization for various
+/// ChecksumType values (CRC32, CRC32C, CRC64NVME, SHA1, SHA256)
+/// in composite and full-object modes.
 ///
-/// 场景:
-/// - CRC32 composite → 成功
-/// - CRC32 full-object → 成功
-/// - CRC32C composite → 成功
-/// - CRC32C full-object → 成功
-/// - CRC64NVME (always full-object) → 成功
-/// - SHA1 composite → 成功
-/// - SHA256 composite → 成功
-/// - SHA1 full-object → ChecksumInvalid
-/// - SHA256 full-object → ChecksumInvalid
-///
-/// 对应 Go: TestChecksumAddToHeader
+/// Scenarios:
+/// - CRC32 composite -> success
+/// - CRC32 full-object -> success
+/// - CRC32C composite -> success
+/// - CRC32C full-object -> success
+/// - CRC64NVME (always full-object) -> success
+/// - SHA1 composite -> success
+/// - SHA256 composite -> success
+/// - SHA1 full-object -> ChecksumInvalid
+/// - SHA256 full-object -> ChecksumInvalid
 #[test]
 #[ignore]
 fn test_checksum_add_to_header() {
@@ -60,15 +57,13 @@ fn test_checksum_add_to_header() {
     // }
 }
 
-/// 测试 Checksum 序列化/反序列化
+/// Tests Checksum serialize/deserialize
 ///
-/// 场景:
-/// - 从数据创建 CRC32 Checksum
-/// - 调用 AppendTo 序列化
-/// - 调用 ChecksumFromBytes 反序列化
-/// - 验证 Matches 和 Equal
-///
-/// 对应 Go: TestChecksumSerializeDeserialize
+/// Scenarios:
+/// - Create CRC32 Checksum from data
+/// - Serialize via AppendTo
+/// - Deserialize via ChecksumFromBytes
+/// - Verify Matches and Equal
 #[test]
 #[ignore]
 fn test_checksum_serialize_deserialize() {
@@ -83,16 +78,14 @@ fn test_checksum_serialize_deserialize() {
     // assert!(chksm_out.equal(&chksm), "Checksum structural mismatch");
 }
 
-/// 测试 Multipart Checksum 序列化/反序列化
+/// Tests Multipart Checksum serialize/deserialize
 ///
-/// 场景:
-/// - 将数据分为 3 部分, 分别计算 CRC32C 校验和
-/// - 组合各部分校验和
-/// - 创建包含 multipart flag 的最终 checksum
-/// - 序列化后反序列化
-/// - 验证各部分校验和正确
-///
-/// 对应 Go: TestChecksumSerializeDeserializeMultiPart
+/// Scenarios:
+/// - Split data into 3 parts, compute CRC32C checksum for each
+/// - Combine part checksums
+/// - Create final checksum with multipart flag
+/// - Serialize then deserialize
+/// - Verify each part checksum is correct
 #[test]
 #[ignore]
 fn test_checksum_serialize_deserialize_multipart() {

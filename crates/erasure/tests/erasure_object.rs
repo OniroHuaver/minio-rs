@@ -1,239 +1,206 @@
 //! Erasure object tests.
 //!
-//! 对应 Go: `cmd/erasure-object_test.go`
-//!
-//! 测试对象层面的擦除编码操作: PutObject, GetObject, DeleteObject,
-//! 多部分上传、quorum 检测、版本化删除、内联数据等。
+//! Tests object-level erasure coding operations: PutObject, GetObject, DeleteObject,
+//! multipart upload, quorum detection, versioned deletion, inline data, etc.
 
 use erasure::*;
 
-/// 测试重复的 PutObjectPart 操作。
+/// Tests idempotent PutObjectPart.
 ///
-/// Go 源: `TestRepeatPutObjectPart`
+/// After creating a multipart upload, upload twice with the same part number
+/// (5 MiB data + MD5), verify the second upload does not fail.
 ///
-/// 创建 multipart upload 后，用相同的 part number 上传两次
-/// (5 MiB 数据 + MD5)，验证第二次上传不会失败。
-///
-/// 相关 Issue: <https://github.com/minio/minio/issues/1930>
+/// Related Issue: <https://github.com/minio/minio/issues/1930>
 #[test]
 #[ignore]
 fn test_repeat_put_object_part() {
     // TODO: implement when PutObjectPart with idempotent part upload is available
 }
 
-/// 测试基本的 DeleteObject 操作。
+/// Tests basic DeleteObject behavior.
 ///
-/// Go 源: `TestErasureDeleteObjectBasic`
-///
-/// 验证各种非法/合法 bucket 和 object 名称的删除行为:
+/// Verify delete behavior for various invalid/valid bucket and object names:
 /// - ".test" bucket -> BucketNameInvalid
 /// - "----" bucket -> BucketNameInvalid
-/// - 空 object -> ObjectNameInvalid
-/// - 不存在的 object -> ObjectNotFound
-/// - 不存在的 dir/object -> ObjectNotFound
-/// - 不存在的 dir -> ObjectNotFound
-/// - 不存在的 dir/ -> ObjectNotFound
-/// - 存在的对象 -> 删除成功
+/// - Empty object -> ObjectNameInvalid
+/// - Non-existent object -> ObjectNotFound
+/// - Non-existent dir/object -> ObjectNotFound
+/// - Non-existent dir -> ObjectNotFound
+/// - Non-existent dir/ -> ObjectNotFound
+/// - Existing object -> deleted successfully
 #[test]
 #[ignore]
 fn test_erasure_delete_object_basic() {
     // TODO: implement when DeleteObject with comprehensive error handling is available
 }
 
-/// 测试跨两个存储池的版本化对象删除。
+/// Tests versioned object deletion across two storage pools.
 ///
-/// Go 源: `TestDeleteObjectsVersionedTwoPools`
-///
-/// 在 32 盘、2 个 pool 上启用版本化:
-/// 1. 在每个 pool 上上传同一对象 (不同版本)
-/// 2. 按顺序删除各版本
-/// 3. 验证删除后 GetObjectInfo 返回 VersionNotFound
+/// Enable versioning on 32 disks across 2 pools:
+/// 1. Upload the same object (different versions) to each pool
+/// 2. Delete versions in sequence
+/// 3. Verify GetObjectInfo returns VersionNotFound after deletion
 #[test]
 #[ignore]
 fn test_delete_objects_versioned_two_pools() {
     // TODO: implement for versioned delete across two storage pools
 }
 
-/// 测试版本化对象的 DeleteObjects 操作。
+/// Tests versioned DeleteObjects operation.
 ///
-/// Go 源: `TestDeleteObjectsVersioned`
-///
-/// 启用版本化后:
-/// 1. 上传同一对象的两个版本
-/// 2. 执行批量删除 (含一个不存在的 UUID)
-/// 3. 验证所有版本删除成功
-/// 4. 验证 xl.meta 文件被清理
+/// After enabling versioning:
+/// 1. Upload two versions of the same object
+/// 2. Execute batch delete (including a non-existent UUID)
+/// 3. Verify all versions are deleted successfully
+/// 4. Verify xl.meta files are cleaned up
 #[test]
 #[ignore]
 fn test_delete_objects_versioned() {
     // TODO: implement for versioned batch delete
 }
 
-/// 测试 ErasureSet 级别的对象删除。
+/// Tests ErasureSet-level object deletion.
 ///
-/// Go 源: `TestErasureDeleteObjectsErasureSet`
-///
-/// 在 32 盘 sets 上:
-/// 1. 上传 4 个对象到同一 bucket
-/// 2. 批量删除
-/// 3. 验证所有对象已删除 (ObjectNotFound)
+/// On 32-disk sets:
+/// 1. Upload 4 objects to the same bucket
+/// 2. Batch delete
+/// 3. Verify all objects are deleted (ObjectNotFound)
 #[test]
 #[ignore]
 fn test_erasure_delete_objects_erasure_set() {
     // TODO: implement for erasure set-level batch delete
 }
 
-/// 测试磁盘故障时的 DeleteObject 行为。
+/// Tests DeleteObject behavior under disk failure.
 ///
-/// Go 源: `TestErasureDeleteObjectDiskNotFound`
-///
-/// 在 16 盘上:
-/// 1. 上传对象
-/// 2. 使 6 个磁盘返回 errFaultyDisk -> 删除应失败 (write quorum 不足)
-/// 3. 重新上传对象
-/// 4. 再使 2 个磁盘离线 -> 删除应失败 (write quorum 不足)
+/// On 16 disks:
+/// 1. Upload object
+/// 2. Make 6 disks return errFaultyDisk -> delete should fail (insufficient write quorum)
+/// 3. Re-upload object
+/// 4. Take 2 more disks offline -> delete should fail (insufficient write quorum)
 #[test]
 #[ignore]
 fn test_erasure_delete_object_disk_not_found() {
     // TODO: implement for delete with disk failures testing write quorum
 }
 
-/// 测试磁盘故障时的 DeleteObject 行为 (EC:4 场景)。
+/// Tests DeleteObject behavior under disk failure (EC:4 scenario).
 ///
-/// Go 源: `TestErasureDeleteObjectDiskNotFoundErasure4`
-///
-/// 在 16 盘上 (EC:4):
-/// 1. 上传、删除、重新上传对象
-/// 2. 使 5 个磁盘返回 errFaultyDisk -> 删除应失败 (write quorum 不足)
+/// On 16 disks (EC:4):
+/// 1. Upload, delete, re-upload object
+/// 2. Make 5 disks return errFaultyDisk -> delete should fail (insufficient write quorum)
 #[test]
 #[ignore]
 fn test_erasure_delete_object_disk_not_found_erasure4() {
     // TODO: implement for delete with 5 disk failures
 }
 
-/// 测试磁盘故障时仍能成功的 DeleteObject。
+/// Tests successful DeleteObject despite disk failures.
 ///
-/// Go 源: `TestErasureDeleteObjectDiskNotFoundErr`
-///
-/// 在 16 盘上:
-/// 1. 上传对象
-/// 2. 使 4 个磁盘返回 errFaultyDisk -> 删除应成功 (EC:4, 仍有足够 quorum)
-/// 3. 重新上传
-/// 4. 再使 3 个磁盘离线 -> 删除仍成功 (write quorum 足够)
+/// On 16 disks:
+/// 1. Upload object
+/// 2. Make 4 disks return errFaultyDisk -> delete should succeed (EC:4, sufficient quorum)
+/// 3. Re-upload
+/// 4. Take 3 more disks offline -> delete should still succeed (sufficient write quorum)
 #[test]
 #[ignore]
 fn test_erasure_delete_object_disk_not_found_err() {
     // TODO: implement for successful delete despite some disk failures
 }
 
-/// 测试 GetObject 在无法达到 read quorum 时的行为。
+/// Tests GetObject when read quorum cannot be reached.
 ///
-/// Go 源: `TestGetObjectNoQuorum`
+/// Scenario 1: All xl.meta online but data shards deleted
+///   -> GetObjectNInfo should return errErasureReadQuorum
 ///
-/// 场景 1: 所有 xl.meta 在线但数据分片被删除
-///   -> GetObjectNInfo 应返回 errErasureReadQuorum
-///
-/// 场景 2: 9 个磁盘离线 (少于 quorum)
-///   -> GetObjectNInfo 应返回 errErasureReadQuorum
+/// Scenario 2: 9 disks offline (below quorum)
+///   -> GetObjectNInfo should return errErasureReadQuorum
 #[test]
 #[ignore]
 fn test_get_object_no_quorum() {
     // TODO: implement for read quorum failure in GetObject
 }
 
-/// 测试 HeadObject (GetObjectInfo) 在无法达到 quorum 时的行为。
+/// Tests HeadObject (GetObjectInfo) when quorum cannot be reached.
 ///
-/// Go 源: `TestHeadObjectNoQuorum`
-///
-/// 场景 1: xl.meta 在线但数据分片被删除 -> GetObjectInfo 应成功
-/// 场景 2: 10 个磁盘离线 -> GetObjectInfo 应返回 errErasureReadQuorum
+/// Scenario 1: xl.meta online but data shards deleted -> GetObjectInfo should succeed
+/// Scenario 2: 10 disks offline -> GetObjectInfo should return errErasureReadQuorum
 #[test]
 #[ignore]
 fn test_head_object_no_quorum() {
     // TODO: implement for quorum failure in GetObjectInfo
 }
 
-/// 测试 PutObject 在无法达到 write quorum 时的行为。
+/// Tests PutObject when write quorum cannot be reached.
 ///
-/// Go 源: `TestPutObjectNoQuorum`
-///
-/// 在 16 盘上:
-/// 1. 上传一个大对象 (smallFileThreshold*16)
-/// 2. 使 9 个磁盘通过 naughtyDisk 失败
-/// 3. 重新上传 -> 应返回 errErasureWriteQuorum
+/// On 16 disks:
+/// 1. Upload a large object (smallFileThreshold*16)
+/// 2. Make 9 disks fail via naughtyDisk
+/// 3. Re-upload -> should return errErasureWriteQuorum
 #[test]
 #[ignore]
 fn test_put_object_no_quorum() {
     // TODO: implement for write quorum failure in PutObject (large objects)
 }
 
-/// 测试小对象 PutObject 在无法达到 write quorum 时的行为。
+/// Tests small object PutObject when write quorum cannot be reached.
 ///
-/// Go 源: `TestPutObjectNoQuorumSmall`
-///
-/// 与 TestPutObjectNoQuorum 类似但使用小对象 (smallFileThreshold/2)。
+/// Similar to TestPutObjectNoQuorum but with small objects (smallFileThreshold/2).
 #[test]
 #[ignore]
 fn test_put_object_no_quorum_small() {
     // TODO: implement for write quorum failure in PutObject (small objects)
 }
 
-/// 测试小对象的内联数据存储。
+/// Tests inline data storage for small objects.
 ///
-/// Go 源: `TestPutObjectSmallInlineData`
-///
-/// 用 4 盘配置:
-/// 1. 上传单字节对象 -> 读取验证
-/// 2. 上传超过 smallFileThreshold 的对象 -> 读取验证
-/// 3. 验证两次 PutObject 后数据完整性
+/// With 4-disk configuration:
+/// 1. Upload single-byte object -> read and verify
+/// 2. Upload object exceeding smallFileThreshold -> read and verify
+/// 3. Verify data integrity after two PutObject calls
 #[test]
 #[ignore]
 fn test_put_object_small_inline_data() {
     // TODO: implement for inline data storage and retrieval
 }
 
-/// 测试 objectQuorumFromMeta 函数。
+/// Tests objectQuorumFromMeta function.
 ///
-/// Go 源: `testObjectQuorumFromMeta`
-///
-/// 测试不同 StorageClass 配置下的 quorum 计算:
-/// 1. 无 StorageClass -> 默认 parity -> read/write quorum
-/// 2. 请求 RRS 存储类 -> 更高的 quorum (parity=2)
-/// 3. 请求 STANDARD -> 默认 quorum
-/// 4. Standard Parity=6 -> 更低 quorum
-/// 5. RRS Parity=2 -> 更高 quorum
-/// 6. 混合配置 -> 正确 quorum
-/// 7. Standard Parity=5 -> 相应 quorum
+/// Test quorum calculation under different StorageClass configurations:
+/// 1. No StorageClass -> default parity -> read/write quorum
+/// 2. RRS storage class requested -> higher quorum (parity=2)
+/// 3. STANDARD requested -> default quorum
+/// 4. Standard Parity=6 -> lower quorum
+/// 5. RRS Parity=2 -> higher quorum
+/// 6. Mixed configuration -> correct quorum
+/// 7. Standard Parity=5 -> corresponding quorum
 #[test]
 #[ignore]
 fn test_object_quorum_from_meta() {
     // TODO: implement when objectQuorumFromMeta with storage class support is available
 }
 
-/// 测试部分磁盘内联、部分非内联时的 GetObject。
+/// Tests GetObject when some disks are inline and others are not.
 ///
-/// Go 源: `TestGetObjectInlineNotInline`
-///
-/// 使用 4 盘，通过预置的测试数据 (xl-meta-inline-notinline.zip)，
-/// 验证一个磁盘数据内联、其他磁盘非内联时能正确读取对象。
+/// Using 4 disks with pre-built test data (xl-meta-inline-notinline.zip),
+/// verify that an object can be read correctly when one disk has inline data
+/// and other disks do not.
 #[test]
 #[ignore]
 fn test_get_object_inline_not_inline() {
     // TODO: implement for mixed inline/not-inline disk scenarios
 }
 
-/// 测试有过期磁盘时的 GetObject。
+/// Tests GetObject with outdated disks.
 ///
-/// Go 源: `TestGetObjectWithOutdatedDisks`
+/// On 6 disks, test 4 scenarios:
+/// 1. Non-versioned small object
+/// 2. Non-versioned large object
+/// 3. Versioned small object
+/// 4. Versioned large object
 ///
-/// 在 6 盘上测试 4 种场景:
-/// 1. 非版本化小对象
-/// 2. 非版本化大对象
-/// 3. 版本化小对象
-/// 4. 版本化大对象
-///
-/// 每种场景: 先全量上传, 再使 2 盘离线后上传新版本,
-/// 最后恢复磁盘读取验证 MD5。
+/// Each scenario: upload fully, take 2 disks offline then upload new version,
+/// finally restore disks and verify MD5 on read.
 #[test]
 #[ignore]
 fn test_get_object_with_outdated_disks() {

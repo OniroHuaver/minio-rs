@@ -1,96 +1,93 @@
-//! KMS 测试: KMS 处理器、DEK 编解码、SecretKey 加解密
-//!
-//! 对应 Go: cmd/kms-handlers_test.go,
-//!          internal/kms/config_test.go, dek_test.go, secret-key_test.go
+//! KMS tests: KMS handlers, DEK encode/decode, SecretKey encrypt/decrypt
 
 // ---- kms-handlers ----
 
-/// 验证 KMS CreateKey handler。
+/// Verifies KMS CreateKey handler.
 ///
-/// 覆盖: 无策略(拒绝)、允许策略(成功)、资源不匹配(拒绝)。
+/// Covers: no policy (deny), allow policy (success), resource mismatch (deny).
 #[test]
 #[ignore]
 fn test_kms_handlers_create_key() {
-    // Go: 4 个 case: 无策略->403; 无资源限制->200; 资源匹配->200; 资源不匹配->403
+    // 4 cases: no policy->403; no resource restriction->200; resource match->200; resource mismatch->403
     // TODO: implement when KMS handler subsystem is available
 }
 
-/// 验证 KMS KeyStatus handler。
+/// Verifies KMS KeyStatus handler.
 #[test]
 #[ignore]
 fn test_kms_handlers_key_status() {
-    // Go: 7 个 case: root、无策略、无资源限制、资源匹配、资源不匹配
+    // 7 cases: root, no policy, no resource restriction, resource match, resource mismatch
     // TODO: implement when KMS handler subsystem is available
 }
 
-/// 验证 KMS APIs/Version/Metrics/Status handlers。
+/// Verifies KMS APIs/Version/Metrics/Status handlers.
 #[test]
 #[ignore]
 fn test_kms_handlers_apis() {
-    // Go: ~12 个 case 覆盖 Version/APIs/Metrics/Status 每个的 root、无策略、有策略
+    // ~12 cases covering Version/APIs/Metrics/Status for root, no policy, with policy
     // TODO: implement when KMS handler subsystem is available
 }
 
-/// 验证 KMS ListKeys handler。
+/// Verifies KMS ListKeys handler.
 #[test]
 #[ignore]
 fn test_kms_handlers_list_keys() {
-    // Go: ~8 个 case 覆盖 pattern 过滤、资源限制、Deny 策略
+    // ~8 cases covering pattern filter, resource restriction, Deny policy
     // TODO: implement when KMS handler subsystem is available
 }
 
-/// 验证 KMS Admin API handler。
+/// Verifies KMS Admin API handler.
 #[test]
 #[ignore]
 fn test_kms_handler_admin_api() {
-    // Go: ~9 个 case 覆盖 Admin KMS API: CreateKey/Status/KeyStatus
+    // ~9 cases covering Admin KMS API: CreateKey/Status/KeyStatus
     //   Admin actions ignore Resources
     // TODO: implement when KMS handler subsystem is available
 }
 
-/// 验证 KMS handler 未配置或无效凭据时的行为。
+/// Verifies KMS handler behavior when not configured or with invalid credentials.
 #[test]
 #[ignore]
 fn test_kms_handler_not_configured_or_invalid_creds() {
-    // Go: KMS 未配置 -> 501 Not Implemented
-    //   KMS 已配置但凭据无效 -> 403 Forbidden
+    // KMS not configured -> 501 Not Implemented
+    //   KMS configured but invalid credentials -> 403 Forbidden
     // TODO: implement when KMS handler subsystem is available
 }
 
 // ---- internal/kms/config ----
 
-/// 验证 KMS 配置存在性检查 `IsPresent()`。
+/// Verifies KMS config presence check `IsPresent()`.
 #[test]
 #[ignore]
 fn test_kms_is_present() {
-    // Go: GlobalKMS != nil -> true; nil -> false
+    // GlobalKMS != nil -> true; nil -> false
     // TODO: implement when KMS config is available
 }
 
 // ---- internal/kms/dek ----
 
-/// 验证 DEK 编解码往返。
+/// Verifies DEK encode/decode round-trip.
 #[test]
 #[ignore]
 fn test_encode_decode_dek() {
-    // Go: DEK{Version, Key, SealedKey} -> Encode -> Decode -> 相等
+    // DEK{Version, Key, SealedKey} -> Encode -> Decode -> equal
     // TODO: implement when DEK type is available
 }
 
 // ---- internal/kms/secret-key ----
 
-/// 验证单密钥加解密往返。
+/// Verifies single key encrypt/decrypt round-trip.
 #[test]
 #[ignore]
 fn test_single_key_roundtrip() {
-    // Go: SecretKey -> Encrypt -> Decrypt -> 原文
+    // SecretKey -> Encrypt -> Decrypt -> original
     // TODO: implement when SecretKey KMS is available
 }
 
-/// 验证密钥解密 `DecryptKey()`。
+/// Verifies key decryption `DecryptKey()`.
 #[test]
 #[ignore]
 fn test_decrypt_key() {
-    // Go: 多密钥尝试解密
+    // multi-key decryption attempt
     // TODO: implement when SecretKey KMS is available
 }

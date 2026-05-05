@@ -1,20 +1,16 @@
 //! Common healing helper functions and tests.
 //!
-//! 对应 Go: `cmd/erasure-healing-common_test.go`
-//!
-//! 测试修复过程中使用的公共辅助函数：commonTime、
-//! listOnlineDisks、checkObjectWithAllParts、commonParity 等。
+//! Tests helper functions used during healing: commonTime,
+//! listOnlineDisks, checkObjectWithAllParts, commonParity, etc.
 
 use erasure::*;
 
-/// 测试 commonTime 函数，从一组时间戳中找出达到 quorum 的最晚时间。
+/// Tests commonTime function, finds the latest timestamp reaching quorum from a set.
 ///
-/// Go 源: `TestCommonTime`
-///
-/// 测试场景:
-/// 1. 混合不同时间戳，验证返回出现频率达到 quorum 的最晚时间
-/// 2. 所有时间戳相同
-/// 3. 混合正常时间和 timeSentinel 值
+/// Test scenarios:
+/// 1. Mixed timestamps, verify returns the latest time with frequency reaching quorum
+/// 2. All timestamps identical
+/// 3. Mixed normal timestamps and timeSentinel values
 #[test]
 #[ignore]
 fn test_common_time() {
@@ -72,16 +68,14 @@ fn test_common_time() {
     */
 }
 
-/// 测试 listOnlineDisks 函数，验证在线磁盘列表与过期磁盘的一致性。
+/// Tests listOnlineDisks function, verifies online disk list consistency with stale disks.
 ///
-/// Go 源: `TestListOnlineDisks`
-///
-/// 在 16 盘 Erasure 后端上:
-/// 1. 测试所有磁盘正常时的在线列表
-/// 2. 测试部分磁盘上 xl.meta 不可访问 (errFileNotFound, errDiskAccessDenied, errDiskNotFound)
-/// 3. 测试分片损坏 (bitrot error) 场景
-/// - 验证返回的 modTime 正确
-/// - 验证含损坏分片的磁盘不出现在 onlineDisks 中
+/// On a 16-disk Erasure backend:
+/// 1. Test online list when all disks are normal
+/// 2. Test when xl.meta is inaccessible on some disks (errFileNotFound, errDiskAccessDenied, errDiskNotFound)
+/// 3. Test shard corruption (bitrot error) scenarios
+/// - Verify returned modTime is correct
+/// - Verify disks with corrupted shards are excluded from onlineDisks
 #[test]
 #[ignore]
 fn test_list_online_disks() {
@@ -92,42 +86,36 @@ fn test_list_online_disks() {
     */
 }
 
-/// 测试小对象的 listOnlineDisks 函数。
+/// Tests listOnlineDisks for small objects.
 ///
-/// Go 源: `TestListOnlineDisksSmallObjects`
-///
-/// 与大对象测试类似，但使用小于 smallFileThreshold 的数据，
-/// 并验证 Inline Data 场景下的磁盘状态判断。
+/// Similar to the large object test, but uses data smaller than smallFileThreshold,
+/// and verifies disk state detection under Inline Data scenarios.
 #[test]
 #[ignore]
 fn test_list_online_disks_small_objects() {
     // TODO: implement for inline data / small object scenarios
 }
 
-/// 测试 checkObjectWithAllParts 函数。
+/// Tests checkObjectWithAllParts function.
 ///
-/// Go 源: `TestDisksWithAllParts`
-///
-/// 在 16 盘上创建 3 个 part 的对象 (18 MiB)：
-/// 1. 验证所有磁盘在元数据无修改时返回完整
-/// 2. 修改一个磁盘的 ModTime -> 验证该磁盘被过滤
-/// 3. 修改一个磁盘的 DataDir -> 验证该磁盘被过滤
-/// 4. 在 3 个磁盘上篡改 part.1 数据 -> 验证这些磁盘的 dataErrs 标记为需修复
+/// On 16 disks, create a 3-part object (18 MiB):
+/// 1. Verify all disks return complete when metadata is unmodified
+/// 2. Modify one disk's ModTime -> verify that disk is filtered out
+/// 3. Modify one disk's DataDir -> verify that disk is filtered out
+/// 4. Tamper part.1 data on 3 disks -> verify those disks are marked for repair in dataErrs
 #[test]
 #[ignore]
 fn test_disks_with_all_parts() {
     // TODO: implement when checkObjectWithAllParts is available
 }
 
-/// 测试 commonParity 函数，从多个不同 parity 的 FileInfo 中选择
-/// 达到 read quorum 的 parity。
+/// Tests commonParity function, selects parity that reaches read quorum from
+/// multiple FileInfo entries with different parity configurations.
 ///
-/// Go 源: `TestCommonParities`
-///
-/// 使用两个具有不同 parity (6+6 vs 7+5) 的 FileInfo，
-/// 在 12 盘中各占一半，验证 commonParity 能选取达到
-/// read quorum (5) 的正确 parity。
-/// 同时测试包含删除标记的情况。
+/// Uses two FileInfo entries with different parity (6+6 vs 7+5),
+/// each present on half of 12 disks. Verifies commonParity selects
+/// the correct parity reaching read quorum (5).
+/// Also tests cases with delete markers.
 #[test]
 #[ignore]
 fn test_common_parities() {

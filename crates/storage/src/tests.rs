@@ -1,4 +1,4 @@
-//! 单元测试模块
+//! Unit tests
 //!
-//! 当前单元测试主要放在 `tests/` 目录 (集成测试)。
-//! 此处保留为空 — 当需要 crate 内部私有函数测试时再扩展。
+//! Unit tests are primarily in the `tests/` directory (integration tests).
+//! This module is kept empty and will be expanded when internal private function testing is needed.

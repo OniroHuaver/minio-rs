@@ -1,8 +1,6 @@
-//! xlMetaV1 MessagePack 序列化/反序列化测试
+//! xlMetaV1 MessagePack serialization/deserialization tests
 //!
-//! 对应 Go: cmd/xl-storage-format-v1_gen_test.go
-//!
-//! 测试 xlMetaV1 相关类型的 MsgPack (通过 rmp-serde) roundtrip。
+//! Tests MsgPack (via rmp-serde) roundtrip for xlMetaV1 related types.
 
 use storage::{ChecksumInfo, ErasureInfo, ObjectPartInfo, StatInfo, XlMetaV1Object};
 
@@ -118,8 +116,8 @@ fn test_encode_decode_stat_info() {
 
 #[test]
 fn test_marshal_unmarshal_xl_meta_v1_object() {
-    // default() 中 meta_sys/meta_user 为 None，会被 skip_serializing_if 跳过，
-    // 导致序列化/反序列化字段数不一致。这里直接用完整字段构造。
+    // meta_sys/meta_user are None in default(), skipped by skip_serializing_if,
+    // causing field count mismatch on ser/de. Construct with full fields instead.
     let v = XlMetaV1Object {
         version: "1.0.1".into(),
         format: "xl".into(),

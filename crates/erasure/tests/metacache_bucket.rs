@@ -1,17 +1,13 @@
 //! Bucket-level metacache tests.
 //!
-//! 对应 Go: `cmd/metacache-bucket_test.go`
-//!
-//! 测试 bucketMetacache 的 findCache 方法性能。
+//! Tests bucketMetacache findCache method performance.
 
 use erasure::*;
 
-/// 基准测试: bucketMetacache.findCache 性能。
+/// Benchmark: bucketMetacache.findCache performance.
 ///
-/// Go 源: `Benchmark_bucketMetacache_findCache`
-///
-/// 预热 50000 个缓存条目 (100 个不同路径，各 500 次)，
-/// 然后测量 findCache 的性能。
+/// Warm up 50000 cache entries (100 distinct paths, 500 each),
+/// then measure findCache performance.
 #[test]
 #[ignore]
 fn benchmark_bucket_metacache_find_cache() {

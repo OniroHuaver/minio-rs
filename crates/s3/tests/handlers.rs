@@ -1,121 +1,117 @@
-//! HTTP Handler 测试: handler-utils、generic-handlers、crossdomain-xml、sftp、proxy
-//!
-//! 对应 Go: cmd/handler-utils_test.go, cmd/generic-handlers_test.go,
-//!          cmd/crossdomain-xml-handler_test.go, cmd/sftp-server_test.go,
-//!          internal/handlers/proxy_test.go
+//! HTTP Handler tests: handler-utils, generic-handlers, crossdomain-xml, sftp, proxy
 
 // ---- handler-utils ----
 
-/// 验证 Location Constraint 解析: `parseLocationConstraint()`。
+/// Verifies Location Constraint parsing: `parseLocationConstraint()`.
 #[test]
 #[ignore]
 fn test_is_valid_location_constraint() {
-    // Go: 正常XML->ErrNone; 空body->ErrNone; 垃圾->ErrMalformedXML; 损坏XML->ErrMalformedXML
+    // normal XML->ErrNone; empty body->ErrNone; garbage->ErrMalformedXML; broken XML->ErrMalformedXML
     // TODO: implement when parseLocationConstraint equivalent is available
 }
 
-/// 验证 HTTP 头中元数据提取: `extractMetadataFromMime()`。
+/// Verifies metadata extraction from HTTP headers: `extractMetadataFromMime()`.
 #[test]
 #[ignore]
 fn test_extract_metadata_headers() {
-    // Go: 多种 header -> metadata 映射验证; 复制相关 header 被过滤; nil输入->失败
+    // various headers -> metadata mapping; replication-related headers filtered; nil input->fail
     // TODO: implement when extractMetadataFromMime equivalent is available
 }
 
-/// 验证复制元数据头提取: `extractReplicationMetadataFromMime()`。
+/// Verifies replication metadata header extraction: `extractReplicationMetadataFromMime()`.
 #[test]
 #[ignore]
 fn test_extract_replication_metadata_headers() {
-    // Go: X-Minio-Replication-* headers -> X-Minio-Internal-* headers
+    // X-Minio-Replication-* headers -> X-Minio-Internal-* headers
     // TODO: implement when extractReplicationMetadataFromMime equivalent is available
 }
 
-/// 验证复制场景下 CopyObject 元数据提取: `getCpObjMetadataFromHeader()`。
+/// Verifies CopyObject metadata extraction for replication: `getCpObjMetadataFromHeader()`.
 #[test]
 #[ignore]
 fn test_get_copy_object_metadata_from_header_replication() {
-    // Go: 非复制请求过滤复制头; 复制请求保留复制头
+    // non-replication request filters replication headers; replication request preserves them
     // TODO: implement when getCpObjMetadataFromHeader equivalent is available
 }
 
-/// 验证 `cloneRequestWithoutCopyReplicationHeaders()` 剥离复制头但保留其他头。
+/// Verifies `cloneRequestWithoutCopyReplicationHeaders()` strips replication headers but preserves others.
 #[test]
 #[ignore]
 fn test_clone_request_without_copy_replication_headers() {
-    // Go: 复制头被剥离; 原始请求保留; Content-Type 保留
+    // replication headers stripped; original request preserved; Content-Type preserved
     // TODO: implement when cloneRequestWithoutCopyReplicationHeaders equivalent is available
 }
 
-/// 验证资源路径提取: `getResource()` (含虚拟域名 bucket 解析)。
+/// Verifies resource path extraction: `getResource()` (with virtual-hosted bucket parsing).
 #[test]
 #[ignore]
 fn test_get_resource() {
-    // Go: 虚拟域名->前缀加bucket; IPv6->原路径; IPv4->原路径; 不匹配域名->原路径
+    // virtual-hosted -> prefix + bucket; IPv6->original path; IPv4->original path; unmatching domain->original path
     // TODO: implement when getResource equivalent is available
 }
 
 // ---- generic-handlers ----
 
-/// 验证 RPC 请求猜测: `guessIsRPCReq()`。
+/// Verifies RPC request detection: `guessIsRPCReq()`.
 #[test]
 #[ignore]
 fn test_guess_is_rpc() {
-    // Go: nil->false; /minio/lock->true; grid.RoutePath->true; grid.RouteLockPath->true
+    // nil->false; /minio/lock->true; grid.RoutePath->true; grid.RouteLockPath->true
     // TODO: implement when guessIsRPCReq equivalent is available
 }
 
-/// 验证 HTTP header 大小检查: `isHTTPHeaderSizeTooLarge()`。
+/// Verifies HTTP header size check: `isHTTPHeaderSizeTooLarge()`.
 #[test]
 #[ignore]
 fn test_is_http_header_size_too_large() {
-    // Go: header 数量>8K -> true; user metadata > 2K -> true
+    // header count > 8K -> true; user metadata > 2K -> true
     // TODO: implement when isHTTPHeaderSizeTooLarge equivalent is available
 }
 
-/// 验证保留元数据检测: `containsReservedMetadata()`。
+/// Verifies reserved metadata detection: `containsReservedMetadata()`.
 #[test]
 #[ignore]
 fn test_contains_reserved_metadata() {
-    // Go: X-Minio-* -> true; crypto.MetaIV/MetaAlgorithm/MetaSealedKeySSEC -> false;
+    // X-Minio-* -> true; crypto.MetaIV/MetaAlgorithm/MetaSealedKeySSEC -> false;
     //   ReservedMetadataPrefix+Key -> true
     // TODO: implement when containsReservedMetadata equivalent is available
 }
 
-/// 验证 SSE TLS 处理器: 非TLS下SSE-C请求被拒绝。
+/// Verifies SSE TLS handler: SSE-C requests rejected over non-TLS.
 #[test]
 #[ignore]
 fn test_sse_tls_handler() {
-    // Go: globalIsTLS=false+SSE-C头->403; globalIsTLS=true+SSE-C头->200
+    // globalIsTLS=false + SSE-C headers -> 403; globalIsTLS=true + SSE-C headers -> 200
     // TODO: implement when setRequestValidityMiddleware equivalent is available
 }
 
-/// 验证路径中危险组件检测: `hasBadPathComponent()` (Benchmark wrapper)。
+/// Verifies dangerous path component detection: `hasBadPathComponent()` (Benchmark wrapper).
 #[test]
 #[ignore]
 fn test_has_bad_path_component() {
-    // Go: 空->false; 反斜杠->false; 长路径->false; 长路径+../..->true
+    // empty->false; backslash->false; long path->false; long path + ../..->true
     // TODO: implement when hasBadPathComponent equivalent is available
 }
 
 // ---- crossdomain-xml-handler ----
 
-/// 验证跨域 XML handler: `setCrossDomainPolicyMiddleware()`。
+/// Verifies cross-domain XML handler: `setCrossDomainPolicyMiddleware()`.
 #[test]
 #[ignore]
 fn test_cross_xml_handler() {
-    // Go: GET /crossdomain.xml -> 200 OK
+    // GET /crossdomain.xml -> 200 OK
     // TODO: implement when setCrossDomainPolicyMiddleware equivalent is available
 }
 
 // ---- sftp-server ----
 
-/// 验证 SFTP 认证流程。
+/// Verifies SFTP authentication flow.
 ///
-/// 覆盖: Service Account 登录、无效密码、LDAP 密码/公钥认证、缺失策略拒绝。
+/// Covers: Service Account login, invalid password, LDAP password/public key auth, missing policy denial.
 #[test]
 #[ignore]
 fn test_sftp_authentication() {
-    // Go: 集成测试遍历 iamTestSuites
+    // integration test iterating iamTestSuites
     //   SFTPServiceAccountLogin / SFTPInvalidServiceAccountPassword /
     //   SFTPFailedAuthDueToMissingPolicy / SFTPValidLDAPLoginWithPassword /
     //   SFTPPublicKeyAuthentication
@@ -124,26 +120,26 @@ fn test_sftp_authentication() {
 
 // ---- handlers/proxy ----
 
-/// 验证 `getScheme()`: 从 TLS 配置推断 scheme。
+/// Verifies `getScheme()`: infers scheme from TLS config.
 #[test]
 #[ignore]
 fn test_get_scheme() {
-    // Go: tlsConfig!=nil->"https"; nil->"http"
+    // tlsConfig!=nil->"https"; nil->"http"
     // TODO: implement when getScheme equivalent is available
 }
 
-/// 验证 `getSourceIP()`: 从 X-Forwarded-For / X-Real-IP 提取客户端 IP。
+/// Verifies `getSourceIP()`: extracts client IP from X-Forwarded-For / X-Real-IP.
 #[test]
 #[ignore]
 fn test_get_source_ip() {
-    // Go: 各种 header 组合 -> 正确客户端 IP
+    // various header combinations -> correct client IP
     // TODO: implement when getSourceIP equivalent is available
 }
 
-/// 验证 XFF 禁用时 `getSourceIP()` 行为。
+/// Verifies `getSourceIP()` behavior when XFF is disabled.
 #[test]
 #[ignore]
 fn test_xff_disabled() {
-    // Go: X-Forwarded-For 被忽略，使用 RemoteAddr
+    // X-Forwarded-For ignored, using RemoteAddr
     // TODO: implement when getSourceIP with disabled XFF is available
 }

@@ -1,96 +1,213 @@
-//! Erasure encoding tests with various configurations and disk failure scenarios.
+//! Erasure encoding tests — shard layout, size, and data integrity.
 //!
-//! 对应 Go: `cmd/erasure-encode_test.go`
+//! ## Test coverage (derived from STORAGE_SPEC.md §3, ARCHITECTURE.md §6)
 //!
-//! 测试擦除编码 (写入) 流程在各种 data/parity 组合、磁盘在线/离线
-//! 及非对齐数据偏移下的正确性和容错能力。
+//! - Shard count = M+N across all parity tiers
+//! - Shard size uniformity (all equal after zero-pad)
+//! - Data-shard content correctness (raw bytes before RS)
+//! - Parity shards are non-trivial (≠ all-zero, RS transform applied)
+//! - Deterministic encode: same input → identical output
+//! - Re-encode stability: multiple encode calls produce identical shards
+//! - Small-file inline threshold (≤128 KiB) shard sizes
+//! - Large-file boundary (multiple MiB) shard sizes
+//! - M+N ≤ 256 limit
 
-use erasure::*;
+use erasure::Erasure;
 
-/// 测试各种配置下擦除编码的正确性。
-///
-/// Go 源: `TestErasureEncode`
-///
-/// 测试场景 (共 20 个):
-/// - dataBlocks: 2~10, onDisks: 4~16 (含不足的情况)
-/// - 模拟不同数量的离线磁盘和坏盘
-/// - 不同数据大小 (0, 1 MiB) 和数据偏移 (0, 1, 2, MiB, MiB/2 等)
-/// - 不同块大小 (blockSizeV2, 1 MiB 等)
-/// - 不同位衰减算法
-/// - 验证成功场景写入字节数正确、失败场景正确返回错误
-/// - 模拟磁盘故障后重新编码并验证与 quorum 相关行为
-#[test]
-#[ignore]
-fn test_erasure_encode() {
-    // TODO: implement when Erasure::encode with bitrot writer and disk abstraction are available
-    /*
-    struct EncodeTest {
-        data_blocks: usize,
-        on_disks: usize,
-        off_disks: usize,
-        block_size: i64,
-        data_size: i64,
-        offset: usize,
-        algorithm: BitrotAlgorithm,
-        should_fail: bool,
-        should_fail_quorum: bool,
+fn test_bytes(seed: u64, len: usize) -> Vec<u8> {
+    let mut v = Vec::with_capacity(len);
+    let mut s = seed.wrapping_mul(0x9e3779b97f4a7c15);
+    for _ in 0..len {
+        s = s.wrapping_add(0x9e3779b97f4a7c15);
+        v.push((s.wrapping_mul(s >> 33) >> 24) as u8);
     }
+    v
+}
 
-    let test_cases = vec![
-        EncodeTest { data_blocks: 2, on_disks: 4, off_disks: 0, block_size: 1<<20, data_size: 1<<20, offset: 0, algorithm: BitrotAlgorithm::Blake2b512, should_fail: false, should_fail_quorum: false },
-        EncodeTest { data_blocks: 3, on_disks: 6, off_disks: 0, block_size: 1<<20, data_size: 1<<20, offset: 1, algorithm: BitrotAlgorithm::Sha256, should_fail: false, should_fail_quorum: false },
-        EncodeTest { data_blocks: 4, on_disks: 8, off_disks: 2, block_size: 1<<20, data_size: 1<<20, offset: 2, algorithm: BitrotAlgorithm::Default, should_fail: false, should_fail_quorum: false },
-        EncodeTest { data_blocks: 5, on_disks: 10, off_disks: 3, block_size: 1<<20, data_size: 1<<20, offset: 1<<20, algorithm: BitrotAlgorithm::Blake2b512, should_fail: false, should_fail_quorum: false },
-        EncodeTest { data_blocks: 7, on_disks: 14, off_disks: 5, block_size: 1<<20, data_size: 0, offset: 0, algorithm: BitrotAlgorithm::Sha256, should_fail: false, should_fail_quorum: false },
-        EncodeTest { data_blocks: 8, on_disks: 16, off_disks: 7, block_size: 1<<20, data_size: 0, offset: 0, algorithm: BitrotAlgorithm::Default, should_fail: false, should_fail_quorum: false },
-        EncodeTest { data_blocks: 2, on_disks: 4, off_disks: 2, block_size: 1<<20, data_size: 1<<20, offset: 0, algorithm: BitrotAlgorithm::Blake2b512, should_fail: false, should_fail_quorum: true },
-        EncodeTest { data_blocks: 8, on_disks: 10, off_disks: 1, block_size: 1<<20, data_size: 1<<20, offset: 0, algorithm: BitrotAlgorithm::Default, should_fail: false, should_fail_quorum: false },
+// ---------------------------------------------------------------------------
+// Shard count
+// ---------------------------------------------------------------------------
+
+#[test]
+fn shard_count_matches_total() {
+    let configs = &[(2, 1), (2, 2), (3, 2), (4, 2), (4, 4), (6, 3), (8, 4), (12, 4)];
+    for &(m, n) in configs {
+        let ec = Erasure::new(m, n).unwrap_or_else(|e| panic!("new({m},{n}): {e}"));
+        let shards = ec.encode(&test_bytes(m as u64, 1024)).expect("encode");
+        assert_eq!(shards.len(), m + n, "wrong shard count for {m}+{n}");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Shard size uniformity
+// ---------------------------------------------------------------------------
+
+#[test]
+fn all_shards_equal_size() {
+    // STORAGE_SPEC.md §3.2: each shard = shard_size bytes, last data shard zero-padded
+    let configs = &[(4, 2), (8, 4), (3, 3)];
+    for &(m, n) in configs {
+        let ec = Erasure::new(m, n).expect("new");
+        for &data_len in &[1usize, 63, 64, 255, 256, 1023, 1024, 4097, 65537] {
+            let shards = ec
+                .encode(&test_bytes(data_len as u64, data_len))
+                .unwrap_or_else(|e| panic!("encode {data_len}: {e}"));
+            let expected = (data_len + m - 1) / m;
+            for (i, s) in shards.iter().enumerate() {
+                assert_eq!(
+                    s.len(),
+                    expected,
+                    "{m}+{n} len={data_len}: shard[{i}] size mismatch"
+                );
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Data-shard content
+// ---------------------------------------------------------------------------
+
+#[test]
+fn data_shards_contain_original_bytes() {
+    // first M shards must contain the original data (zero-padded to shard_size)
+    let ec = Erasure::new(4, 2).expect("4+2");
+    let original = test_bytes(42, 4000);
+    let shards = ec.encode(&original).expect("encode");
+    let shard_size = (4000 + 3) / 4; // = 1000
+
+    let mut reconstructed = Vec::new();
+    for i in 0..4 {
+        reconstructed.extend_from_slice(&shards[i]);
+    }
+    assert_eq!(&reconstructed[..4000], &original[..]);
+    // trailing zeros in last shard
+    assert!(reconstructed[4000..].iter().all(|&b| b == 0));
+    assert_eq!(reconstructed.len(), 4 * shard_size);
+}
+
+// ---------------------------------------------------------------------------
+// Parity shards are non-trivial
+// ---------------------------------------------------------------------------
+
+#[test]
+fn parity_shards_are_non_zero() {
+    let ec = Erasure::new(4, 2).expect("4+2");
+    let data = test_bytes(1, 4096);
+    let shards = ec.encode(&data).expect("encode");
+
+    // parity shards (index M..M+N-1) should not be all-zero with real data
+    for i in 4..6 {
+        let is_zero = shards[i].iter().all(|&b| b == 0);
+        assert!(!is_zero, "parity shard[{i}] is unexpectedly all-zero");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Deterministic encoding
+// ---------------------------------------------------------------------------
+
+#[test]
+fn encode_is_deterministic() {
+    let ec = Erasure::new(8, 4).expect("8+4");
+    let data = test_bytes(0xcafe, 128 * 1024); // 128 KiB
+
+    let a = ec.encode(&data).expect("first");
+    let b = ec.encode(&data).expect("second");
+
+    assert_eq!(a.len(), b.len());
+    for i in 0..a.len() {
+        assert_eq!(a[i], b[i], "shard[{i}] differs between encodes");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Re-encode with varying sizes
+// ---------------------------------------------------------------------------
+
+#[test]
+fn encode_various_data_sizes() {
+    // covers inline (≤128 KiB), mid-range, and large (multi-MiB) sizes
+    // STORAGE_SPEC.md §3.3, §7.2, §7.3
+    let sizes = &[
+        1usize,                                   // 1 B
+        128,                                       // 128 B
+        1024,                                      // 1 KiB
+        65536,                                     // 64 KiB
+        128 * 1024 - 1,                            // just under 128 KiB
+        128 * 1024,                                // exact 128 KiB threshold
+        128 * 1024 + 1,                            // just over threshold
+        1024 * 1024,                               // 1 MiB
+        4 * 1024 * 1024,                           // 4 MiB (default block size)
+        4 * 1024 * 1024 + 1,                       // just over block size
+        8 * 1024 * 1024,                           // 8 MiB
     ];
 
-    for (i, test) in test_cases.iter().enumerate() {
-        // 1. Create erasure engine
-        // 2. Generate random test data
-        // 3. Create bitrot writers for each online disk
-        // 4. Encode data
-        // 5. Verify encoded bytes count matches
-        // 6. If off_disks > 0, simulate bad disks and re-encode
-        // 7. Verify quorum handling
-        todo!("implement test case {}", i);
+    let ec = Erasure::new(8, 4).expect("8+4");
+    for &size in sizes {
+        let data = test_bytes(size as u64 + 1, size);
+        let shards = ec.encode(&data).expect("encode");
+        assert_eq!(shards.len(), 12, "shard count for size={size}");
+
+        // full roundtrip verification
+        let all: Vec<_> = shards.iter().map(|s| Some(s.clone())).collect();
+        let decoded = ec.decode(&all).expect("decode");
+        assert_eq!(&decoded[..size], &data[..], "roundtrip size={size}");
     }
-    */
 }
 
-/// 擦除编码基准测试 - 快速 (2+2, 12 MiB)
+// ---------------------------------------------------------------------------
+// Max shards limit
+// ---------------------------------------------------------------------------
+
 #[test]
-#[ignore]
-fn benchmark_erasure_encode_quick() {
-    // TODO: implement benchmark for 2+2 configuration
+fn max_total_shards_limit() {
+    // M+N ≤ 256 per the native ReedSolomon limit
+    assert!(Erasure::new(200, 100).is_err(), "should reject M+N > 256");
+    assert!(Erasure::new(128, 128).is_ok(), "256 should be allowed");
+    assert!(Erasure::new(255, 1).is_ok(), "256 should be allowed");
+    assert!(Erasure::new(200, 57).is_err(), "257 should be rejected");
 }
 
-/// 擦除编码基准测试 - 4 盘 64KB
+// ---------------------------------------------------------------------------
+// with_default_parity — full coverage
+// ---------------------------------------------------------------------------
+
 #[test]
-#[ignore]
-fn benchmark_erasure_encode_4_64kb() {
-    // TODO: implement benchmark for 2+2 at 64KB with various disk failure patterns
+fn default_parity_all_valid_tiers() {
+    // Verify every valid total_disk count gets the right parity per ARCHITECTURE.md §6
+    fn expected(total: usize) -> (usize, usize) {
+        let parity = match total {
+            0..=5 => 2,
+            6..=7 => 3,
+            _ => 4,
+        };
+        (total - parity, parity)
+    }
+
+    for total in 3..=32 {
+        let ec = Erasure::with_default_parity(total)
+            .unwrap_or_else(|e| panic!("with_default_parity({total}): {e}"));
+        let (exp_data, exp_parity) = expected(total);
+        assert_eq!(ec.params().data_blocks, exp_data, "data for total={total}");
+        assert_eq!(ec.params().parity_blocks, exp_parity, "parity for total={total}");
+        assert_eq!(ec.params().total_shards(), total);
+    }
 }
 
-/// 擦除编码基准测试 - 8 盘 20MB
-#[test]
-#[ignore]
-fn benchmark_erasure_encode_8_20mb() {
-    // TODO: implement benchmark for 4+4 at 20MB with various disk failure patterns
-}
+// ---------------------------------------------------------------------------
+// Shard size edge cases — unaligned data to block boundaries
+// ---------------------------------------------------------------------------
 
-/// 擦除编码基准测试 - 12 盘 30MB
 #[test]
-#[ignore]
-fn benchmark_erasure_encode_12_30mb() {
-    // TODO: implement benchmark for 6+6 at 30MB with various disk failure patterns
-}
-
-/// 擦除编码基准测试 - 16 盘 40MB
-#[test]
-#[ignore]
-fn benchmark_erasure_encode_16_40mb() {
-    // TODO: implement benchmark for 8+8 at 40MB with various disk failure patterns
+fn shard_size_unaligned_vs_block_size() {
+    // DEFAULT_BLOCK_SIZE = 4 MiB (§6 of STORAGE_SPEC.md), but shard calculation
+    // uses ceil(data_len / M) not block size. Verify independence.
+    let ec = Erasure::new(4, 2).expect("4+2");
+    let data = test_bytes(7, 4 * 1024 * 1024 - 1); // 4 MiB - 1
+    let shards = ec.encode(&data).expect("encode");
+    let expected_shard = (4 * 1024 * 1024 - 1 + 3) / 4; // = 1 MiB
+    for (i, s) in shards.iter().enumerate() {
+        assert_eq!(s.len(), expected_shard, "shard[{i}] size");
+    }
 }

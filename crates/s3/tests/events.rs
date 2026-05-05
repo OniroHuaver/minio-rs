@@ -1,495 +1,489 @@
-//! 事件通知测试: ARN、Config、Name、Rules、RulesMap、TargetID、TargetList
-//!
-//! 对应 Go: internal/event/arn_test.go, config_test.go, name_test.go,
-//!          rules_test.go, rulesmap_test.go, targetid_test.go,
-//!          targetidset_test.go, targetlist_test.go,
-//!          target/mysql_test.go, target/nats_*.go, target/nsq_test.go,
-//!          target/postgresql_test.go
+//! Event notification tests: ARN, Config, Name, Rules, RulesMap, TargetID, TargetList
 
 // ---- event/arn ----
 
-/// 验证 ARN 字符串表示。
+/// Verifies ARN string representation.
 #[test]
 #[ignore]
 fn test_arn_string() {
-    // Go: ARN{Partition, Service, Region, AccountID, Resource}.String() -> "arn:..."
+    // ARN{Partition, Service, Region, AccountID, Resource}.String() -> "arn:..."
     // TODO: implement when ARN type is available
 }
 
-/// 验证 ARN MarshalXML。
+/// Verifies ARN MarshalXML.
 #[test]
 #[ignore]
 fn test_arn_marshal_xml() {
-    // Go: xml.Marshal(ARN)
+    // xml.Marshal(ARN)
     // TODO: implement when ARN XML serialization is available
 }
 
-/// 验证 ARN UnmarshalXML。
+/// Verifies ARN UnmarshalXML.
 #[test]
 #[ignore]
 fn test_arn_unmarshal_xml() {
-    // Go: xml.Unmarshal -> ARN
+    // xml.Unmarshal -> ARN
     // TODO: implement when ARN XML deserialization is available
 }
 
-/// 验证 ARN 解析: `ParseARN()`。
+/// Verifies ARN parsing: `ParseARN()`.
 #[test]
 #[ignore]
 fn test_parse_arn() {
-    // Go: "arn:partition:service:region:account:resource" -> ARN
+    // "arn:partition:service:region:account:resource" -> ARN
     // TODO: implement when ParseARN equivalent is available
 }
 
 // ---- event/config ----
 
-/// 验证 FilterRule 值验证。
+/// Verifies FilterRule value validation.
 #[test]
 #[ignore]
 fn test_validate_filter_rule_value() {
-    // Go: 空/无效前缀后缀 -> error
+    // empty/invalid prefix/suffix -> error
     // TODO: implement when FilterRule is available
 }
 
-/// 验证 FilterRule UnmarshalXML。
+/// Verifies FilterRule UnmarshalXML.
 #[test]
 #[ignore]
 fn test_filter_rule_unmarshal_xml() {
-    // Go: XML -> FilterRule
+    // XML -> FilterRule
     // TODO: implement when FilterRule XML deserialization is available
 }
 
-/// 验证 FilterRuleList UnmarshalXML。
+/// Verifies FilterRuleList UnmarshalXML.
 #[test]
 #[ignore]
 fn test_filter_rule_list_unmarshal_xml() {
-    // Go: XML -> FilterRuleList
+    // XML -> FilterRuleList
     // TODO: implement when FilterRuleList is available
 }
 
-/// 验证 FilterRuleList 模式匹配。
+/// Verifies FilterRuleList pattern matching.
 #[test]
 #[ignore]
 fn test_filter_rule_list_pattern() {
-    // Go: 前缀/后缀匹配
+    // prefix/suffix matching
     // TODO: implement when FilterRuleList pattern matching is available
 }
 
-/// 验证 Queue UnmarshalXML。
+/// Verifies Queue UnmarshalXML.
 #[test]
 #[ignore]
 fn test_queue_unmarshal_xml() {
-    // Go: XML -> Queue
+    // XML -> Queue
     // TODO: implement when Queue XML deserialization is available
 }
 
-/// 验证 Queue 验证。
+/// Verifies Queue validation.
 #[test]
 #[ignore]
 fn test_queue_validate() {
-    // Go: 空ARN -> error
+    // empty ARN -> error
     // TODO: implement when Queue validation is available
 }
 
-/// 验证 Queue 设置 region。
+/// Verifies Queue region setting.
 #[test]
 #[ignore]
 fn test_queue_set_region() {
-    // Go: Queue.SetRegion()
+    // Queue.SetRegion()
     // TODO: implement when Queue.SetRegion equivalent is available
 }
 
-/// 验证 Queue 转换为 RulesMap。
+/// Verifies Queue to RulesMap conversion.
 #[test]
 #[ignore]
 fn test_queue_to_rules_map() {
-    // Go: Queue -> RulesMap
+    // Queue -> RulesMap
     // TODO: implement when Queue.to_rules_map equivalent is available
 }
 
-/// 验证 Config UnmarshalXML。
+/// Verifies Config UnmarshalXML.
 #[test]
 #[ignore]
 fn test_config_unmarshal_xml() {
-    // Go: XML -> Config
+    // XML -> Config
     // TODO: implement when Config XML deserialization is available
 }
 
-/// 验证 Config 验证。
+/// Verifies Config validation.
 #[test]
 #[ignore]
 fn test_config_validate() {
-    // Go: 无效配置 -> error
+    // invalid config -> error
     // TODO: implement when Config validation is available
 }
 
-/// 验证 Config 设置 region。
+/// Verifies Config region setting.
 #[test]
 #[ignore]
 fn test_config_set_region() {
-    // Go: Config.SetRegion()
+    // Config.SetRegion()
     // TODO: implement when Config.SetRegion equivalent is available
 }
 
-/// 验证 Config 转换为 RulesMap。
+/// Verifies Config to RulesMap conversion.
 #[test]
 #[ignore]
 fn test_config_to_rules_map() {
-    // Go: Config -> RulesMap
+    // Config -> RulesMap
     // TODO: implement when Config.to_rules_map equivalent is available
 }
 
-/// 验证 Config 解析。
+/// Verifies Config parsing.
 #[test]
 #[ignore]
 fn test_parse_config() {
-    // Go: XML bytes -> Config
+    // XML bytes -> Config
     // TODO: implement when ParseConfig equivalent is available
 }
 
 // ---- event/name ----
 
-/// 验证 Name.Expand()。
+/// Verifies Name.Expand().
 #[test]
 #[ignore]
 fn test_name_expand() {
-    // Go: Name{...}.Expand() -> 展开的事件名列表
+    // Name{...}.Expand() -> expanded event name list
     // TODO: implement when Name.Expand equivalent is available
 }
 
-/// 验证 Name.String()。
+/// Verifies Name.String().
 #[test]
 #[ignore]
 fn test_name_string() {
-    // Go: Name -> "s3:ObjectCreated:Put" 等
+    // Name -> "s3:ObjectCreated:Put" etc.
     // TODO: implement when Name display is available
 }
 
-/// 验证 Name MarshalXML。
+/// Verifies Name MarshalXML.
 #[test]
 #[ignore]
 fn test_name_marshal_xml() {
-    // Go: xml.Marshal(Name)
+    // xml.Marshal(Name)
     // TODO: implement when Name XML serialization is available
 }
 
-/// 验证 Name UnmarshalXML。
+/// Verifies Name UnmarshalXML.
 #[test]
 #[ignore]
 fn test_name_unmarshal_xml() {
-    // Go: xml.Unmarshal -> Name
+    // xml.Unmarshal -> Name
     // TODO: implement when Name XML deserialization is available
 }
 
-/// 验证 Name MarshalJSON。
+/// Verifies Name MarshalJSON.
 #[test]
 #[ignore]
 fn test_name_marshal_json() {
-    // Go: json.Marshal(Name)
+    // json.Marshal(Name)
     // TODO: implement when Name JSON serialization is available
 }
 
-/// 验证 Name UnmarshalJSON。
+/// Verifies Name UnmarshalJSON.
 #[test]
 #[ignore]
 fn test_name_unmarshal_json() {
-    // Go: json.Unmarshal -> Name
+    // json.Unmarshal -> Name
     // TODO: implement when Name JSON deserialization is available
 }
 
-/// 验证 Name 解析: `ParseName()`。
+/// Verifies Name parsing: `ParseName()`.
 #[test]
 #[ignore]
 fn test_parse_name() {
-    // Go: "s3:ObjectCreated:*" -> Name
+    // "s3:ObjectCreated:*" -> Name
     // TODO: implement when ParseName equivalent is available
 }
 
 // ---- event/rules ----
 
-/// 验证 NewPattern()。
+/// Verifies NewPattern().
 #[test]
 #[ignore]
 fn test_new_pattern() {
-    // Go: 构造 Pattern 并验证
+    // construct Pattern and verify
     // TODO: implement when Pattern type is available
 }
 
-/// 验证 Rules.Add()。
+/// Verifies Rules.Add().
 #[test]
 #[ignore]
 fn test_rules_add() {
-    // Go: Rules.Add(event, target) -> 规则合并
+    // Rules.Add(event, target) -> rule merge
     // TODO: implement when Rules type is available
 }
 
-/// 验证 Rules.Match()。
+/// Verifies Rules.Match().
 #[test]
 #[ignore]
 fn test_rules_match() {
-    // Go: Rules.Match(event) -> matching targets
+    // Rules.Match(event) -> matching targets
     // TODO: implement when Rules.Match equivalent is available
 }
 
-/// 验证 Rules.Clone()。
+/// Verifies Rules.Clone().
 #[test]
 #[ignore]
 fn test_rules_clone() {
-    // Go: Rules.Clone() -> 深度拷贝
+    // Rules.Clone() -> deep copy
     // TODO: implement when Rules.Clone equivalent is available
 }
 
-/// 验证 Rules.Union()。
+/// Verifies Rules.Union().
 #[test]
 #[ignore]
 fn test_rules_union() {
-    // Go: Rules.Union(other) -> 合并
+    // Rules.Union(other) -> merge
     // TODO: implement when Rules.Union equivalent is available
 }
 
-/// 验证 Rules.Difference()。
+/// Verifies Rules.Difference().
 #[test]
 #[ignore]
 fn test_rules_difference() {
-    // Go: Rules.Difference(other) -> 差集
+    // Rules.Difference(other) -> difference
     // TODO: implement when Rules.Difference equivalent is available
 }
 
 // ---- event/rulesmap ----
 
-/// 验证 RulesMap.Clone()。
+/// Verifies RulesMap.Clone().
 #[test]
 #[ignore]
 fn test_rules_map_clone() {
-    // Go: RulesMap.Clone() -> 深度拷贝
+    // RulesMap.Clone() -> deep copy
     // TODO: implement when RulesMap is available
 }
 
-/// 验证 RulesMap.Add()。
+/// Verifies RulesMap.Add().
 #[test]
 #[ignore]
 fn test_rules_map_add() {
-    // Go: RulesMap.Add(event, target) -> 添加路由
+    // RulesMap.Add(event, target) -> add route
     // TODO: implement when RulesMap.Add equivalent is available
 }
 
-/// 验证 RulesMap.Remove()。
+/// Verifies RulesMap.Remove().
 #[test]
 #[ignore]
 fn test_rules_map_remove() {
-    // Go: RulesMap.Remove(event, target) -> 移除路由
+    // RulesMap.Remove(event, target) -> remove route
     // TODO: implement when RulesMap.Remove equivalent is available
 }
 
-/// 验证 RulesMap.Match()。
+/// Verifies RulesMap.Match().
 #[test]
 #[ignore]
 fn test_rules_map_match() {
-    // Go: RulesMap.Match(event) -> matching rules
+    // RulesMap.Match(event) -> matching rules
     // TODO: implement when RulesMap.Match equivalent is available
 }
 
-/// 验证 NewRulesMap()。
+/// Verifies NewRulesMap().
 #[test]
 #[ignore]
 fn test_new_rules_map() {
-    // Go: NewRulesMap(event, target) -> RulesMap
+    // NewRulesMap(event, target) -> RulesMap
     // TODO: implement when NewRulesMap equivalent is available
 }
 
 // ---- event/targetid ----
 
-/// 验证 TargetID.String()。
+/// Verifies TargetID.String().
 #[test]
 #[ignore]
 fn test_target_id_string() {
-    // Go: TargetID{ID, ARN}.String() -> "ID:ARN"
+    // TargetID{ID, ARN}.String() -> "ID:ARN"
     // TODO: implement when TargetID is available
 }
 
-/// 验证 TargetID.ToARN()。
+/// Verifies TargetID.ToARN().
 #[test]
 #[ignore]
 fn test_target_id_to_arn() {
-    // Go: TargetID -> ARN
+    // TargetID -> ARN
     // TODO: implement when TargetID.to_arn is available
 }
 
-/// 验证 TargetID.MarshalJSON()。
+/// Verifies TargetID.MarshalJSON().
 #[test]
 #[ignore]
 fn test_target_id_marshal_json() {
-    // Go: json.Marshal(TargetID)
+    // json.Marshal(TargetID)
     // TODO: implement when TargetID JSON serialization is available
 }
 
-/// 验证 TargetID.UnmarshalJSON()。
+/// Verifies TargetID.UnmarshalJSON().
 #[test]
 #[ignore]
 fn test_target_id_unmarshal_json() {
-    // Go: json.Unmarshal -> TargetID
+    // json.Unmarshal -> TargetID
     // TODO: implement when TargetID JSON deserialization is available
 }
 
 // ---- event/targetidset ----
 
-/// 验证 TargetIDSet.Clone()。
+/// Verifies TargetIDSet.Clone().
 #[test]
 #[ignore]
 fn test_target_id_set_clone() {
-    // Go: TargetIDSet.Clone() -> 深度拷贝
+    // TargetIDSet.Clone() -> deep copy
     // TODO: implement when TargetIDSet is available
 }
 
-/// 验证 TargetIDSet.Union()。
+/// Verifies TargetIDSet.Union().
 #[test]
 #[ignore]
 fn test_target_id_set_union() {
-    // Go: TargetIDSet.Union(other) -> 并集
+    // TargetIDSet.Union(other) -> union
     // TODO: implement when TargetIDSet.Union equivalent is available
 }
 
-/// 验证 TargetIDSet.Difference()。
+/// Verifies TargetIDSet.Difference().
 #[test]
 #[ignore]
 fn test_target_id_set_difference() {
-    // Go: TargetIDSet.Difference(other) -> 差集
+    // TargetIDSet.Difference(other) -> difference
     // TODO: implement when TargetIDSet.Difference equivalent is available
 }
 
-/// 验证 NewTargetIDSet()。
+/// Verifies NewTargetIDSet().
 #[test]
 #[ignore]
 fn test_new_target_id_set() {
-    // Go: NewTargetIDSet(ids...) -> TargetIDSet
+    // NewTargetIDSet(ids...) -> TargetIDSet
     // TODO: implement when NewTargetIDSet equivalent is available
 }
 
 // ---- event/targetlist ----
 
-/// 验证 TargetList.Add()。
+/// Verifies TargetList.Add().
 #[test]
 #[ignore]
 fn test_target_list_add() {
-    // Go: TargetList.Add(target) -> 注册 target
+    // TargetList.Add(target) -> register target
     // TODO: implement when TargetList is available
 }
 
-/// 验证 TargetList.Exists()。
+/// Verifies TargetList.Exists().
 #[test]
 #[ignore]
 fn test_target_list_exists() {
-    // Go: TargetList.Exists(id) -> bool
+    // TargetList.Exists(id) -> bool
     // TODO: implement when TargetList.Exists equivalent is available
 }
 
-/// 验证 TargetList.List()。
+/// Verifies TargetList.List().
 #[test]
 #[ignore]
 fn test_target_list_list() {
-    // Go: TargetList.List() -> []TargetID
+    // TargetList.List() -> []TargetID
     // TODO: implement when TargetList.list equivalent is available
 }
 
-/// 验证 NewTargetList()。
+/// Verifies NewTargetList().
 #[test]
 #[ignore]
 fn test_new_target_list() {
-    // Go: NewTargetList() -> *TargetList
+    // NewTargetList() -> *TargetList
     // TODO: implement when NewTargetList equivalent is available
 }
 
 // ---- event/target/mysql ----
 
-/// 验证 MySQL target 注册。
+/// Verifies MySQL target registration.
 #[test]
 #[ignore]
 fn test_mysql_registration() {
-    // Go: MySQL target identity/region validation
+    // MySQL target identity/region validation
     // TODO: implement when MySQL event target is available
 }
 
 // ---- event/target/nats ----
 
-/// 验证 NATS 明文连接。
+/// Verifies NATS plain connection.
 #[test]
 #[ignore]
 fn test_nats_conn_plain() {
-    // Go: NATS plain connection
+    // NATS plain connection
     // TODO: implement when NATS event target is available
 }
 
-/// 验证 NATS 用户名密码连接。
+/// Verifies NATS user/password connection.
 #[test]
 #[ignore]
 fn test_nats_conn_user_pass() {
-    // Go: NATS user/password auth
+    // NATS user/password auth
     // TODO: implement when NATS event target is available
 }
 
-/// 验证 NATS Token 连接。
+/// Verifies NATS Token connection.
 #[test]
 #[ignore]
 fn test_nats_conn_token() {
-    // Go: NATS token auth
+    // NATS token auth
     // TODO: implement when NATS event target is available
 }
 
-/// 验证 NATS NKey Seed 连接。
+/// Verifies NATS NKey Seed connection.
 #[test]
 #[ignore]
 fn test_nats_conn_nkey_seed() {
-    // Go: NATS NKey auth
+    // NATS NKey auth
     // TODO: implement when NATS event target is available
 }
 
-/// 验证 NATS TLS 自定义 CA 连接。
+/// Verifies NATS TLS custom CA connection.
 #[test]
 #[ignore]
 fn test_nats_conn_tls_custom_ca() {
-    // Go: NATS TLS with custom CA
+    // NATS TLS with custom CA
     // TODO: implement when NATS event target is available
 }
 
-/// 验证 NATS TLS HandshakeFirst 连接。
+/// Verifies NATS TLS HandshakeFirst connection.
 #[test]
 #[ignore]
 fn test_nats_conn_tls_custom_ca_handshake_first() {
-    // Go: NATS TLS handshake first
+    // NATS TLS handshake first
     // TODO: implement when NATS event target is available
 }
 
-/// 验证 NATS TLS 客户端证书连接。
+/// Verifies NATS TLS client certificate connection.
 #[test]
 #[ignore]
 fn test_nats_conn_tls_client_authorization() {
-    // Go: NATS TLS client cert auth
+    // NATS TLS client cert auth
     // TODO: implement when NATS event target is available
 }
 
 // ---- event/target/nsq ----
 
-/// 验证 NSQ 参数验证。
+/// Verifies NSQ parameter validation.
 #[test]
 #[ignore]
 fn test_nsq_args_validate() {
-    // Go: NSQ 参数验证
+    // NSQ parameter validation
     // TODO: implement when NSQ event target is available
 }
 
 // ---- event/target/postgresql ----
 
-/// 验证 PostgreSQL target 注册。
+/// Verifies PostgreSQL target registration.
 #[test]
 #[ignore]
 fn test_postgresql_registration() {
-    // Go: PostgreSQL target identity/region validation
+    // PostgreSQL target identity/region validation
     // TODO: implement when PostgreSQL event target is available
 }
 
-/// 验证 PostgreSQL 表名验证。
+/// Verifies PostgreSQL table name validation.
 #[test]
 #[ignore]
 fn test_psql_table_name_validation() {
-    // Go: PostgreSQL 表名规则验证
+    // PostgreSQL table name rule validation
     // TODO: implement when PostgreSQL event target is available
 }

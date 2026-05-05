@@ -1,19 +1,15 @@
-//! IO 工具函数测试
+//! IO utility function tests
 //!
-//! 对应 Go: internal/ioutil/ioutil_test.go
-//!
-//! 测试 DeadlineWorker, DeadlineWriter, WriteOnClose, AppendFile,
-//! SkipReader, SameFile, CopyAligned 等工具。
+//! Tests DeadlineWorker, DeadlineWriter, WriteOnClose, AppendFile,
+//! SkipReader, SameFile, CopyAligned, and other utilities.
 
 use storage::*;
 
-/// 测试 DeadlineWorker 超时工作器
+/// Tests DeadlineWorker timeout worker
 ///
-/// 场景:
-/// - 耗时 600ms 的工作在 500ms 超时 → context::DeadlineExceeded
-/// - 耗时 450ms 的工作在 500ms 超时 → 成功
-///
-/// 对应 Go: TestDeadlineWorker
+/// Scenarios:
+/// - 600ms work with 500ms timeout -> context::DeadlineExceeded
+/// - 450ms work with 500ms timeout -> success
 #[test]
 #[ignore]
 fn test_deadline_worker() {
@@ -35,13 +31,11 @@ fn test_deadline_worker() {
     // assert!(result.is_ok());
 }
 
-/// 测试 DeadlineWriter 超时写入器
+/// Tests DeadlineWriter timeout writer
 ///
-/// 场景:
-/// - 写入耗时 500ms 的目标, 450ms 超时 → DeadlineExceeded
-/// - 写入耗时 100ms 的目标, 600ms 超时 → 成功, 写入 4 字节
-///
-/// 对应 Go: TestDeadlineWriter
+/// Scenarios:
+/// - Write to 500ms target with 450ms timeout -> DeadlineExceeded
+/// - Write to 100ms target with 600ms timeout -> success, 4 bytes written
 #[test]
 #[ignore]
 fn test_deadline_writer() {
@@ -55,14 +49,12 @@ fn test_deadline_writer() {
     // assert_eq!(n, 4);
 }
 
-/// 测试 WriteOnClose 写入时关闭标记
+/// Tests WriteOnClose write-on-close flag
 ///
-/// 场景:
-/// - 新建 WriteOnClose → HasWritten = false
-/// - 写入后 → HasWritten = true
-/// - Close 后 → HasWritten = true
-///
-/// 对应 Go: TestCloseOnWriter
+/// Scenarios:
+/// - New WriteOnClose -> HasWritten = false
+/// - After write -> HasWritten = true
+/// - After Close -> HasWritten = true
 #[test]
 #[ignore]
 fn test_close_on_writer() {
@@ -78,13 +70,11 @@ fn test_close_on_writer() {
     // assert!(writer.has_written());
 }
 
-/// 测试 AppendFile 文件追加
+/// Tests AppendFile file append
 ///
-/// 场景:
-/// - 将文件 b 的内容追加到文件 a
-/// - 验证 a 的内容为两个文件的拼接
-///
-/// 对应 Go: TestAppendFile
+/// Scenarios:
+/// - Append contents of file b to file a
+/// - Verify a contains concatenation of both files
 #[test]
 #[ignore]
 fn test_append_file() {
@@ -103,18 +93,16 @@ fn test_append_file() {
     // assert_eq!(content, "aaaaaaaaaabbbbbbbbbb");
 }
 
-/// 测试 SkipReader 跳过读取
+/// Tests SkipReader skip reading
 ///
-/// 场景:
-/// - 空数据, skip=0 → ""
-/// - 空数据, skip=1 → ""
-/// - "abc", skip=0 → "abc"
-/// - "abc", skip=1 → "bc"
-/// - "abc", skip=2 → "c"
-/// - "abc", skip=3 → ""
-/// - "abc", skip=4 → ""
-///
-/// 对应 Go: TestSkipReader
+/// Scenarios:
+/// - empty data, skip=0 -> ""
+/// - empty data, skip=1 -> ""
+/// - "abc", skip=0 -> "abc"
+/// - "abc", skip=1 -> "bc"
+/// - "abc", skip=2 -> "c"
+/// - "abc", skip=3 -> ""
+/// - "abc", skip=4 -> ""
 #[test]
 #[ignore]
 fn test_skip_reader() {
@@ -135,13 +123,11 @@ fn test_skip_reader() {
     // }
 }
 
-/// 测试 SameFile 比较两个文件是否相同
+/// Tests SameFile comparing two files
 ///
-/// 场景:
-/// - 同一个文件的两个 stat → 相同
-/// - 修改文件后 stat → 不相同
-///
-/// 对应 Go: TestSameFile
+/// Scenarios:
+/// - Two stats of the same file -> same
+/// - Stat after modifying file -> different
 #[test]
 #[ignore]
 fn test_same_file() {
@@ -158,13 +144,11 @@ fn test_same_file() {
     // assert!(!same_file(&fi1, &fi2_modified));
 }
 
-/// 测试 CopyAligned 对齐拷贝
+/// Tests CopyAligned aligned copy
 ///
-/// 场景:
-/// - 源数据 5 字节, 读取 5 字节 → 成功写入 5 字节
-/// - 源数据完整, 读取全部 → 写入全部
-///
-/// 对应 Go: TestCopyAligned
+/// Scenarios:
+/// - 5 byte source, read 5 bytes -> successfully written 5 bytes
+/// - Full source, read all -> write all
 #[test]
 #[ignore]
 fn test_copy_aligned() {

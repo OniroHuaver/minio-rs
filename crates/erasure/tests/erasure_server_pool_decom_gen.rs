@@ -1,17 +1,13 @@
 //! Auto-generated msgpack serialization tests for pool decommission types.
 //!
-//! 对应 Go: `cmd/erasure-server-pool-decom_gen_test.go` (msgp 生成)
-//!
-//! 测试 msgpack 序列化/反序列化:
-//! PoolDecommissionInfo, PoolStatus, decomError, poolMeta, poolSpaceInfo。
+//! Tests msgpack serialization/deserialization:
+//! PoolDecommissionInfo, PoolStatus, decomError, poolMeta, poolSpaceInfo.
 
 use erasure::*;
 
-/// 测试 PoolDecommissionInfo 的 Marshal/Unmarshal 往返。
+/// Tests PoolDecommissionInfo Marshal/Unmarshal roundtrip.
 ///
-/// Go 源: `TestMarshalUnmarshalPoolDecommissionInfo`
-///
-/// 验证序列化后反序列化得到相同结构，且无剩余字节。
+/// Verify serialization followed by deserialization yields the same struct with no remaining bytes.
 #[test]
 #[ignore]
 fn test_marshal_unmarshal_pool_decommission_info() {
@@ -24,71 +20,63 @@ fn test_marshal_unmarshal_pool_decommission_info() {
     */
 }
 
-/// 测试 PoolDecommissionInfo 的 Encode/Decode 往返。
+/// Tests PoolDecommissionInfo Encode/Decode roundtrip.
 #[test]
 #[ignore]
 fn test_encode_decode_pool_decommission_info() {
     // TODO: implement when msgp encode/decode is available
 }
 
-/// 测试 PoolStatus 的 Marshal/Unmarshal 往返。
-///
-/// Go 源: `TestMarshalUnmarshalPoolStatus`
+/// Tests PoolStatus Marshal/Unmarshal roundtrip.
 #[test]
 #[ignore]
 fn test_marshal_unmarshal_pool_status() {
     // TODO: implement when PoolStatus with msgp serialization is available
 }
 
-/// 测试 PoolStatus 的 Encode/Decode 往返。
+/// Tests PoolStatus Encode/Decode roundtrip.
 #[test]
 #[ignore]
 fn test_encode_decode_pool_status() {
     // TODO: implement when msgp encode/decode is available
 }
 
-/// 测试 decomError 的 Marshal/Unmarshal 往返。
-///
-/// Go 源: `TestMarshalUnmarshaldecomError`
+/// Tests decomError Marshal/Unmarshal roundtrip.
 #[test]
 #[ignore]
 fn test_marshal_unmarshal_decom_error() {
     // TODO: implement when decomError with msgp serialization is available
 }
 
-/// 测试 decomError 的 Encode/Decode 往返。
+/// Tests decomError Encode/Decode roundtrip.
 #[test]
 #[ignore]
 fn test_encode_decode_decom_error() {
     // TODO: implement when msgp encode/decode is available
 }
 
-/// 测试 poolMeta 的 Marshal/Unmarshal 往返。
-///
-/// Go 源: `TestMarshalUnmarshalpoolMeta`
+/// Tests poolMeta Marshal/Unmarshal roundtrip.
 #[test]
 #[ignore]
 fn test_marshal_unmarshal_pool_meta() {
     // TODO: implement when poolMeta with msgp serialization is available
 }
 
-/// 测试 poolMeta 的 Encode/Decode 往返。
+/// Tests poolMeta Encode/Decode roundtrip.
 #[test]
 #[ignore]
 fn test_encode_decode_pool_meta() {
     // TODO: implement when msgp encode/decode is available
 }
 
-/// 测试 poolSpaceInfo 的 Marshal/Unmarshal 往返。
-///
-/// Go 源: `TestMarshalUnmarshalpoolSpaceInfo`
+/// Tests poolSpaceInfo Marshal/Unmarshal roundtrip.
 #[test]
 #[ignore]
 fn test_marshal_unmarshal_pool_space_info() {
     // TODO: implement when poolSpaceInfo with msgp serialization is available
 }
 
-/// 测试 poolSpaceInfo 的 Encode/Decode 往返。
+/// Tests poolSpaceInfo Encode/Decode roundtrip.
 #[test]
 #[ignore]
 fn test_encode_decode_pool_space_info() {

@@ -1,199 +1,196 @@
-//! HTTP 层测试: Range 解析、请求追踪、动态超时、端口检查、listener、server、REST client
-//!
-//! 对应 Go: cmd/httprange_test.go, cmd/http-tracer_test.go, cmd/dynamic-timeouts_test.go,
-//!          internal/http/check_port_test.go, internal/http/listener_test.go,
-//!          internal/http/server_test.go, internal/rest/client_test.go
+//! HTTP layer tests: Range parsing, request tracing, dynamic timeouts, port check, listener, server, REST client
 
 // ---- httprange ----
 
-/// 验证 HTTP Range 头解析: `parseRequestRangeSpec()`。
+/// Verifies HTTP Range header parsing: `parseRequestRangeSpec()`.
 ///
-/// 覆盖: 合法范围(bytes=0-、-5、2-5等)、不可解析格式(=、==、aa等)、无效范围(5-3、10-10等)。
+/// Covers: valid ranges (bytes=0-, -5, 2-5 etc.), unparseable formats (=, ==, aa etc.),
+/// invalid ranges (5-3, 10-10 etc.).
 #[test]
 #[ignore]
 fn test_http_request_range_spec() {
-    // Go: validRangeSpecs 9个: 验证 offset 和 length
-    //   unparsableRangeSpecs 13个: 验证返回 err
-    //   invalidRangeSpecs 5个: 验证返回 ErrInvalidRange
+    // validRangeSpecs 9: verify offset and length
+    //   unparsableRangeSpecs 13: verify returns err
+    //   invalidRangeSpecs 5: verify returns ErrInvalidRange
     // TODO: implement when HTTPRangeSpec/parseRequestRangeSpec is available
 }
 
-/// 验证 Range spec 到 HTTP header 的序列化: `ToHeader()`。
+/// Verifies Range spec to HTTP header serialization: `ToHeader()`.
 #[test]
 #[ignore]
 fn test_http_request_range_to_header() {
-    // Go: 合法spec -> 原字符串; 非法spec -> error
+    // valid spec -> original string; invalid spec -> error
     // TODO: implement when HTTPRangeSpec::to_header is available
 }
 
 // ---- http-tracer ----
 
-/// 验证 LDAP 密码重写: `redactLDAPPwd()`。
+/// Verifies LDAP password redaction: `redactLDAPPwd()`.
 #[test]
 #[ignore]
 fn test_redact_ldap_pwd() {
-    // Go: 空->""; LDAPPassword 被替换为 *REDACTED*; 其他参数不变
+    // empty->""; LDAPPassword replaced with *REDACTED*; other params unchanged
     // TODO: implement when redactLDAPPwd equivalent is available
 }
 
-/// 验证 HTTPStats 并发安全（race condition 回归测试）。
+/// Verifies HTTPStats concurrency safety (race condition regression test).
 #[test]
 #[ignore]
 fn test_http_stats_race_condition() {
-    // Go: 并发 writer(100) + reader(50) 无 race
+    // concurrent writer(100) + reader(50) no race
     // TODO: implement when HTTPStats equivalent is available
 }
 
-/// 验证 HTTPAPIStats 并发安全。
+/// Verifies HTTPAPIStats concurrency safety.
 #[test]
 #[ignore]
 fn test_http_api_stats_race_condition() {
-    // Go: 50 goroutine 并发 Inc + Load
+    // 50 goroutine concurrent Inc + Load
     // TODO: implement when HTTPAPIStats equivalent is available
 }
 
-/// 验证 BucketHTTPStats 并发安全。
+/// Verifies BucketHTTPStats concurrency safety.
 #[test]
 #[ignore]
 fn test_bucket_http_stats_race_condition() {
-    // Go: 50 goroutine 并发 update + load
+    // 50 goroutine concurrent update + load
     // TODO: implement when BucketHTTPStats equivalent is available
 }
 
 // ---- dynamic-timeouts ----
 
-/// 验证动态超时单次增加: `LogFailure()` 后超时增加。
+/// Verifies dynamic timeout single increase: timeout grows after `LogFailure()`.
 #[test]
 #[ignore]
 fn test_dynamic_timeout_single_increase() {
-    // Go: timeout.LogFailure() * dynamicTimeoutLogSize -> timeout 增加
+    // timeout.LogFailure() * dynamicTimeoutLogSize -> timeout increases
     // TODO: implement when DynamicTimeout equivalent is available
 }
 
-/// 验证动态超时多次增加。
+/// Verifies dynamic timeout multiple increases.
 #[test]
 #[ignore]
 fn test_dynamic_timeout_dual_increase() {
-    // Go: 两次 failure 周期 -> 两次增加
+    // two failure periods -> two increases
     // TODO: implement when DynamicTimeout equivalent is available
 }
 
-/// 验证动态超时单次减少: `LogSuccess()` 后超时减少。
+/// Verifies dynamic timeout single decrease: timeout shrinks after `LogSuccess()`.
 #[test]
 #[ignore]
 fn test_dynamic_timeout_single_decrease() {
-    // Go: timeout.LogSuccess(duration) * dynamicTimeoutLogSize -> timeout 减少
+    // timeout.LogSuccess(duration) * dynamicTimeoutLogSize -> timeout decreases
     // TODO: implement when DynamicTimeout equivalent is available
 }
 
-/// 验证动态超时多次减少。
+/// Verifies dynamic timeout multiple decreases.
 #[test]
 #[ignore]
 fn test_dynamic_timeout_dual_decrease() {
-    // Go: 两次 success 周期 -> 两次减少
+    // two success periods -> two decreases
     // TODO: implement when DynamicTimeout equivalent is available
 }
 
-/// 验证动态超时持续减少到合理范围。
+/// Verifies dynamic timeout sustained decrease to reasonable range.
 #[test]
 #[ignore]
 fn test_dynamic_timeout_many_decreases() {
-    // Go: 100 次 success 周期 -> timeout 在初始值和 successTimeout 之间
+    // 100 success periods -> timeout between initial and successTimeout
     // TODO: implement when DynamicTimeout equivalent is available
 }
 
-/// 验证动态超时并发安全。
+/// Verifies dynamic timeout concurrency safety.
 #[test]
 #[ignore]
 fn test_dynamic_timeout_concurrent() {
-    // Go: GOMAXPROCS goroutine 并发 -> 无 panic
+    // GOMAXPROCS goroutine concurrent -> no panic
     // TODO: implement when DynamicTimeout equivalent is available
 }
 
-/// 验证动态超时触及最小值。
+/// Verifies dynamic timeout reaches minimum.
 #[test]
 #[ignore]
 fn test_dynamic_timeout_hit_minimum() {
-    // Go: success 循环后 timeout == minimum
+    // success loop -> timeout == minimum
     // TODO: implement when DynamicTimeout equivalent is available
 }
 
-/// 验证动态超时指数分布调整。
+/// Verifies dynamic timeout exponential distribution adjustment.
 #[test]
 #[ignore]
 fn test_dynamic_timeout_adjust_exponential() {
-    // Go: rand.ExpFloat64 分布 -> timeout 下降
+    // rand.ExpFloat64 distribution -> timeout decreases
     // TODO: implement when DynamicTimeout equivalent is available
 }
 
-/// 验证动态超时正态分布调整。
+/// Verifies dynamic timeout normal distribution adjustment.
 #[test]
 #[ignore]
 fn test_dynamic_timeout_adjust_normalized() {
-    // Go: rand.NormFloat64 分布 -> timeout 下降
+    // rand.NormFloat64 distribution -> timeout decreases
     // TODO: implement when DynamicTimeout equivalent is available
 }
 
 // ---- internal/http/check_port ----
 
-/// 验证端口可用性检查: `CheckPortAvailability()`。
+/// Verifies port availability check: `CheckPortAvailability()`.
 #[test]
 #[ignore]
 fn test_check_port_availability() {
-    // Go: 尝试 bind/unbind, 验证端口可用性检测
+    // try bind/unbind, verify port availability detection
     // TODO: implement when port check utility is available
 }
 
 // ---- internal/http/listener ----
 
-/// 验证 HTTP listener 创建。
+/// Verifies HTTP listener creation.
 #[test]
 #[ignore]
 fn test_new_http_listener() {
-    // Go: 创建 HTTPListener 实例
+    // create HTTPListener instance
     // TODO: implement when HTTPListener equivalent is available
 }
 
-/// 验证 HTTP listener 启动和关闭。
+/// Verifies HTTP listener start and close.
 #[test]
 #[ignore]
 fn test_http_listener_start_close() {
-    // Go: Start() -> Close() 生命周期
+    // Start() -> Close() lifecycle
     // TODO: implement when HTTPListener equivalent is available
 }
 
-/// 验证 HTTP listener Addr()。
+/// Verifies HTTP listener Addr().
 #[test]
 #[ignore]
 fn test_http_listener_addr() {
-    // Go: 单个地址
+    // single address
     // TODO: implement when HTTPListener equivalent is available
 }
 
-/// 验证 HTTP listener Addrs()。
+/// Verifies HTTP listener Addrs().
 #[test]
 #[ignore]
 fn test_http_listener_addrs() {
-    // Go: 多个地址
+    // multiple addresses
     // TODO: implement when HTTPListener equivalent is available
 }
 
 // ---- internal/http/server ----
 
-/// 验证 HTTP server 创建。
+/// Verifies HTTP server creation.
 #[test]
 #[ignore]
 fn test_new_server() {
-    // Go: 创建 Server 实例
+    // create Server instance
     // TODO: implement when HTTP server equivalent is available
 }
 
 // ---- internal/rest/client ----
 
-/// 验证 `NetworkError.Unwrap()`: 返回原始 error。
+/// Verifies `NetworkError.Unwrap()`: returns original error.
 #[test]
 #[ignore]
 fn test_network_error_unwrap() {
-    // Go: NetworkError{Err: someErr}.Unwrap() -> someErr
+    // NetworkError{Err: someErr}.Unwrap() -> someErr
     // TODO: implement when NetworkError equivalent is available
 }

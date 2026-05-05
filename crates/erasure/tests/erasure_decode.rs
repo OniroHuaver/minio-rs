@@ -1,124 +1,300 @@
-//! Erasure decoding tests with various offset/length and disk failure scenarios.
+//! Erasure decoding tests — data reconstruction from partial shards.
 //!
-//! 对应 Go: `cmd/erasure-decode_test.go`
+//! ## Test coverage (derived from STORAGE_SPEC.md §5 + EDGE_CASES.md §1.1, §4.2)
 //!
-//! 测试从擦除编码分片中读取数据的完整流程，包括随机偏移/长度读取、
-//! 磁盘离线、位衰减 (bitrot) 校验等场景。
+//! - Decode from all shards present (baseline)
+//! - Decode with parity-only loss (most common recovery path)
+//! - Decode with data-only loss
+//! - Decode with mixed data+parity loss
+//! - Loss exactly at correction boundary (N shards missing → recoverable)
+//! - Loss exceeding N → InsufficientReadQuorum error
+//! - Wrong shard count → error
+//! - Data-size boundary tests (1 B through 8 MiB)
+//! - Shard size uniformity enforced before reconstruct
+//! - Deterministic decode (same input → same output)
 
-use erasure::*;
+use erasure::Erasure;
 
-/// 测试各种配置下擦除解码的正确性。
-///
-/// Go 源: `TestErasureDecode`
-///
-/// 测试场景 (共 38 个):
-/// - dataBlocks: 2~8, parityBlocks: 2~8
-/// - 模拟不同数量的在线/离线磁盘
-/// - 不同数据大小 (1 MiB ~ 2 blockSize)
-/// - 不同偏移量和读取长度 (包含边界: offset=0, offset=size, 负数等)
-/// - 不同位衰减算法: BLAKE2b512, SHA256, DefaultBitrotAlgorithm
-/// - 离线磁盘数量从 0 到超过纠错能力
-/// - 验证成功场景读取数据与原始数据一致
-#[test]
-#[ignore]
-fn test_erasure_decode() {
-    // TODO: implement when Erasure with bitrot reader/writer, disk abstraction, and ShardFileOffset are available
-    /*
-    struct DecodeTest {
-        data_blocks: usize,
-        on_disks: usize,     // total disks = data + parity
-        off_disks: usize,    // disks to take offline for quorum test
-        block_size: i64,
-        data_size: i64,
-        offset: i64,
-        length: i64,
-        algorithm: BitrotAlgorithm,
-        should_fail: bool,
-        should_fail_quorum: bool,
+fn test_bytes(seed: u64, len: usize) -> Vec<u8> {
+    let mut v = Vec::with_capacity(len);
+    let mut s = seed.wrapping_mul(0x9e3779b97f4a7c15);
+    for _ in 0..len {
+        s = s.wrapping_add(0x9e3779b97f4a7c15);
+        v.push((s.wrapping_mul(s >> 33) >> 24) as u8);
     }
+    v
+}
 
-    let test_cases = vec![
-        // (data, on, off, block, data, offset, len, algo, fail, qfail)
-        DecodeTest { data_blocks: 2, on_disks: 4, off_disks: 0, block_size: 1<<20, data_size: 1<<20, offset: 0, length: 1<<20, algorithm: BitrotAlgorithm::Blake2b512, should_fail: false, should_fail_quorum: false },
-        DecodeTest { data_blocks: 3, on_disks: 6, off_disks: 0, block_size: 1<<20, data_size: 1<<20, offset: 0, length: 1<<20, algorithm: BitrotAlgorithm::Sha256, should_fail: false, should_fail_quorum: false },
-        DecodeTest { data_blocks: 4, on_disks: 8, off_disks: 0, block_size: 1<<20, data_size: 1<<20, offset: 0, length: 1<<20, algorithm: BitrotAlgorithm::Default, should_fail: false, should_fail_quorum: false },
-        DecodeTest { data_blocks: 5, on_disks: 10, off_disks: 0, block_size: 1<<20, data_size: 1<<20, offset: 1, length: (1<<20)-1, algorithm: BitrotAlgorithm::Blake2b512, should_fail: false, should_fail_quorum: false },
-        DecodeTest { data_blocks: 6, on_disks: 12, off_disks: 0, block_size: 1<<20, data_size: 1<<20, offset: 1<<20, length: 0, algorithm: BitrotAlgorithm::Blake2b512, should_fail: false, should_fail_quorum: false },
-        // ... more cases covering all combinations
-        DecodeTest { data_blocks: 2, on_disks: 4, off_disks: 0, block_size: 1<<20, data_size: 1<<20, offset: -1, length: 3, algorithm: BitrotAlgorithm::Default, should_fail: true, should_fail_quorum: false },
-        DecodeTest { data_blocks: 2, on_disks: 4, off_disks: 0, block_size: 1<<20, data_size: 1<<20, offset: 1024, length: -1, algorithm: BitrotAlgorithm::Default, should_fail: true, should_fail_quorum: false },
+/// Helper: encode, drop specified shard indices, decode, verify.
+fn encode_drop_decode(m: usize, n: usize, data: &[u8], drop: &[usize]) -> Vec<u8> {
+    let ec = Erasure::new(m, n).expect("new");
+    let shards = ec.encode(data).expect("encode");
+    let total = m + n;
+    let partial: Vec<Option<Vec<u8>>> = (0..total)
+        .map(|i| {
+            if drop.contains(&i) {
+                None
+            } else {
+                Some(shards[i].clone())
+            }
+        })
+        .collect();
+    ec.decode(&partial).expect("decode")
+}
+
+// ---------------------------------------------------------------------------
+// Baseline: all shards present
+// ---------------------------------------------------------------------------
+
+#[test]
+fn decode_all_shards_present() {
+    for &(m, n) in &[(4, 2), (6, 3), (8, 4), (12, 4)] {
+        let data = test_bytes(m as u64 * 7, 64 * 1024);
+        let decoded = encode_drop_decode(m, n, &data, &[]);
+        assert_eq!(&decoded[..data.len()], &data[..], "{m}+{n}");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Parity-only loss
+// ---------------------------------------------------------------------------
+
+#[test]
+fn decode_parity_only_loss() {
+    // losing any parity shards should never affect data recovery
+    for &(m, n, miss) in &[(4, 2, 1), (4, 2, 2), (6, 3, 1), (6, 3, 2), (6, 3, 3), (8, 4, 4)] {
+        let data = test_bytes(m as u64 * 11, 256 * 1024);
+        let drop: Vec<usize> = (m..m + miss).collect();
+        let decoded = encode_drop_decode(m, n, &data, &drop);
+        assert_eq!(&decoded[..data.len()], &data[..], "{m}+{n} missing {miss} parity");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Data-only loss
+// ---------------------------------------------------------------------------
+
+#[test]
+fn decode_data_only_loss() {
+    // losing data shards → parity reconstruction
+    for &(m, n, miss) in &[(4, 2, 1), (4, 2, 2), (6, 3, 1), (6, 3, 2), (6, 3, 3), (8, 4, 3)] {
+        let data = test_bytes(m as u64 * 13, 128 * 1024);
+        let drop: Vec<usize> = (0..miss).collect();
+        let decoded = encode_drop_decode(m, n, &data, &drop);
+        assert_eq!(&decoded[..data.len()], &data[..], "{m}+{n} missing {miss} data");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Mixed data + parity loss
+// ---------------------------------------------------------------------------
+
+#[test]
+fn decode_mixed_loss() {
+    let cases: &[(usize, usize, &[usize])] = &[
+        (4, 2, &[0, 4]),
+        (4, 2, &[1, 5]),
+        (6, 3, &[0, 1, 6]),
+        (6, 3, &[0, 6, 7]),
+        (8, 4, &[0, 1, 2, 8]),
+        (8, 4, &[0, 1, 8, 9]),
+    ];
+    for &(m, n, drop) in cases {
+        let data = test_bytes((m + n) as u64, 64 * 1024);
+        let decoded = encode_drop_decode(m, n, &data, drop);
+        assert_eq!(&decoded[..data.len()], &data[..], "{m}+{n} drop {drop:?}");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Boundary: exactly N shards missing (still recoverable)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn decode_exact_boundary_recoverable() {
+    // §4.2: missing == N → recoverable
+    let ec = Erasure::new(4, 2).expect("4+2");
+    let data = test_bytes(77, 4096);
+    let shards = ec.encode(&data).expect("encode");
+
+    // drop exactly 2 shards (data[1] + parity[1])
+    let partial: Vec<Option<Vec<u8>>> = vec![
+        Some(shards[0].clone()),
+        None,
+        Some(shards[2].clone()),
+        Some(shards[3].clone()),
+        Some(shards[4].clone()),
+        None,
     ];
 
-    for (i, test) in test_cases.iter().enumerate() {
-        // 1. Create erasure engine
-        // 2. Encode random data to all disks
-        // 3. Read back with various offset/length
-        // 4. Verify data integrity
-        // 5. If off_disks > 0, simulate disk failures and re-read
-        todo!("implement test case {}", i);
+    let decoded = ec.decode(&partial).expect("missing=N should recover");
+    assert_eq!(&decoded[..4096], &data[..]);
+}
+
+// ---------------------------------------------------------------------------
+// Boundary: > N shards missing → error
+// ---------------------------------------------------------------------------
+
+#[test]
+fn decode_beyond_boundary_errors() {
+    let cases = &[
+        (4, 2, 3, "missing 3 > N=2"),
+        (6, 3, 4, "missing 4 > N=3"),
+        (8, 4, 5, "missing 5 > N=4"),
+    ];
+
+    for &(m, n, missing, label) in cases {
+        let ec = Erasure::new(m, n).expect(label);
+        let data = test_bytes(m as u64, 1024);
+        let shards = ec.encode(&data).expect("encode");
+        let total = m + n;
+
+        let partial: Vec<Option<Vec<u8>>> = (0..total)
+            .map(|i| {
+                if i < missing {
+                    None
+                } else {
+                    Some(shards[i].clone())
+                }
+            })
+            .collect();
+
+        let err = ec.decode(&partial).expect_err(label);
+        assert!(
+            matches!(err, base::error::MinioError::InsufficientReadQuorum { .. }),
+            "{label}: expected InsufficientReadQuorum, got {err}"
+        );
     }
-    */
 }
 
-/// 测试随机偏移和长度的擦除解码。
-///
-/// Go 源: `TestErasureDecodeRandomOffsetLength`
-///
-/// 使用 7+7 配置 (14 盘)、5 MiB 随机数据，
-/// 执行 10000 次随机 offset/length 读取验证。
-///
-/// 注意: 此测试耗时较长，默认跳过。
+// ---------------------------------------------------------------------------
+// Wrong shard count → error
+// ---------------------------------------------------------------------------
+
 #[test]
-#[ignore]
-fn test_erasure_decode_random_offset_length() {
-    // TODO: implement when Erasure decode with streaming bitrot reader is available
-    /*
-    let data_blocks = 7;
-    let parity_blocks = 7;
-    let block_size = 1 * 1024 * 1024; // 1 MiB
+fn wrong_shard_count_error() {
+    let ec = Erasure::new(4, 2).expect("4+2");
 
-    // Create 5 MiB random data
-    let data_size = 5 * 1024 * 1024;
-    let data = vec![0u8; data_size];
-    // fill with random
+    // too few
+    let few: Vec<Option<Vec<u8>>> = (0..5).map(|_| Some(vec![0u8; 64])).collect();
+    assert!(ec.decode(&few).is_err(), "too few shards should fail");
 
-    // Encode data
-    // For 10000 random offsets and lengths, verify decode returns correct data
-    todo!("implement random offset/length test");
-    */
+    // too many
+    let many: Vec<Option<Vec<u8>>> = (0..7).map(|_| Some(vec![0u8; 64])).collect();
+    assert!(ec.decode(&many).is_err(), "too many shards should fail");
 }
 
-/// 擦除解码基准测试 - 快速 (2+2, 12 MiB)
+// ---------------------------------------------------------------------------
+// Data size boundary tests
+// ---------------------------------------------------------------------------
+
 #[test]
-#[ignore]
-fn benchmark_erasure_decode_quick() {
-    // TODO: implement benchmark for 2+2 configuration at 12 MiB with various disk failures
+fn decode_various_data_sizes() {
+    let sizes = &[
+        1usize, 7, 31, 63, 64, 127, 128, 255, 256, 511, 512,
+        1023, 1024, 4095, 4096, 4097, 65535, 65536, 65537,
+        128 * 1024 - 1, 128 * 1024, 128 * 1024 + 1,
+        1024 * 1024, 4 * 1024 * 1024, 8 * 1024 * 1024,
+    ];
+
+    let ec = Erasure::new(8, 4).expect("8+4");
+    for &size in sizes {
+        let data = test_bytes(size as u64 + 100, size);
+        let shards = ec.encode(&data).expect("encode");
+
+        // all present
+        let all: Vec<_> = shards.iter().map(|s| Some(s.clone())).collect();
+        let decoded = ec.decode(&all)
+            .unwrap_or_else(|e| panic!("decode size={size}: {e}"));
+        assert_eq!(&decoded[..size], &data[..], "size={size}");
+
+        // drop 4 parity shards
+        let partial: Vec<Option<Vec<u8>>> = (0..12)
+            .map(|i| if i < 8 { Some(shards[i].clone()) } else { None })
+            .collect();
+        let decoded2 = ec.decode(&partial)
+            .unwrap_or_else(|e| panic!("decode w/ missing parity size={size}: {e}"));
+        assert_eq!(&decoded2[..size], &data[..], "size={size} with parity loss");
+    }
 }
 
-/// 擦除解码基准测试 - 4 盘 64KB
+// ---------------------------------------------------------------------------
+// Deterministic decode
+// ---------------------------------------------------------------------------
+
 #[test]
-#[ignore]
-fn benchmark_erasure_decode_4_64kb() {
-    // TODO: implement benchmark for 2+2 at 64KB with various disk failure patterns
+fn decode_is_deterministic() {
+    let ec = Erasure::new(8, 4).expect("8+4");
+    let data = test_bytes(0xbad, 1024 * 1024);
+    let shards = ec.encode(&data).expect("encode");
+
+    // drop 3 shards
+    let drop = &[0usize, 5, 10];
+    let partial: Vec<Option<Vec<u8>>> = (0..12)
+        .map(|i| {
+            if drop.contains(&i) {
+                None
+            } else {
+                Some(shards[i].clone())
+            }
+        })
+        .collect();
+
+    let a = ec.decode(&partial).expect("first decode");
+    let b = ec.decode(&partial).expect("second decode");
+    assert_eq!(a, b, "decode should be deterministic");
 }
 
-/// 擦除解码基准测试 - 8 盘 20MB
+// ---------------------------------------------------------------------------
+// All-None shards → error
+// ---------------------------------------------------------------------------
+
 #[test]
-#[ignore]
-fn benchmark_erasure_decode_8_20mb() {
-    // TODO: implement benchmark for 4+4 at 20MB with various disk failure patterns
+fn all_missing_shards() {
+    let ec = Erasure::new(4, 2).expect("4+2");
+    let shards: Vec<Option<Vec<u8>>> = (0..6).map(|_| None).collect();
+    let err = ec.decode(&shards).expect_err("all missing should fail");
+    assert!(
+        matches!(err, base::error::MinioError::InsufficientReadQuorum { .. }),
+        "got {err}"
+    );
 }
 
-/// 擦除解码基准测试 - 12 盘 30MB
+// ---------------------------------------------------------------------------
+// Exactly M data shards survive (ReadQuorum boundary)
+// ---------------------------------------------------------------------------
+
 #[test]
-#[ignore]
-fn benchmark_erasure_decode_12_30mb() {
-    // TODO: implement benchmark for 6+6 at 30MB with various disk failure patterns
+fn decode_exact_m_data_shards() {
+    // 4+2: ReadQuorum = 4 (data_blocks)
+    let ec = Erasure::new(4, 2).expect("4+2");
+    let data = test_bytes(0xf00, 2048);
+    let shards = ec.encode(&data).expect("encode");
+
+    // only shards 0-3 survive (exactly M)
+    let partial: Vec<Option<Vec<u8>>> = (0..6)
+        .map(|i| if i < 4 { Some(shards[i].clone()) } else { None })
+        .collect();
+
+    let decoded = ec.decode(&partial).expect("exact M should recover");
+    assert_eq!(&decoded[..2048], &data[..]);
 }
 
-/// 擦除解码基准测试 - 16 盘 40MB
+// ---------------------------------------------------------------------------
+// M-1 data shards → insufficient
+// ---------------------------------------------------------------------------
+
 #[test]
-#[ignore]
-fn benchmark_erasure_decode_16_40mb() {
-    // TODO: implement benchmark for 8+8 at 40MB with various disk failure patterns
+fn decode_less_than_m_data_shards() {
+    let ec = Erasure::new(4, 2).expect("4+2");
+    let data = test_bytes(0xbad, 4096);
+    let shards = ec.encode(&data).expect("encode");
+
+    // only 3 valid shards
+    let partial: Vec<Option<Vec<u8>>> = (0..6)
+        .map(|i| if i < 3 { Some(shards[i].clone()) } else { None })
+        .collect();
+
+    let err = ec.decode(&partial).expect_err("3 < M=4 should fail");
+    assert!(matches!(err, base::error::MinioError::InsufficientReadQuorum { .. }));
 }

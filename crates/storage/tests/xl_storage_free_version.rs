@@ -1,27 +1,23 @@
-//! 过渡层 FreeVersion (TierFreeVersion) 测试
+//! FreeVersion (TierFreeVersion) tests
 //!
-//! 对应 Go: cmd/xl-storage-free-version_test.go
-//!
-//! 测试在 tiered/transitioned 场景下 free version 的创建、管理、
-//! 列表和清理逻辑。
+//! Tests free version creation, management, listing, and cleanup
+//! in tiered/transitioned scenarios.
 
 use storage::*;
 
-/// 测试 FreeVersion 的完整生命周期
+/// Tests FreeVersion full lifecycle
 ///
-/// 场景:
-/// 1. 添加普通版本 (本地内容)
-/// 2. 添加 null 版本并过渡到冷存储
-/// 3. 覆盖 null 版本 → 产生 free version (fv1)
-/// 4. 删除 transitioned 版本 → 产生 free version (fv2)
-/// 5. 验证 free version 列表含 2 个版本
-/// 6. ToFileInfo inclFreeVers=true → 返回最新非 free 版本
-/// 7. 删除所有非 free 版本后, inclFreeVers=true → 返回 free version
-/// 8. ToFileInfo inclFreeVers=false → errFileNotFound
-/// 9. 清理 free version → 列表为空
-/// 10. 向非 tiered 版本添加 free version → 不应生效
-///
-/// 对应 Go: TestFreeVersion
+/// Scenarios:
+/// 1. Add normal version (local content)
+/// 2. Add null version and transition to cold storage
+/// 3. Overwrite null version -> produces free version (fv1)
+/// 4. Delete transitioned version -> produces free version (fv2)
+/// 5. Verify free version list contains 2 versions
+/// 6. ToFileInfo inclFreeVers=true -> returns latest non-free version
+/// 7. After deleting all non-free versions, inclFreeVers=true -> returns free version
+/// 8. ToFileInfo inclFreeVers=false -> errFileNotFound
+/// 9. Cleanup free versions -> list is empty
+/// 10. Add free version to non-tiered version -> should not take effect
 #[test]
 #[ignore]
 fn test_free_version() {
@@ -67,13 +63,11 @@ fn test_free_version() {
     // // ... additional assertions
 }
 
-/// 测试 SkipFreeVersion - 跳过 free version 创建的场景
+/// Tests SkipFreeVersion - skip free version creation scenarios
 ///
-/// 场景:
-/// - 正常 Tiers 参数 → InitFreeVersion 应创建 free version
-/// - 设置 SkipTierFreeVersion → InitFreeVersion 应跳过创建
-///
-/// 对应 Go: TestSkipFreeVersion
+/// Scenarios:
+/// - Normal Tiers parameter -> InitFreeVersion should create free version
+/// - SkipTierFreeVersion set -> InitFreeVersion should skip creation
 #[test]
 #[ignore]
 fn test_skip_free_version() {

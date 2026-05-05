@@ -1,23 +1,20 @@
-//! naughtyDisk 模拟错误磁盘测试
+//! naughtyDisk simulated error disk tests
 //!
-//! 对应 Go: cmd/naughty-disk_test.go
-//!
-//! naughtyDisk 是一个 StorageAPI 的包装器，允许开发者编程注入特定
-//! 调用次数的错误，用于模拟难以在实际中模拟的磁盘错误。
+//! naughtyDisk is a StorageAPI wrapper that allows developers to inject
+//! errors at specific call counts, used to simulate disk errors that
+//! are hard to reproduce in practice.
 
 use storage::*;
 
-/// 测试 naughtyDisk 错误注入机制
+/// Tests naughtyDisk error injection mechanism
 ///
-/// 验证:
-/// - naughtyDisk 的 calc_error 按调用次数递增返回预编程错误
-/// - 无预编程错误时返回 default_err
-/// - 无 default_err 时返回 Ok
+/// Verify:
+/// - naughtyDisk calc_error returns programmed errors by call count
+/// - Returns default_err when no programmed error matches
+/// - Returns Ok when no default_err is set
 ///
-/// 注意: naughtyDisk 本身是一个测试辅助工具，这个测试验证
-/// naughtyDisk 的行为是否正确。
-///
-/// 对应 Go: naughty-disk_test.go (naughtyDisk 结构体本身需要被测试)
+/// Note: naughtyDisk itself is a test helper. This test verifies
+/// that naughtyDisk behaves correctly.
 #[test]
 #[ignore]
 fn test_naughty_disk_error_injection() {

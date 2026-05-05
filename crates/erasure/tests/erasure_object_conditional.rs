@@ -1,25 +1,21 @@
 //! Conditional object operations tests with read quorum failure scenarios.
 //!
-//! 对应 Go: `cmd/erasure-object-conditional_test.go`
+//! Tests PutObject behavior with if-match/if-none-match conditions
+//! when read quorum cannot be reached.
 //!
-//! 测试带 if-match/if-none-match 条件的 PutObject 操作
-//! 在无法达到 read quorum 时的行为。
-//!
-//! 相关 Issue: <https://github.com/minio/minio/issues/21603>
+//! Related Issue: <https://github.com/minio/minio/issues/21603>
 
 use erasure::*;
 
-/// 测试带 if-none-match/if-match 条件的 PutObject
-/// 在 read quorum 失败时的行为。
+/// Tests PutObject with if-none-match/if-match conditions
+/// under read quorum failure.
 ///
-/// Go 源: `TestPutObjectConditionalWithReadQuorumFailure`
-///
-/// 在 16 盘 (EC 8+8, read quorum=9) 上:
-/// 1. 创建初始对象获取 ETag
-/// 2. 取 8 个磁盘离线 (少于 read quorum 9)
-/// 3. if-none-match: * -> 无法判断对象是否存在 -> read quorum error
-/// 4. if-match: <correct-etag> -> 无法校验 ETag -> read quorum error
-/// 5. if-match: wrong-etag -> 即使 ETag 错误也无法正常拒绝 (因 read quorum 失败)
+/// On 16 disks (EC 8+8, read quorum=9):
+/// 1. Create initial object to get ETag
+/// 2. Take 8 disks offline (below read quorum of 9)
+/// 3. if-none-match: * -> cannot determine object existence -> read quorum error
+/// 4. if-match: <correct-etag> -> cannot verify ETag -> read quorum error
+/// 5. if-match: wrong-etag -> cannot reject due to read quorum failure
 #[test]
 #[ignore]
 fn test_put_object_conditional_with_read_quorum_failure() {

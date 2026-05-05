@@ -1,19 +1,18 @@
-//! 工具函数和验证测试
+//! Utility function and validation tests
 //!
-//! 对应 Go: `cmd/object-api-utils_test.go`
-//!
-//! 测试各种工具函数: bucket/对象名验证、元数据处理、压缩检测、路径清理等。
+//! Tests various utility functions: bucket/object name validation, metadata handling,
+//! compression detection, path cleaning etc.
 
 // ============================================================
-// Bucket 和对象名校验
+// Bucket and object name validation
 // ============================================================
 
-/// 验证 IsValidBucketName 函数。
+/// Verifies IsValidBucketName function.
 ///
-/// Go: `TestIsValidBucketName`
-/// 测试大量合法/非法 bucket 名:
-/// 合法: "lol", "1-this-is-valid", "this.works.too.1", "testbucket" 等
-/// 非法: "------", "my..bucket", "192.168.1.1", 含特殊字符、太短("a","ab")、太长等
+/// Tests many valid/invalid bucket names:
+/// Valid: "lol", "1-this-is-valid", "this.works.too.1", "testbucket" etc.
+/// Invalid: "------", "my..bucket", "192.168.1.1", contains special chars,
+/// too short ("a","ab"), too long etc.
 #[test]
 #[ignore]
 // TODO: implement when bucket validation utils are available
@@ -26,19 +25,18 @@ fn test_is_valid_bucket_name() {
     //     ("192.168.1.1", false),
     //     ("a", false),
     //     ("ab", false),
-    //     // ... 更多用例
+    //     // ... more cases
     // ];
     // for (name, should_pass) in test_cases {
     //     assert_eq!(is_valid_bucket_name(name), should_pass, "bucket: {name}");
     // }
 }
 
-/// 验证 IsValidObjectName 函数。
+/// Verifies IsValidObjectName function.
 ///
-/// Go: `TestIsValidObjectName`
-/// 测试大量合法/非法对象名:
-/// 合法: "object", 含特殊字符, unicode, 较长路径
-/// 非法: 空字符串, 以 "/" 结尾, ".." 遍历, 双斜杠, 非 UTF-8 字节
+/// Tests many valid/invalid object names:
+/// Valid: "object", special chars, unicode, longer paths
+/// Invalid: empty string, ends with "/", ".." traversal, double slash, non-UTF-8 bytes
 #[test]
 #[ignore]
 // TODO: implement when object validation utils are available
@@ -50,7 +48,7 @@ fn test_is_valid_object_name() {
     //     ("../../etc", false),
     //     ("contains//double/forwardslash", false),
     //     (vec![0xff, 0xfe, 0xfd], false),
-    //     // ... 更多用例
+    //     // ... more cases
     // ];
     // for (name, should_pass) in test_cases {
     //     assert_eq!(is_valid_object_name(name), should_pass, "object: {name:?}");
@@ -58,13 +56,12 @@ fn test_is_valid_object_name() {
 }
 
 // ============================================================
-// MinIO 内部 Meta Bucket 检测
+// MinIO internal meta bucket detection
 // ============================================================
 
-/// 验证 isMinioMetaBucketName 助手函数。
+/// Verifies isMinioMetaBucketName helper function.
 ///
-/// Go: `TestIsMinioMetaBucketName`
-/// 测试 minio 内部 bucket(.minio.sys、multipart、tmp) 和普通 bucket。
+/// Test minio internal buckets (.minio.sys, multipart, tmp) and normal buckets.
 #[test]
 #[ignore]
 // TODO: implement when meta bucket detection is available
@@ -76,13 +73,12 @@ fn test_is_minio_meta_bucket_name() {
 }
 
 // ============================================================
-// 元数据处理
+// Metadata handling
 // ============================================================
 
-/// 验证 CompleteMultipart 的最终 MD5 计算。
+/// Verifies CompleteMultipart final MD5 computation.
 ///
-/// Go: `TestGetCompleteMultipartMD5`
-/// 测试 parts ETag 列表生成最终 S3 ETag 格式 "md5-n"。
+/// Tests generating final S3 ETag format "md5-n" from parts ETag list.
 #[test]
 #[ignore]
 // TODO: implement when multipart MD5 computation is available
@@ -102,10 +98,9 @@ fn test_get_complete_multipart_md5() {
     // }
 }
 
-/// 验证 removeStandardStorageClass 函数。
+/// Verifies removeStandardStorageClass function.
 ///
-/// Go: `TestRemoveStandardStorageClass`
-/// 当 x-amz-storage-class 为 STANDARD 时，应被移除；其他值保留。
+/// When x-amz-storage-class is STANDARD, it should be removed; other values preserved.
 #[test]
 #[ignore]
 // TODO: implement when metadata helpers are available
@@ -123,10 +118,9 @@ fn test_remove_standard_storage_class() {
     // }
 }
 
-/// 验证 cleanMetadata 函数。
+/// Verifies cleanMetadata function.
 ///
-/// Go: `TestCleanMetadata`
-/// 清除 etag、md5Sum 和 STANDARD storage-class。
+/// Cleans etag, md5Sum and STANDARD storage-class.
 #[test]
 #[ignore]
 // TODO: implement when metadata helpers are available
@@ -144,10 +138,9 @@ fn test_clean_metadata() {
     // }
 }
 
-/// 验证 cleanMetadataKeys 函数。
+/// Verifies cleanMetadataKeys function.
 ///
-/// Go: `TestCleanMetadataKeys`
-/// 清除指定的 key 列表。
+/// Cleans specified key list.
 #[test]
 #[ignore]
 // TODO: implement when metadata helpers are available
@@ -163,22 +156,21 @@ fn test_clean_metadata_keys() {
 }
 
 // ============================================================
-// 压缩检测
+// Compression detection
 // ============================================================
 
-/// 验证 IsCompressed / IsCompressedOK。
+/// Verifies IsCompressed / IsCompressedOK.
 ///
-/// Go: `TestIsCompressed`
-/// 检测 UserDefined 中是否包含 MinIO 内部压缩标记。
+/// Detects whether UserDefined contains MinIO internal compression marker.
 #[test]
 #[ignore]
 // TODO: implement when ObjectInfo compression detection is available
 fn test_is_compressed() {
-    // // 含 compressionAlgorithmV1 -> true
-    // // 含 compressionAlgorithmV2 -> true
-    // // 含未知压缩算法 -> true, err = true
-    // // 含 V2 + 加密标记 -> true
-    // // 无压缩标记 -> false
+    // // Has compressionAlgorithmV1 -> true
+    // // Has compressionAlgorithmV2 -> true
+    // // Has unknown compression algorithm -> true, err = true
+    // // Has V2 + encryption marker -> true
+    // // No compression marker -> false
     // for (i, (obj_info, expected, expect_err)) in test_cases.iter().enumerate() {
     //     assert_eq!(obj_info.is_compressed(), *expected, "case {i}");
     //     let (got, err) = obj_info.is_compressed_ok();
@@ -187,19 +179,18 @@ fn test_is_compressed() {
     // }
 }
 
-/// 验证 excludeForCompression。
+/// Verifies excludeForCompression.
 ///
-/// Go: `TestExcludeForCompression`
-/// 根据 Content-Type 和文件扩展名判断是否应排除压缩。
+/// Determine whether to exclude compression based on Content-Type and file extension.
 #[test]
 #[ignore]
 // TODO: implement when compression config is available
 fn test_exclude_for_compression() {
     // let test_cases = vec![
-    //     (("object.txt", "application/zip"), true),   // 已压缩的 MIME
-    //     (("object.zip", "application/XYZ"), true),     // .zip 扩展名
-    //     (("object.json", "application/json"), false),  // 可压缩
-    //     (("object.txt", "text/plain"), false),         // 可压缩
+    //     (("object.txt", "application/zip"), true),   // already compressed MIME
+    //     (("object.zip", "application/XYZ"), true),     // .zip extension
+    //     (("object.json", "application/json"), false),  // compressible
+    //     (("object.txt", "text/plain"), false),         // compressible
     // ];
     // for ((object, content_type), expected) in test_cases {
     //     let result = exclude_for_compression(object, content_type);
@@ -208,31 +199,29 @@ fn test_exclude_for_compression() {
 }
 
 // ============================================================
-// 对象大小与偏移计算
+// Object size and offset computation
 // ============================================================
 
-/// 验证 GetActualSize。
+/// Verifies GetActualSize.
 ///
-/// Go: `TestGetActualSize`
-/// 从 ObjectInfo 计算实际未压缩大小。
+/// Computes actual uncompressed size from ObjectInfo.
 #[test]
 #[ignore]
 // TODO: implement when ObjectInfo size computation is available
 fn test_get_actual_size() {
-    // // 有 parts 时计算 sum of ActualSize
-    // // 有 X-Minio-Internal-actual-size 时解析
-    // // 无上述字段时返回 -1
+    // // With parts: compute sum of ActualSize
+    // // With X-Minio-Internal-actual-size: parse
+    // // Without either: return -1
 }
 
-/// 验证 getCompressedOffsets。
+/// Verifies getCompressedOffsets.
 ///
-/// Go: `TestGetCompressedOffsets`
-/// 计算压缩对象中的读取偏移。
+/// Computes read offsets in compressed objects.
 #[test]
 #[ignore]
 // TODO: implement when compression offset computation is available
 fn test_get_compressed_offsets() {
-    // // 测试多 part 对象中各偏移计算
+    // // Test offset computation for multi-part objects
     // let obj_info = ObjectInfo { parts: vec![
     //     ObjectPartInfo { size: 39235668, actual_size: 67108864 },
     //     ObjectPartInfo { size: 19177372, actual_size: 32891137 },
@@ -243,24 +232,23 @@ fn test_get_compressed_offsets() {
 }
 
 // ============================================================
-// 路径处理
+// Path handling
 // ============================================================
 
-/// 验证 pathNeedsClean。
+/// Verifies pathNeedsClean.
 ///
-/// Go: `Test_pathNeedsClean`
-/// 检测路径是否需要清理(多余的斜杠、.、.. 元素)。
+/// Detects whether a path needs cleaning (extra slashes, ., .. elements).
 #[test]
 #[ignore]
 // TODO: implement when path utils are available
 fn test_path_needs_clean() {
     // let test_cases = vec![
-    //     ("abc", false),           // 已干净
-    //     ("abc/", true),           // 尾部斜杠
-    //     ("abc//def", true),       // 双斜杠
-    //     ("abc/./def", true),      // . 元素
-    //     ("abc/def/../jkl", true), // .. 元素
-    //     ("/abc/def", false),      // 已干净
+    //     ("abc", false),           // already clean
+    //     ("abc/", true),           // trailing slash
+    //     ("abc//def", true),       // double slash
+    //     ("abc/./def", true),      // . element
+    //     ("abc/def/../jkl", true), // .. element
+    //     ("/abc/def", false),      // already clean
     // ];
     // for (path, needs_clean) in test_cases {
     //     assert_eq!(path_needs_clean(path.as_bytes()), needs_clean, "path: {path}");
@@ -268,36 +256,35 @@ fn test_path_needs_clean() {
 }
 
 // ============================================================
-// 压缩 reader 测试
+// Compression reader tests
 // ============================================================
 
-/// 验证 S2 压缩 reader。
+/// Verifies S2 compression reader.
 ///
-/// Go: `TestS2CompressReader`
-/// 测试 s2 压缩 reader 能正确压缩数据，且解压后 roundtrip 一致。
+/// Test that s2 compression reader correctly compresses data and
+/// decompression roundtrip is consistent.
 #[test]
 #[ignore]
 // TODO: implement when S2 compression is available
 fn test_s2_compress_reader() {
-    // // 测试空数据、小数据、大数据
-    // // 验证压缩输出与标准 s2 writer 一致
-    // // 验证解压 roundtrip
+    // // Test empty data, small data, large data
+    // // Verify compressed output matches standard s2 writer
+    // // Verify decompression roundtrip
 }
 
 // ============================================================
-// 路径遍历攻击测试
+// Path traversal attack tests
 // ============================================================
 
-/// 验证路径遍历攻击防护(Windows)。
+/// Verifies path traversal attack protection (Windows).
 ///
-/// Go: `TestPathTraversalExploit` / `testPathTraversalExploit`
-/// 尝试写入 "\\../.minio.sys/config/hello.txt"，验证被拒绝。
+/// Try writing "\\../.minio.sys/config/hello.txt", verify it is rejected.
 #[test]
 #[ignore]
 // TODO: implement when path traversal detection + integration test are available
 fn test_path_traversal_exploit() {
-    // // 在 Windows 上，对象名包含反斜杠路径遍历
+    // // On Windows, object name containing backslash path traversal
     // let object_name = r"\../.minio.sys/config/hello.txt";
-    // // 通过 HTTP handler 发起 PUT
-    // // 验证后端没有写入该路径
+    // // Initiate PUT via HTTP handler
+    // // Verify backend did not write to that path
 }

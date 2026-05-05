@@ -1,29 +1,26 @@
-//! 冷热分层测试: Tier 配置管理、Metrics
-//!
-//! 对应 Go: cmd/tier_gen_test.go, cmd/tier_test.go,
-//!          cmd/tier-last-day-stats_gen_test.go
+//! Tier lifecycle tests: Tier config management, Metrics
 
-/// 验证 TierConfigMgr 的 Marshal/Unmarshal 往返 (MessagePack)。
+/// Verifies TierConfigMgr Marshal/Unmarshal round-trip (MessagePack).
 #[test]
 #[ignore]
 fn test_marshal_unmarshal_tier_config_mgr() {
-    // Go: TierConfigMgr -> MarshalMsg -> UnmarshalMsg -> 相等
+    // TierConfigMgr -> MarshalMsg -> UnmarshalMsg -> equal
     // TODO: implement when TierConfigMgr + msgpack is available
 }
 
-/// 验证 TierConfigMgr 的 Encode/Decode 往返。
+/// Verifies TierConfigMgr Encode/Decode round-trip.
 #[test]
 #[ignore]
 fn test_encode_decode_tier_config_mgr() {
-    // Go: msgp.Encode -> Decode -> 相等
+    // msgp.Encode -> Decode -> equal
     // TODO: implement when TierConfigMgr + msgpack is available
 }
 
-/// 验证 Tier Metrics 观测。
+/// Verifies Tier Metrics observation.
 #[test]
 #[ignore]
 fn test_tier_metrics() {
-    // Go: globalTierMetrics.Observe(tier, duration)
-    //   验证 success/failure 计数正确
+    // globalTierMetrics.Observe(tier, duration)
+    //   verify success/failure counts
     // TODO: implement when tier metrics are available
 }

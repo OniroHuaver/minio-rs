@@ -1,21 +1,17 @@
-//! 位衰减 (Bitrot) 读写器测试
+//! Bitrot reader/writer tests
 //!
-//! 对应 Go: cmd/bitrot_test.go
-//!
-//! 测试新 BitrotWriter/BitrotReader 组合，验证使用不同位衰减算法时
-//! 写入和读取数据的一致性。
+//! Tests the BitrotWriter/BitrotReader combination, verifying data
+//! consistency when writing and reading with different bitrot algorithms.
 
 use storage::*;
 
-/// 测试所有 BitrotAlgorithm 的读写器组合
+/// Tests all BitrotAlgorithm reader/writer combinations
 ///
-/// 场景:
-/// - 使用 new_bitrot_writer 写入 35 字节数据 (分多次写入)
-/// - 写入完成后使用 new_bitrot_reader 读取
-/// - 在偏移 0, 10, 20, 30 处分别读取 10/5 字节
-/// - 验证数据一致性
-///
-/// 对应 Go: TestAllBitrotAlgorithms
+/// Scenarios:
+/// - Write 35 bytes via new_bitrot_writer (multiple writes)
+/// - Read back via new_bitrot_reader after writing
+/// - Read 10/5 bytes at offsets 0, 10, 20, 30
+/// - Verify data consistency
 #[test]
 #[ignore]
 fn test_all_bitrot_algorithms() {

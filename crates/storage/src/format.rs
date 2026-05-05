@@ -1,31 +1,29 @@
-//! xl.meta 格式读写工具
+//! xl.meta format read/write utilities
 //!
-//! 提供 xl.meta 二进制文件的读取、写入、格式校验等基础功能。
-//!
-//! 对应 Go: cmd/xl-storage-format-utils.go
+//! Provides basic functionality for reading, writing, and validating xl.meta binary files.
 
 use base::error::{MinioError, MinioResult};
 use base::format::{XlMeta, XlMetaHeader};
 
-/// 读取 xl.meta 文件 (8 字节 Header + MessagePack Body)
+/// Read an xl.meta file (8-byte Header + MessagePack Body)
 ///
-/// 委托给 `XlMeta::from_bytes`，确保与所有调用路径走同一套解析逻辑
-/// （含 header 版本校验和 body 大小限制）。
+/// Delegates to `XlMeta::from_bytes` to ensure consistent parsing logic
+/// across all call paths (including header version validation and body size limits).
 pub fn read_xl_meta(buf: &[u8]) -> MinioResult<XlMeta> {
     XlMeta::from_bytes(buf)
 }
 
-/// 写入 xl.meta 二进制 (Header + MessagePack Body)
+/// Write xl.meta binary (Header + MessagePack Body)
 pub fn write_xl_meta(meta: &XlMeta) -> MinioResult<Vec<u8>> {
     write_xl_meta_inner(meta, false)
 }
 
-/// 写入 xl.meta 二进制 (不含 Data 内联字段，用于签名计算等场景)
+/// Write xl.meta binary without inline Data field (for signature calculation, etc.)
 pub fn write_xl_meta_no_data(meta: &XlMeta) -> MinioResult<Vec<u8>> {
     write_xl_meta_inner(meta, true)
 }
 
-/// 统一的 xl.meta 序列化内部实现
+/// Internal unified xl.meta serialization implementation
 fn write_xl_meta_inner(meta: &XlMeta, named: bool) -> MinioResult<Vec<u8>> {
     let mut buf = Vec::with_capacity(4096);
     buf.extend_from_slice(&XlMetaHeader::default().to_bytes());
@@ -38,23 +36,24 @@ fn write_xl_meta_inner(meta: &XlMeta, named: bool) -> MinioResult<Vec<u8>> {
     Ok(buf)
 }
 
-/// 校验 xl.meta 的 version + format 字段是否合法
+/// Validate xl.meta version and format fields
 ///
-/// format 必须为 "xl"，version 必须为 "1.0.0" 或 "1.0.1"。
+/// format must be "xl", version must be "1.0.0" or "1.0.1".
 pub fn is_xl_meta_format_valid(version: &str, format: &str) -> bool {
     format == "xl" && (version == "1.0.0" || version == "1.0.1")
 }
 
-/// 校验擦除码参数 (data/parity block 数量)
+/// Validate erasure coding parameters (data/parity block counts)
 ///
-/// data 必须 > 0，parity ≥ 0，且 data ≥ parity（RS 容错理论要求数据块不少于校验块）。
+/// data must be > 0, parity >= 0, and data >= parity
+/// (RS erasure coding requires at least as many data blocks as parity blocks).
 pub fn is_xl_meta_erasure_info_valid(data: i64, parity: i64) -> bool {
     data > 0 && parity >= 0 && data >= parity
 }
 
-/// 根据 part 索引计算该 part 的实际大小
+/// Calculate the actual size of a part given its index
 ///
-/// 最后一个 part 可能不满 part_size。
+/// The last part may be smaller than part_size.
 pub fn calculate_part_size_from_idx(
     total_size: i64,
     part_size: i64,
@@ -92,10 +91,9 @@ pub fn calculate_part_size_from_idx(
     }
 }
 
-/// 确定性哈希 (用于 xl.meta 签名计算)
+/// Deterministic hash (used for xl.meta signature calculation)
 ///
-/// 对 key-value map 做稳定排序后 SHA256 哈希。
-/// 对应 Go: cmd/xl-storage-format-utils.go hashDeterministicString
+/// Performs SHA256 hashing on a key-value map after stable sorting.
 pub fn hash_deterministic_string(meta: &std::collections::HashMap<String, String>) -> String {
     use sha2::{Digest, Sha256};
     let mut keys: Vec<&String> = meta.keys().collect();
@@ -109,9 +107,7 @@ pub fn hash_deterministic_string(meta: &std::collections::HashMap<String, String
     format!("{:x}", hasher.finalize())
 }
 
-/// xl.meta V1 对象（用于兼容旧版 xl.json 格式的 JSON 序列化）
-///
-/// 对应 Go: cmd/xl-storage-format-v1.go xlMetaV1Object
+/// xl.meta V1 object (for JSON serialization compatible with legacy xl.json format)
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct XlMetaV1Object {
     pub version: String,
@@ -126,14 +122,14 @@ pub struct XlMetaV1Object {
     pub meta_user: Option<std::collections::HashMap<String, String>>,
 }
 
-/// V1 文件状态信息
+/// V1 file stat information
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct StatInfo {
     pub size: i64,
     pub mod_time: i64,
 }
 
-/// V1 擦除码信息
+/// V1 erasure code information
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ErasureInfo {
     pub algorithm: u8,
@@ -145,7 +141,7 @@ pub struct ErasureInfo {
     pub checksums: Vec<ChecksumInfo>,
 }
 
-/// V1 校验和信息
+/// V1 checksum information
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ChecksumInfo {
     pub part_number: u32,
@@ -153,7 +149,7 @@ pub struct ChecksumInfo {
     pub hash: Vec<u8>,
 }
 
-/// V1 对象分片信息
+/// V1 object part information
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ObjectPartInfo {
     pub number: u32,
@@ -165,9 +161,7 @@ pub struct ObjectPartInfo {
     pub index: i32,
 }
 
-/// V2 版本头 (可序列化版本，用于签名计算)
-///
-/// 对应 Go: cmd/xl-storage-format-v2.go xlMetaV2VersionHeader
+/// V2 version header (serializable, used for signature calculation)
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct XlMetaV2VersionHeader {
     pub version_id: Vec<u8>,
@@ -177,9 +171,7 @@ pub struct XlMetaV2VersionHeader {
     pub flags: u8,
 }
 
-/// V2 对象条目
-///
-/// 对应 Go: cmd/xl-storage-format-v2.go xlMetaV2Object
+/// V2 object entry
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct XlMetaV2Object {
     pub version_id: Vec<u8>,
@@ -190,9 +182,7 @@ pub struct XlMetaV2Object {
     pub flags: u8,
 }
 
-/// V2 删除标记
-///
-/// 对应 Go: cmd/xl-storage-format-v2.go xlMetaV2DeleteMarker
+/// V2 delete marker
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct XlMetaV2DeleteMarker {
     pub version_id: Vec<u8>,
@@ -202,9 +192,7 @@ pub struct XlMetaV2DeleteMarker {
     pub flags: u8,
 }
 
-/// V2 版本条目
-///
-/// 对应 Go: cmd/xl-storage-format-v2.go xlMetaV2Version
+/// V2 version entry
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct XlMetaV2Version {
     pub header: XlMetaV2VersionHeader,
@@ -212,16 +200,14 @@ pub struct XlMetaV2Version {
     pub delete_marker: Option<XlMetaV2DeleteMarker>,
 }
 
-/// V2 DataDir 解码器 (用于解析内联 DataDir 索引)
-///
-/// 对应 Go: cmd/xl-storage-format-v2.go xlMetaDataDirDecoder
+/// V2 DataDir decoder (for parsing inline DataDir index)
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct XlMetaDataDirDecoder {
     #[serde(with = "serde_bytes")]
     pub data: Vec<u8>,
 }
 
-// ========== 默认值构造 ==========
+// ========== Default implementations ==========
 
 impl Default for XlMetaV1Object {
     fn default() -> Self {
