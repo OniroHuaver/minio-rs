@@ -18,13 +18,13 @@
 
 ### 子任务
 
-- [ ] **1.1** `base`: xl.meta 格式读/写工具 — 能解析磁盘上的 `xl.meta` 文件
-- [ ] **1.2** `storage`: xlStorage 本地磁盘驱动实现 — 文件 IO、原子 rename、目录管理
-- [ ] **1.3** `erasure`: Reed-Solomon 编解码 + Quorum 判定 + 分片并行读写
-- [ ] **1.4** `object`: erasureObjects — PUT/GET/DELETE 完整调用链
-- [ ] **1.5** `s3`: axum HTTP 路由 — PutObject / GetObject / DeleteObject / ListObjectsV2
-- [ ] **1.6** `server`: 启动流程 — 磁盘检测、EC 池初始化、HTTP Server 监听
-- [ ] **1.7** 集成测试 — 用 `awscli` 或 `mc` 客户端做端到端验证
+- [x] **1.1** `base`: xl.meta 格式读/写工具 — 能解析磁盘上的 `xl.meta` 文件
+- [x] **1.2** `storage`: xlStorage 本地磁盘驱动实现 — 文件 IO、原子 rename、目录管理
+- [x] **1.3** `erasure`: Reed-Solomon 编解码 + Quorum 判定 + 分片并行读写
+- [x] **1.4** `object`: erasureObjects — PUT/GET/DELETE 完整调用链
+- [x] **1.5** `s3`: axum HTTP 路由 — PutObject / GetObject / DeleteObject / ListObjectsV2
+- [x] **1.6** `server`: 启动流程 — 磁盘检测、EC 池初始化、HTTP Server 监听
+- [x] **1.7** 集成测试 — 用 `awscli` 或 `mc` 客户端做端到端验证
 
 ### 验证标准
 
@@ -48,7 +48,7 @@ mc rm local/testbucket/hello.txt
 
 ### 子任务
 
-- [ ] **2.1** `grid`: gRPC 节点间 RPC (远程磁盘读/写)
+- [ ] **2.1** `grid`: websocket 节点间 RPC (远程磁盘读/写)
 - [ ] **2.2** `storage`: storageRESTClient — 通过 RPC 访问远程磁盘
 - [ ] **2.3** 分布式锁 (dsync) — 写操作互斥
 - [ ] **2.4** `object`: ServerPool 路由 — SipHash 选 Set + 多池选择
@@ -103,7 +103,7 @@ mc cp secret.txt local/bucket/ --access-key user1 --secret-key password1
 
 | Phase | 状态 | 开始 | 完成 | 备注 |
 |-------|------|------|------|------|
-| 1     | 🔴 待开始 | - | - | 核心存储 |
+| 1     | 🟢 已完成 | 2026-05-04 | 2026-05-05 | 核心存储 (全部 7 个子任务完成) |
 | 2     | 🔴 待开始 | - | - | 分布式 |
 | 3     | 🔴 待开始 | - | - | IAM |
 | 4     | 🔴 待开始 | - | - | 高级特性 |
