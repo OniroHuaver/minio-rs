@@ -8,9 +8,11 @@
 pub mod erasure_objects;
 pub mod object_api;
 pub mod set;
+pub mod standalone_objects;
 
 pub use erasure_objects::ErasureObjects;
 pub use object_api::{ListObjectsResult, MultipartInfo, ObjectAPI, ObjectInfo};
+pub use standalone_objects::StandaloneObjects;
 
 // ---- Test modules ----
 // All test functions are tagged with #[ignore], enabled when corresponding types are ready

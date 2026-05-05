@@ -4,36 +4,15 @@ MinIO 对象存储的 Rust 学习版重写。
 
 ## 目标
 
-通过用 Rust 逐层重写 MinIO 核心数据路径，深入理解：
+通过 Rust 逐层重写 MinIO 核心数据路径，深入理解：
 - **XL Storage Format V2** — 磁盘格式与 MessagePack 版本日志
 - **Erasure Coding** — Reed-Solomon 编解码与 Quorum 判定
-- **分布式架构** — 无共享节点通信 (gRPC)、分布式锁、多池路由
+- **分布式架构** — 无共享节点通信、分布式锁、多池路由
 - **S3 API** — AWS SigV4 签名、IAM 策略评估、STS 临时凭证
 
-## 项目结构
+## 结构
 
-```
-minio-rs/
-├── crates/
-│   ├── base/         # xl.meta 格式、EC 参数、存储常量
-│   ├── storage/      # StorageAPI trait + 本地磁盘实现
-│   ├── erasure/      # Reed-Solomon 编解码
-│   ├── object/       # ObjectAPI trait + 对象操作编排
-│   ├── iam/          # IAM/STS 子系统 (Phase 3)
-│   ├── grid/         # 分布式 RPC (Phase 2)
-│   ├── s3/           # S3 HTTP API (axum)
-│   └── server/       # 二进制入口
-├── docs/
-│   ├── ARCHITECTURE.md    # 分层架构设计
-│   ├── PLAN.md            # 分阶段实施计划
-│   ├── STORAGE_SPEC.md    # 存储格式规格 (xl.meta + EC)
-│   ├── API_REFERENCE.md   # S3/Admin/STS API 完整参考
-│   ├── EDGE_CASES.md      # 极端 Case 处理策略 (待 Agent 完成)
-│   ├── IAM_SPEC.md        # IAM/STS/KMS/Security 安全体系
-│   ├── SUBSYSTEMS.md      # 21 个子系统规格速览
-│   └── DISTRIBUTED.md     # 分布式架构 + EC + S3 Select
-└── tests/
-```
+单 Crate，`src/` 下按模块分层：`server` → `s3` → `object` → `erasure` → `storage` → `base`。文档在 `docs/`（snake_case），集成测试在 `tests/`。
 
 ## 进度
 
@@ -48,14 +27,9 @@ minio-rs/
 ## 快速开始
 
 ```bash
-# 构建
 cargo build
-
-# 运行
-cargo run -p server
-
-# 测试
-cargo test --workspace
+cargo run
+cargo test
 ```
 
 ## 参考

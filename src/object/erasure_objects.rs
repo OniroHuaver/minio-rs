@@ -364,7 +364,7 @@ impl ObjectAPI for ErasureObjects {
         let mod_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
-            .as_nanos() as i64;
+            .as_secs() as i64;
 
         let version_id = Uuid::now_v7().to_string();
         let mut header = XlMetaVersionHeader::new(version_id.clone());
@@ -429,9 +429,21 @@ impl ObjectAPI for ErasureObjects {
                 let meta_path = format!("{prefix}{entry}/xl.meta");
                 match disk.stat_file(bucket, &meta_path).await {
                     Ok(_) => {
-                        // xl.meta exists -> this is an object
+                        // xl.meta exists; skip if latest version is a DeleteMarker
                         // Simplified: construct basic ObjectInfo without reading full metadata
                         // TODO: read xl.meta for accurate metadata (size, etag, mod_time, etc.)
+                        if let Ok(bytes) = disk.read_all(bucket, &meta_path).await {
+                            if let Ok(meta) = XlMeta::from_bytes(&bytes) {
+                                let is_deleted = meta.versions.iter()
+                                    .rev()
+                                    .next()
+                                    .map(|v| matches!(v, XlMetaEntry::Delete { .. }))
+                                    .unwrap_or(false);
+                                if is_deleted {
+                                    continue;
+                                }
+                            }
+                        }
                         objects.push(ObjectInfo {
                             bucket: bucket.to_string(),
                             name: format!("{prefix}{entry}"),

@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use crate::base::error::{MinioError, MinioResult};
-use crate::object::{ErasureObjects, ObjectAPI};
+use crate::object::{ErasureObjects, ObjectAPI, StandaloneObjects};
 use crate::s3::AppState;
 use crate::storage::{DiskInfo, StorageAPI};
 use tokio::signal;
@@ -34,12 +34,18 @@ pub async fn run(config: ServerConfig) -> MinioResult<()> {
     // 1. Disk check and preparation
     let checked = check_disks(&config.disks).await?;
 
-    // 2. Build ErasureObjects with automatic EC parity
+    // 2. Build object store: standalone for 1-2 disks, EC for >=3
     let disks: Vec<Arc<dyn StorageAPI>> = checked
         .iter()
         .map(|d| d.xl_storage.clone() as Arc<dyn StorageAPI>)
         .collect();
-    let objects = Arc::new(ErasureObjects::new(disks)?);
+    let objects: Arc<dyn ObjectAPI> = if disks.len() < 3 {
+        tracing::info!("standalone mode ({} disk(s), no EC)", disks.len());
+        Arc::new(StandaloneObjects::new(disks.into_iter().next().unwrap()))
+    } else {
+        tracing::info!("erasure coding mode ({} disks)", disks.len());
+        Arc::new(ErasureObjects::new(disks)?)
+    };
 
     // 3. Build AppState
     let state = Arc::new(AppState {

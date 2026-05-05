@@ -89,6 +89,9 @@ pub fn print_banner(address: &str, console_address: Option<&str>, disk_infos: &[
 
 /// EC parameter calculation matching `Erasure::with_default_parity`.
 fn compute_ec(disk_count: usize) -> (usize, usize, usize, usize) {
+    if disk_count < 3 {
+        return (disk_count, 0, disk_count, disk_count); // standalone: no EC
+    }
     let parity = match disk_count {
         0..=5 => 2,
         6..=7 => 3,
