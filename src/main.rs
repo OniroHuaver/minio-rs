@@ -3,9 +3,9 @@
 //! Initialises tracing, parses CLI arguments via clap, and hands control to `server::run()`.
 
 use clap::Parser;
-use server::cmd;
-use server::server as srv;
-use server::ServerConfig;
+use minio_rs::server::cmd;
+use minio_rs::server::run as srv;
+use minio_rs::server::ServerConfig;
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]

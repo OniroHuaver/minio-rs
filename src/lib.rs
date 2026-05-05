@@ -1,35 +1,18 @@
-//! server: MinIO Rust binary entry point (library form)
+//! minio-rs — S3-compatible object storage server
 //!
-//! This crate provides both `[[bin]]` (main.rs) and `[lib]` (lib.rs) targets,
-//! so that integration tests can reference the library's public API.
+//! Single-crate architecture with all modules under `src/`.
 
-// ============================================================================
-// Module declarations
-// ============================================================================
-
-/// CLI argument parsing (clap derive)
-pub mod cmd;
-
-/// Server startup flow: disk check, EC pool init, HTTP serve
+pub mod base;
+pub mod erasure;
+pub mod grid;
+pub mod iam;
+pub mod object;
+pub mod s3;
 pub mod server;
+pub mod storage;
 
-/// Disk path checking and preparation
-pub mod disk;
-
-/// Startup banner display
-pub mod banner;
-
-// ============================================================================
 // Re-exports
-// ============================================================================
-
-pub use base::format;
-pub use s3::AppState;
 pub use crate::server::ServerConfig;
-
-// ============================================================================
-// Constants
-// ============================================================================
 
 /// Server version
 pub const VERSION: &str = "DEVELOPMENT.GOGET";

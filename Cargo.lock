@@ -188,26 +188,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "base"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "chrono",
- "crc32fast",
- "hex",
- "rmp-serde",
- "rmpv",
- "serde",
- "serde_bytes",
- "serde_json",
- "sha2",
- "siphasher",
- "thiserror",
- "tracing",
- "uuid",
-]
-
-[[package]]
 name = "base64"
 version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -428,22 +408,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
-name = "erasure"
-version = "0.1.0"
-dependencies = [
- "base",
- "bytes",
- "futures",
- "highway",
- "reed-solomon-erasure",
- "sha2",
- "storage",
- "thiserror",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "errno"
 version = "0.3.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -623,18 +587,6 @@ dependencies = [
  "r-efi",
  "wasip2",
  "wasip3",
-]
-
-[[package]]
-name = "grid"
-version = "0.1.0"
-dependencies = [
- "base",
- "prost",
- "thiserror",
- "tokio",
- "tonic",
- "tracing",
 ]
 
 [[package]]
@@ -832,22 +784,6 @@ dependencies = [
  "tower-service",
  "tracing",
  "windows-registry",
-]
-
-[[package]]
-name = "iam"
-version = "0.1.0"
-dependencies = [
- "base",
- "base64",
- "chrono",
- "jsonwebtoken",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tracing",
- "uuid",
 ]
 
 [[package]]
@@ -1179,19 +1115,36 @@ checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
 name = "minio-rs"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "axum",
- "base",
+ "base64",
+ "bytes",
  "chrono",
  "clap",
- "erasure",
- "grid",
- "iam",
- "object",
+ "crc32fast",
+ "futures",
+ "hex",
+ "highway",
+ "hyper",
+ "jsonwebtoken",
+ "md-5",
+ "prost",
+ "quick-xml",
+ "reed-solomon-erasure",
  "reqwest",
- "s3",
- "storage",
+ "rmp-serde",
+ "rmpv",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "sha2",
+ "siphasher",
  "tempfile",
+ "thiserror",
  "tokio",
+ "tonic",
+ "tower 0.5.3",
+ "tower-http 0.5.2",
  "tracing",
  "tracing-subscriber",
  "uuid",
@@ -1266,23 +1219,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
-]
-
-[[package]]
-name = "object"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "base",
- "bytes",
- "erasure",
- "futures",
- "sha2",
- "storage",
- "thiserror",
- "tokio",
- "tracing",
- "uuid",
 ]
 
 [[package]]
@@ -1746,31 +1682,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
 
 [[package]]
-name = "s3"
-version = "0.1.0"
-dependencies = [
- "axum",
- "base",
- "base64",
- "bytes",
- "chrono",
- "hex",
- "hyper",
- "iam",
- "md-5",
- "object",
- "quick-xml",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tower 0.5.3",
- "tower-http 0.5.2",
- "tracing",
- "uuid",
-]
-
-[[package]]
 name = "schannel"
 version = "0.1.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1987,23 +1898,6 @@ name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
-
-[[package]]
-name = "storage"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "base",
- "bytes",
- "rmp-serde",
- "serde",
- "serde_bytes",
- "sha2",
- "thiserror",
- "tokio",
- "tracing",
- "uuid",
-]
 
 [[package]]
 name = "strsim"
