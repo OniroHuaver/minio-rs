@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 /// Simplified mc (MinIO Client) CLI simulation.
 ///
 /// Wraps the raw S3 HTTP client with mc-style command names:

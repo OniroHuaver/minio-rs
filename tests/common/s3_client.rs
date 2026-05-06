@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 /// Thin S3 HTTP client built on reqwest.
 ///
 /// No authentication is applied (SigV4 is deferred to a later phase).
