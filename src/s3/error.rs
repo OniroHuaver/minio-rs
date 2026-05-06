@@ -40,7 +40,19 @@ pub fn to_s3_error_code(err: &MinioError) -> (StatusCode, &'static str, &'static
             (StatusCode::NOT_FOUND, "NoSuchBucket", "The specified bucket does not exist.")
         }
         MinioError::ObjectAlreadyExists(_) => {
+            (StatusCode::CONFLICT, "ObjectAlreadyExists", "The specified object already exists.")
+        }
+        MinioError::BucketAlreadyExists(_) => {
             (StatusCode::CONFLICT, "BucketAlreadyExists", "The requested bucket name is not available.")
+        }
+        MinioError::NoSuchUpload(_) => {
+            (StatusCode::NOT_FOUND, "NoSuchUpload", "The specified multipart upload does not exist.")
+        }
+        MinioError::InvalidPart(_) => {
+            (StatusCode::BAD_REQUEST, "InvalidPart", "One or more of the specified parts could not be found.")
+        }
+        MinioError::EntityTooSmall => {
+            (StatusCode::BAD_REQUEST, "EntityTooSmall", "Your proposed upload is smaller than the minimum allowed object size.")
         }
         MinioError::ChecksumMismatch { .. } => {
             (StatusCode::BAD_REQUEST, "BadDigest", "The Content-MD5 you specified did not match what we received.")

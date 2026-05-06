@@ -52,6 +52,11 @@ pub async fn run(config: ServerConfig) -> MinioResult<()> {
         object_api: objects.clone() as Arc<dyn ObjectAPI>,
         instance_id: Uuid::now_v7().to_string(),
         region: "us-east-1".to_string(),
+        credentials: std::env::var("MINIO_ROOT_USER").ok().and_then(|ak| {
+            std::env::var("MINIO_ROOT_PASSWORD")
+                .ok()
+                .map(|sk| (ak, sk))
+        }),
     });
 
     // 4. Build S3 HTTP router

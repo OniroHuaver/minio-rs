@@ -53,6 +53,14 @@ impl S3Client {
             .expect("head_bucket")
     }
 
+    pub async fn get_bucket_location(&self, bucket: &str) -> reqwest::Response {
+        self.client
+            .get(format!("{}/{}?location", self.endpoint, bucket))
+            .send()
+            .await
+            .expect("get_bucket_location")
+    }
+
     // ---- Object operations ----
 
     pub async fn put_object(&self, bucket: &str, key: &str, body: &[u8]) -> reqwest::Response {
@@ -248,6 +256,86 @@ impl S3Client {
             .send()
             .await
             .expect("list_objects_v2_full")
+    }
+
+    /// Copy an object server-side (PUT /{dst-bucket}/{dst-key} + x-amz-copy-source).
+    pub async fn copy_object(
+        &self,
+        src_bucket: &str,
+        src_key: &str,
+        dst_bucket: &str,
+        dst_key: &str,
+    ) -> reqwest::Response {
+        let url = format!("{}/{}/{}", self.endpoint, dst_bucket, urlencode_key(dst_key));
+        self.client
+            .put(&url)
+            .header(
+                "x-amz-copy-source",
+                format!("/{}/{}", src_bucket, src_key),
+            )
+            .send()
+            .await
+            .expect("copy_object")
+    }
+
+    /// Copy an object with metadata replacement.
+    pub async fn copy_object_replace_meta(
+        &self,
+        src_bucket: &str,
+        src_key: &str,
+        dst_bucket: &str,
+        dst_key: &str,
+        meta: &[(&str, &str)],
+    ) -> reqwest::Response {
+        let url = format!("{}/{}/{}", self.endpoint, dst_bucket, urlencode_key(dst_key));
+        let mut req = self
+            .client
+            .put(&url)
+            .header(
+                "x-amz-copy-source",
+                format!("/{}/{}", src_bucket, src_key),
+            )
+            .header("x-amz-metadata-directive", "REPLACE");
+        for (k, v) in meta {
+            let header_name = format!("x-amz-meta-{}", k);
+            req = req.header(header_name, *v);
+        }
+        req.send().await.expect("copy_object_replace_meta")
+    }
+
+    /// Delete multiple objects in a single request (POST /{bucket}?delete).
+    pub async fn delete_objects(
+        &self,
+        bucket: &str,
+        keys: &[&str],
+        quiet: bool,
+    ) -> reqwest::Response {
+        // Build XML body
+        let mut objects_xml = String::new();
+        for key in keys {
+            objects_xml.push_str(&format!(
+                "<Object><Key>{}</Key></Object>",
+                key
+            ));
+        }
+        let quiet_xml = if quiet {
+            "<Quiet>true</Quiet>".to_string()
+        } else {
+            String::new()
+        };
+        let body = format!(
+            r#"<?xml version="1.0" encoding="UTF-8"?><Delete>{}{}</Delete>"#,
+            quiet_xml, objects_xml
+        );
+
+        let url = format!("{}/{}?delete", self.endpoint, bucket);
+        self.client
+            .post(&url)
+            .header("content-type", "application/xml")
+            .body(body)
+            .send()
+            .await
+            .expect("delete_objects")
     }
 }
 

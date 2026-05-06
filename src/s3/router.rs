@@ -4,13 +4,18 @@ use std::sync::Arc;
 
 use axum::{
     extract::DefaultBodyLimit,
-    routing::{delete, get, head, put},
+    middleware,
+    routing::{delete, get, head, post, put},
     Router,
 };
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
-use crate::s3::handlers::bucket::{bucket_exists_handler, create_bucket_handler, delete_bucket_handler};
-use crate::s3::handlers::list::list_objects_v2_handler;
+use crate::s3::handlers::bucket::{
+    bucket_exists_handler, bucket_get_handler, bucket_put_handler, delete_bucket_handler,
+};
+use crate::s3::auth::sigv4_middleware;
+use crate::s3::handlers::delete::delete_objects_handler;
+use crate::s3::handlers::multipart::multipart_post_handler;
 use crate::s3::handlers::object::{
     delete_object_handler, get_object_handler, head_object_handler, put_object_handler,
 };
@@ -57,16 +62,20 @@ pub fn router(state: Arc<AppState>) -> Router {
         // Service: ListBuckets
         .route("/", get(list_buckets_handler))
         // Bucket operations
-        .route("/:bucket", get(list_objects_v2_handler))
-        .route("/:bucket", put(create_bucket_handler))
+        .route("/:bucket", get(bucket_get_handler))
+        .route("/:bucket", put(bucket_put_handler))
         .route("/:bucket", head(bucket_exists_handler))
+        .route("/:bucket", post(delete_objects_handler))
         .route("/:bucket", delete(delete_bucket_handler))
         // Object operations
         .route("/:bucket/*key", put(put_object_handler))
         .route("/:bucket/*key", get(get_object_handler))
         .route("/:bucket/*key", head(head_object_handler))
         .route("/:bucket/*key", delete(delete_object_handler))
+        // Multipart upload
+        .route("/:bucket/*key", post(multipart_post_handler))
         // Middleware
+        .layer(middleware::from_fn_with_state(state.clone(), sigv4_middleware))
         // 5 GiB body limit — matches MAX_OBJECT_SIZE in put_object_handler
         .layer(DefaultBodyLimit::max(5 * 1024 * 1024 * 1024))
         .layer(TraceLayer::new_for_http())

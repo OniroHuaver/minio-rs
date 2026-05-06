@@ -50,10 +50,9 @@ async fn test_create_duplicate_bucket() {
     let resp = client.create_bucket("dup-bucket").await;
     assert_eq!(resp.status(), 200);
 
-    // Second creation: `make_volume` is idempotent via `create_dir_all`
-    // TODO: when conflict detection is added, change to expect 409
+    // Second creation: must return 409 BucketAlreadyExists
     let resp = client.create_bucket("dup-bucket").await;
-    assert_eq!(resp.status(), 200);
+    assert_eq!(resp.status(), 409, "duplicate create_bucket → 409 Conflict");
 }
 
 #[tokio::test]

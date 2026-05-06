@@ -1,6 +1,7 @@
 //! S3 Bucket operation integration tests (Standalone, 1 disk).
 //!
-//! Covers: CreateBucket, HeadBucket, DeleteBucket, ListBuckets
+//! Covers: CreateBucket, HeadBucket, DeleteBucket, ListBuckets,
+//! Bucket Conflict Detection, GetBucketLocation
 //! Focuses on S3 protocol compliance — status codes, XML format, error codes.
 
 mod common;
@@ -42,10 +43,9 @@ async fn create_bucket_idempotent() {
     let (_server, client) = setup().await;
     let resp = client.create_bucket("dup").await;
     assert_eq!(resp.status(), 200);
-    // NOTE: current implementation is idempotent (create_dir_all).
-    // S3 would return BucketAlreadyOwnedByYou; adapt when conflict detection is added.
+    // S3: duplicate bucket creation must return 409 Conflict
     let resp = client.create_bucket("dup").await;
-    assert_eq!(resp.status(), 200, "duplicate CreateBucket currently returns 200");
+    assert_eq!(resp.status(), 409, "duplicate CreateBucket → 409 Conflict");
 }
 
 #[tokio::test]
@@ -71,6 +71,66 @@ async fn create_multiple_buckets() {
     for name in ["alpha", "bravo", "charlie", "delta", "echo"] {
         assert!(body.contains(name), "list should contain `{name}`");
     }
+}
+
+// ============================================================================
+// Bucket Conflict Detection
+// ============================================================================
+
+#[tokio::test]
+async fn create_duplicate_bucket_xml_error() {
+    let (_server, client) = setup().await;
+    client.create_bucket("conflict-xml").await;
+    let resp = client.create_bucket("conflict-xml").await;
+    assert_eq!(resp.status(), 409);
+    let body = resp.text().await.unwrap();
+    assert!(body.contains("<?xml"), "should have XML declaration");
+    assert!(body.contains("<Code>BucketAlreadyExists</Code>"), "error code should be BucketAlreadyExists");
+    assert!(body.contains("<Message>"), "should have Message");
+    assert!(body.contains("<Resource>/conflict-xml</Resource>"), "should have Resource path");
+    assert!(body.contains("<RequestId>"), "should have RequestId");
+}
+
+#[tokio::test]
+async fn create_bucket_after_delete_same_name() {
+    let (_server, client) = setup().await;
+    client.create_bucket("recreate").await;
+    client.delete_bucket("recreate").await;
+    let resp = client.create_bucket("recreate").await;
+    assert_eq!(resp.status(), 200, "re-create after delete should succeed");
+}
+
+#[tokio::test]
+async fn create_bucket_after_delete_verify_list() {
+    let (_server, client) = setup().await;
+    client.create_bucket("recycle").await;
+    client.delete_bucket("recycle").await;
+    // Delete non-existent is idempotent 204
+    let resp = client.delete_bucket("recycle").await;
+    assert_eq!(resp.status(), 204);
+    // Re-create
+    let resp = client.create_bucket("recycle").await;
+    assert_eq!(resp.status(), 200);
+    // Verify it appears in the bucket list
+    let resp = client.list_buckets().await;
+    let body = resp.text().await.unwrap();
+    assert!(body.contains("<Name>recycle</Name>"), "re-created bucket should be listed");
+}
+
+#[tokio::test]
+async fn create_bucket_conflict_does_not_affect_other() {
+    let (_server, client) = setup().await;
+    client.create_bucket("safe-alpha").await;
+    client.create_bucket("safe-bravo").await;
+    // Duplicate alpha → 409
+    let resp = client.create_bucket("safe-alpha").await;
+    assert_eq!(resp.status(), 409);
+    // Bravo should still exist and be accessible
+    let resp = client.head_bucket("safe-bravo").await;
+    assert_eq!(resp.status(), 200);
+    // Create a new bucket should still work
+    let resp = client.create_bucket("safe-charlie").await;
+    assert_eq!(resp.status(), 200);
 }
 
 // ============================================================================
@@ -191,4 +251,92 @@ async fn list_buckets_empty() {
     // Should still be valid XML with empty Buckets list (<Buckets/> self-closing)
     assert!(body.contains("<Buckets"), "should have Buckets wrapper");
     assert!(body.contains("<ListAllMyBucketsResult"), "should have root element");
+}
+
+// ============================================================================
+// GetBucketLocation
+// ============================================================================
+
+#[tokio::test]
+async fn get_bucket_location_ok_200() {
+    let (_server, client) = setup().await;
+    client.create_bucket("loc-test").await;
+    let resp = client.get_bucket_location("loc-test").await;
+    assert_eq!(resp.status(), 200, "GetBucketLocation should return 200");
+}
+
+#[tokio::test]
+async fn get_bucket_location_xml_structure() {
+    let (_server, client) = setup().await;
+    client.create_bucket("loc-xml").await;
+    let resp = client.get_bucket_location("loc-xml").await;
+    assert_eq!(resp.status(), 200);
+    let ct = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok());
+    assert_eq!(ct, Some("application/xml"), "Content-Type should be application/xml");
+    let body = resp.text().await.unwrap();
+    assert!(body.contains("<?xml"), "should have XML declaration");
+    assert!(
+        body.contains("xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\""),
+        "should have S3 xmlns"
+    );
+    assert!(body.contains("<LocationConstraint"), "should have LocationConstraint root");
+    assert!(body.contains("</LocationConstraint>"), "should close LocationConstraint");
+}
+
+#[tokio::test]
+async fn get_bucket_location_contains_region() {
+    let (_server, client) = setup().await;
+    client.create_bucket("loc-region").await;
+    let resp = client.get_bucket_location("loc-region").await;
+    assert_eq!(resp.status(), 200);
+    let body = resp.text().await.unwrap();
+    // Default region is "us-east-1"
+    assert!(
+        body.contains("us-east-1"),
+        "LocationConstraint should contain the region, body: {body}"
+    );
+}
+
+#[tokio::test]
+async fn get_bucket_location_nonexistent_bucket() {
+    let (_server, client) = setup().await;
+    // S3 spec: GetBucketLocation does NOT require bucket existence.
+    // The location query is routed before bucket-existence checks.
+    let resp = client.get_bucket_location("no-such-bucket-loc").await;
+    // Current implementation returns 200 with the default region
+    let status = resp.status();
+    assert!(
+        status == 200 || status == 404,
+        "GetBucketLocation non-existent: expected 200 or 404, got {status}"
+    );
+}
+
+#[tokio::test]
+async fn get_bucket_location_multiple_buckets_same_region() {
+    let (_server, client) = setup().await;
+    let buckets = ["loc-a", "loc-b", "loc-c"];
+    for name in &buckets {
+        client.create_bucket(name).await;
+    }
+    for name in &buckets {
+        let resp = client.get_bucket_location(name).await;
+        assert_eq!(resp.status(), 200, "GetBucketLocation for '{name}' should succeed");
+    }
+}
+
+#[tokio::test]
+async fn get_bucket_location_after_delete() {
+    let (_server, client) = setup().await;
+    client.create_bucket("loc-gone").await;
+    client.delete_bucket("loc-gone").await;
+    // After deletion, GetBucketLocation still returns 200 (region is configured, bucket check is bypassed)
+    let resp = client.get_bucket_location("loc-gone").await;
+    let status = resp.status();
+    assert!(
+        status == 200 || status == 404,
+        "GetBucketLocation after delete: expected 200 or 404, got {status}"
+    );
 }

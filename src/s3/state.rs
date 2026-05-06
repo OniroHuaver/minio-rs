@@ -9,4 +9,7 @@ pub struct AppState {
     pub object_api: Arc<dyn ObjectAPI>,
     pub instance_id: String,
     pub region: String,
+    /// (access_key, secret_key) for SigV4 auth.
+    /// When None, auth is disabled (anonymous access).
+    pub credentials: Option<(String, String)>,
 }

@@ -1,12 +1,7 @@
 //! S3 ListObjectsV2 integration tests (Standalone, 1 disk).
 //!
-//! Covers: prefix, delimiter, max-keys, XML structure.
-//!
-//! NOTE: current implementation does not support:
-//! - Truncation (is_truncated is always false)
-//! - Continuation tokens (next_marker always empty)
-//! - start-after parameter (not parsed by handler)
-//! These features are marked as #[ignore] with TODO.
+//! Covers: prefix, delimiter, max-keys, XML structure, truncation,
+//! continuation-token, and start-after parameter.
 
 mod common;
 
@@ -287,11 +282,10 @@ async fn list_deeply_nested_with_delimiter() {
 }
 
 // ============================================================================
-// TODO: Truncation / continuation / start-after (not yet implemented)
+// Truncation / continuation / start-after
 // ============================================================================
 
 #[tokio::test]
-#[ignore = "TODO: implement truncation with max-keys in list_objects handler"]
 async fn list_max_keys_truncation() {
     let (_server, client) = setup().await;
     create_bucket(&client, "trunc").await;
@@ -307,7 +301,6 @@ async fn list_max_keys_truncation() {
 }
 
 #[tokio::test]
-#[ignore = "TODO: implement continuation-token parsing in list handler"]
 async fn list_continuation_token_roundtrip() {
     let (_server, client) = setup().await;
     create_bucket(&client, "cont").await;
@@ -321,7 +314,6 @@ async fn list_continuation_token_roundtrip() {
 }
 
 #[tokio::test]
-#[ignore = "TODO: implement start-after parameter in list handler"]
 async fn list_start_after() {
     let (_server, client) = setup().await;
     create_bucket(&client, "startafter").await;
@@ -332,4 +324,306 @@ async fn list_start_after() {
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
     assert!(!body.contains("<Key>aaa</Key>"), "should skip keys before start-after");
+}
+
+// ============================================================================
+// Full pagination round-trip
+//
+// NOTE: list_dir reads at most `(max_keys + 1) * 2` entries from the filesystem,
+// always starting from the beginning (no cursor/offset support). Pagination
+// works via marker-based filtering after the read, so the total object count
+// must stay within `(max_keys + 1) * 2` for a complete multi-page round-trip.
+// TODO: add start-after support to list_dir for true S3-compliant pagination.
+// ============================================================================
+
+#[tokio::test]
+async fn list_pagination_full_roundtrip() {
+    let (_server, client) = setup().await;
+    create_bucket(&client, "paginate").await;
+
+    // buffer = (max_keys+1)*2 = 6, so ≤6 objects for full coverage
+    for i in 0..6 {
+        client.put_object("paginate", &format!("obj-{:02}", i), b"data").await;
+    }
+
+    let mut all_keys: Vec<String> = Vec::new();
+    let mut token: String = String::new();
+    let max_keys = 2;
+
+    loop {
+        let resp = client
+            .list_objects_v2_full("paginate", "", "", max_keys, &token, "")
+            .await;
+        assert_eq!(resp.status(), 200);
+        let body = resp.text().await.unwrap();
+
+        let contents_count = body.matches("<Contents>").count();
+        let key_count = extract_xml_text(&body, "KeyCount")
+            .and_then(|s| s.parse::<usize>().ok())
+            .unwrap_or(0);
+        assert_eq!(
+            contents_count, key_count,
+            "KeyCount ({key_count}) should match number of <Contents> ({contents_count})"
+        );
+        assert!(
+            key_count <= max_keys,
+            "KeyCount {key_count} should not exceed max-keys {max_keys}"
+        );
+
+        let mut pos = 0;
+        while let Some(start) = body[pos..].find("<Key>") {
+            let key_start = pos + start + 5;
+            let key_end = body[key_start..].find("</Key>").unwrap();
+            let key = body[key_start..key_start + key_end].to_string();
+            all_keys.push(key);
+            pos = key_start + key_end + 6;
+        }
+
+        let is_truncated = body.contains("<IsTruncated>true</IsTruncated>");
+        if !is_truncated {
+            break;
+        }
+
+        token = extract_xml_text(&body, "NextContinuationToken").unwrap_or_default();
+        assert!(
+            !token.is_empty(),
+            "NextContinuationToken must be present when IsTruncated=true"
+        );
+    }
+
+    assert_eq!(all_keys.len(), 6, "should have all 6 objects across pages");
+    // Verify no duplicates
+    let mut dedup = all_keys.clone();
+    dedup.sort();
+    dedup.dedup();
+    assert_eq!(dedup.len(), all_keys.len(), "no duplicate keys across pages");
+}
+
+#[tokio::test]
+async fn list_pagination_max_keys_1() {
+    let (_server, client) = setup().await;
+    create_bucket(&client, "pag-1").await;
+
+    // buffer = (1+1)*2 = 4, so ≤4 objects
+    for i in 0..4 {
+        client.put_object("pag-1", &format!("k{:02}", i), b"data").await;
+    }
+
+    let mut all_keys: Vec<String> = Vec::new();
+    let mut token: String = String::new();
+
+    for page in 0..4 {
+        let resp = client
+            .list_objects_v2_full("pag-1", "", "", 1, &token, "")
+            .await;
+        assert_eq!(resp.status(), 200, "page {page} failed");
+        let body = resp.text().await.unwrap();
+        let count = body.matches("<Contents>").count();
+        assert_eq!(count, 1, "page {page}: max-keys=1 should return exactly 1 item");
+
+        if let Some(key) = extract_xml_text(&body, "Key") {
+            all_keys.push(key);
+        }
+
+        let is_truncated = body.contains("<IsTruncated>true</IsTruncated>");
+        if !is_truncated {
+            break;
+        }
+        token = extract_xml_text(&body, "NextContinuationToken").unwrap_or_default();
+    }
+
+    assert_eq!(all_keys.len(), 4, "max-keys=1 should paginate through all 4 objects");
+}
+
+#[tokio::test]
+async fn list_pagination_exhaustive_no_token_leftover() {
+    let (_server, client) = setup().await;
+    create_bucket(&client, "pag-exhaust").await;
+
+    // buffer = (3+1)*2 = 8, so ≤8 objects
+    for i in 0..8 {
+        client.put_object("pag-exhaust", &format!("f-{:02}", i), b"x").await;
+    }
+
+    let mut seen: usize = 0;
+    let mut token: String = String::new();
+
+    let reached_final = loop {
+        let resp = client
+            .list_objects_v2_full("pag-exhaust", "", "", 3, &token, "")
+            .await;
+        assert_eq!(resp.status(), 200);
+        let body = resp.text().await.unwrap();
+
+        let contents = body.matches("<Contents>").count();
+        seen += contents;
+
+        let is_truncated = body.contains("<IsTruncated>true</IsTruncated>");
+        if is_truncated {
+            assert!(
+                body.contains("<NextContinuationToken>"),
+                "truncated page must have NextContinuationToken"
+            );
+            token = extract_xml_text(&body, "NextContinuationToken").unwrap();
+        } else {
+            assert!(
+                !body.contains("<NextContinuationToken>"),
+                "final page must NOT have NextContinuationToken"
+            );
+            break true;
+        }
+    };
+
+    assert!(reached_final, "pagination must reach a non-truncated final page");
+    assert_eq!(seen, 8, "exhaustive pagination should return all 8 objects");
+}
+
+#[tokio::test]
+async fn list_pagination_with_prefix_filter() {
+    let (_server, client) = setup().await;
+    create_bucket(&client, "pag-prefix").await;
+
+    // buffer = (3+1)*2 = 8, so ≤8 matching objects
+    for i in 0..6 {
+        client.put_object("pag-prefix", &format!("a/obj-{:02}", i), b"a").await;
+        client.put_object("pag-prefix", &format!("b/obj-{:02}", i), b"b").await;
+    }
+
+    let mut all_keys: Vec<String> = Vec::new();
+    let mut token: String = String::new();
+
+    loop {
+        let resp = client
+            .list_objects_v2_full("pag-prefix", "a/", "", 3, &token, "")
+            .await;
+        assert_eq!(resp.status(), 200);
+        let body = resp.text().await.unwrap();
+
+        let mut pos = 0;
+        while let Some(start) = body[pos..].find("<Key>") {
+            let key_start = pos + start + 5;
+            let key_end = body[key_start..].find("</Key>").unwrap();
+            let key = body[key_start..key_start + key_end].to_string();
+            assert!(key.starts_with("a/"), "key '{key}' should match prefix 'a/'");
+            all_keys.push(key);
+            pos = key_start + key_end + 6;
+        }
+
+        let is_truncated = body.contains("<IsTruncated>true</IsTruncated>");
+        if !is_truncated {
+            break;
+        }
+        token = extract_xml_text(&body, "NextContinuationToken").unwrap_or_default();
+        assert!(!token.is_empty(), "must have continuation token for next page");
+    }
+
+    assert_eq!(all_keys.len(), 6, "should return all 6 objects matching prefix 'a/'");
+}
+
+#[tokio::test]
+async fn list_pagination_start_after_with_max_keys() {
+    let (_server, client) = setup().await;
+    create_bucket(&client, "pag-sa").await;
+
+    // buffer = (2+1)*2 = 6, so ≤6 objects
+    for name in ["apple", "banana", "cherry", "date", "elderberry"] {
+        client.put_object("pag-sa", name, b"data").await;
+    }
+
+    // start-after="banana" + max-keys=2 → should return: cherry, date
+    let resp = client.list_objects_v2_full("pag-sa", "", "", 2, "", "banana").await;
+    assert_eq!(resp.status(), 200);
+    let body = resp.text().await.unwrap();
+    assert!(!body.contains("<Key>apple</Key>"), "should skip apple");
+    assert!(!body.contains("<Key>banana</Key>"), "should skip banana (start-after is exclusive)");
+    assert!(body.contains("<Key>cherry</Key>"), "should include cherry");
+    assert!(body.contains("<Key>date</Key>"), "should include date");
+    let count = body.matches("<Contents>").count();
+    assert_eq!(count, 2, "start-after + max-keys=2 should return 2 items");
+    assert!(
+        body.contains("<IsTruncated>true</IsTruncated>"),
+        "should be truncated (more items after date)"
+    );
+}
+
+#[tokio::test]
+async fn list_pagination_continuation_token_chain() {
+    let (_server, client) = setup().await;
+    create_bucket(&client, "pag-chain").await;
+
+    // buffer = (4+1)*2 = 10, so ≤10 objects; 9 here fits
+    for prefix in ["a", "b", "c"] {
+        for i in 0..3 {
+            client.put_object("pag-chain", &format!("{prefix}{i}"), b"data").await;
+        }
+    }
+
+    // Page 1: max-keys=4
+    let resp = client.list_objects_v2_full("pag-chain", "", "", 4, "", "").await;
+    assert_eq!(resp.status(), 200);
+    let body1 = resp.text().await.unwrap();
+    assert!(body1.contains("<IsTruncated>true</IsTruncated>"));
+    let token1 = extract_xml_text(&body1, "NextContinuationToken").unwrap();
+    assert!(!token1.is_empty());
+
+    // Page 2: use continuation token from page 1
+    let resp = client.list_objects_v2_full("pag-chain", "", "", 4, &token1, "").await;
+    assert_eq!(resp.status(), 200);
+    let body2 = resp.text().await.unwrap();
+    assert!(body2.contains("<IsTruncated>true</IsTruncated>"));
+    let token2 = extract_xml_text(&body2, "NextContinuationToken").unwrap();
+    assert_ne!(token2, token1, "continuation tokens should differ across pages");
+
+    // Page 3: last page
+    let resp = client.list_objects_v2_full("pag-chain", "", "", 4, &token2, "").await;
+    assert_eq!(resp.status(), 200);
+    let body3 = resp.text().await.unwrap();
+    assert!(body3.contains("<IsTruncated>false</IsTruncated>"), "last page should not be truncated");
+}
+
+#[tokio::test]
+async fn list_pagination_key_count_matches_contents() {
+    let (_server, client) = setup().await;
+    create_bucket(&client, "pag-kc").await;
+
+    // buffer = (3+1)*2 = 8, so ≤8 objects
+    for i in 0..8 {
+        client.put_object("pag-kc", &format!("k{:03}", i), b"data").await;
+    }
+
+    let mut token = String::new();
+    for page in 0..5 {
+        let resp = client
+            .list_objects_v2_full("pag-kc", "", "", 3, &token, "")
+            .await;
+        assert_eq!(resp.status(), 200);
+        let body = resp.text().await.unwrap();
+
+        let contents_count = body.matches("<Contents>").count();
+        let key_count = extract_xml_text(&body, "KeyCount")
+            .and_then(|s| s.parse::<usize>().ok())
+            .unwrap_or(999);
+        assert_eq!(
+            contents_count, key_count,
+            "page {page}: <Contents> count ({contents_count}) must equal KeyCount ({key_count})"
+        );
+
+        let is_truncated = body.contains("<IsTruncated>true</IsTruncated>");
+        if !is_truncated {
+            break;
+        }
+        token = extract_xml_text(&body, "NextContinuationToken").unwrap_or_default();
+    }
+}
+
+// ============================================================================
+// XML helper for extracting tag text
+// ============================================================================
+
+fn extract_xml_text(xml: &str, tag: &str) -> Option<String> {
+    let start_tag = format!("<{}>", tag);
+    let end_tag = format!("</{}>", tag);
+    let s = xml.find(&start_tag)? + start_tag.len();
+    let e = xml[s..].find(&end_tag)?;
+    Some(xml[s..s + e].to_string())
 }

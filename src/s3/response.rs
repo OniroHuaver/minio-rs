@@ -62,6 +62,10 @@ pub struct ListBucketResult {
     pub max_keys: usize,
     #[serde(rename = "IsTruncated")]
     pub is_truncated: bool,
+    #[serde(rename = "NextContinuationToken", skip_serializing_if = "Option::is_none")]
+    pub next_continuation_token: Option<String>,
+    #[serde(rename = "ContinuationToken", skip_serializing_if = "Option::is_none")]
+    pub continuation_token: Option<String>,
     #[serde(rename = "Contents")]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub contents: Vec<ContentEntry>,
@@ -88,6 +92,100 @@ pub struct ContentEntry {
 pub struct CommonPrefixesEntry {
     #[serde(rename = "Prefix")]
     pub prefix: String,
+}
+
+// ---- Versioning Configuration ---------------------------------------------
+
+#[derive(Serialize)]
+#[serde(rename = "VersioningConfiguration")]
+pub struct VersioningConfigurationXml {
+    #[serde(rename = "@xmlns")]
+    pub xmlns: String,
+    #[serde(rename = "Status")]
+    pub status: String,
+    #[serde(rename = "MfaDelete")]
+    pub mfa_delete: String,
+}
+
+// ---- Multipart Upload XML -------------------------------------------------
+
+#[derive(Serialize)]
+#[serde(rename = "InitiateMultipartUploadResult")]
+pub struct InitiateMultipartUploadResultXml {
+    #[serde(rename = "@xmlns")]
+    pub xmlns: String,
+    #[serde(rename = "Bucket")]
+    pub bucket: String,
+    #[serde(rename = "Key")]
+    pub key: String,
+    #[serde(rename = "UploadId")]
+    pub upload_id: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename = "CompleteMultipartUploadResult")]
+pub struct CompleteMultipartUploadResultXml {
+    #[serde(rename = "@xmlns")]
+    pub xmlns: String,
+    #[serde(rename = "Location")]
+    pub location: String,
+    #[serde(rename = "Bucket")]
+    pub bucket: String,
+    #[serde(rename = "Key")]
+    pub key: String,
+    #[serde(rename = "ETag")]
+    pub etag: String,
+}
+
+// ---- CopyObjectResult ------------------------------------------------------
+
+#[derive(Serialize)]
+#[serde(rename = "CopyObjectResult")]
+pub struct CopyObjectResultXml {
+    #[serde(rename = "@xmlns")]
+    pub xmlns: String,
+    #[serde(rename = "LastModified")]
+    pub last_modified: String,
+    #[serde(rename = "ETag")]
+    pub etag: String,
+}
+
+// ---- LocationConstraint (GetBucketLocation) -------------------------------
+
+#[derive(Serialize)]
+#[serde(rename = "LocationConstraint")]
+pub struct LocationConstraintResult {
+    #[serde(rename = "@xmlns")]
+    pub xmlns: String,
+    #[serde(rename = "$value")]
+    pub location: String,
+}
+
+// ---- DeleteResult (DeleteObjects) -----------------------------------------
+
+#[derive(Serialize)]
+#[serde(rename = "DeleteResult")]
+pub struct DeleteResultXml {
+    #[serde(rename = "Deleted", skip_serializing_if = "Vec::is_empty")]
+    pub deleted: Vec<DeletedEntry>,
+    #[serde(rename = "Error", skip_serializing_if = "Vec::is_empty")]
+    pub errors: Vec<DeleteErrorXml>,
+}
+
+#[derive(Serialize)]
+pub struct DeletedEntry {
+    #[serde(rename = "Key")]
+    pub key: String,
+}
+
+#[derive(Serialize)]
+pub struct DeleteErrorXml {
+    #[serde(rename = "Key")]
+    pub key: String,
+    #[serde(rename = "Code")]
+    pub code: String,
+    #[serde(rename = "Message")]
+    pub message: String,
 }
 
 // ---- ErrorResponse --------------------------------------------------------

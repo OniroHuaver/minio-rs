@@ -1,6 +1,40 @@
-//! Request parsing utilities — metadata extraction and Range header parsing
+//! Request parsing utilities — metadata extraction, Range header parsing, XML deserialization
 
 use axum::http::HeaderMap;
+use serde::Deserialize;
+
+/// XML body for DeleteObjects (POST /:bucket?delete).
+#[derive(Debug, Deserialize)]
+#[serde(rename = "Delete")]
+pub struct DeleteObjectsBody {
+    #[serde(rename = "Object", default)]
+    pub objects: Vec<DeleteObjectEntry>,
+    #[serde(rename = "Quiet", default)]
+    pub quiet: Option<bool>,
+}
+
+/// A single object key in a DeleteObjects request.
+#[derive(Debug, Deserialize)]
+pub struct DeleteObjectEntry {
+    #[serde(rename = "Key")]
+    pub key: String,
+}
+
+/// XML body for CompleteMultipartUpload.
+#[derive(Debug, Deserialize)]
+#[serde(rename = "CompleteMultipartUpload")]
+pub struct CompleteMultipartUploadBody {
+    #[serde(rename = "Part", default)]
+    pub parts: Vec<CompletedPartBody>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CompletedPartBody {
+    #[serde(rename = "PartNumber")]
+    pub part_number: u32,
+    #[serde(rename = "ETag")]
+    pub etag: String,
+}
 
 /// Extract system and user metadata from HTTP headers.
 ///

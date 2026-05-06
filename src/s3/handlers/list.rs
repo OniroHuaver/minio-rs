@@ -31,10 +31,12 @@ pub async fn list_objects_v2_handler(
         .and_then(|v| v.parse().ok())
         .unwrap_or(1000)
         .clamp(1, 1000);
+    let start_after = params.get("start-after").map(|s| s.as_str());
+    let continuation_token = params.get("continuation-token").map(|s| s.as_str());
 
     match state
         .object_api
-        .list_objects(&bucket, &prefix, &delimiter, max_keys)
+        .list_objects(&bucket, &prefix, &delimiter, max_keys, start_after, continuation_token)
         .await
     {
         Ok(result) => {
@@ -65,6 +67,12 @@ pub async fn list_objects_v2_handler(
                 key_count: contents.len(),
                 max_keys,
                 is_truncated: result.is_truncated,
+                next_continuation_token: if result.is_truncated {
+                    Some(result.next_continuation_token.clone())
+                } else {
+                    None
+                },
+                continuation_token: continuation_token.map(|s| s.to_string()),
                 contents,
                 common_prefixes,
             };

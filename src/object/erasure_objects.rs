@@ -9,7 +9,10 @@ use crate::base::format::{VersionType, XlMeta, XlMetaEntry, XlMetaVersionHeader}
 use crate::storage::StorageAPI;
 use uuid::Uuid;
 
-use crate::object::object_api::{ListObjectsResult, ObjectInfo, ObjectAPI};
+use crate::object::object_api::{
+    CompletedPart, DeleteObjectsResult, ListObjectsResult, MetadataDirective, MultipartInfo,
+    ObjectInfo, ObjectAPI, VersioningConfig,
+};
 use crate::object::set::ErasureSet;
 
 /// EC-based object storage implementation
@@ -77,6 +80,11 @@ impl ObjectAPI for ErasureObjects {
 
     async fn make_bucket(&self, bucket: &str) -> MinioResult<()> {
         let disks = self.set.online_disks().await;
+        if let Some(disk) = disks.first() {
+            if disk.file_exists(bucket, "").await? {
+                return Err(MinioError::BucketAlreadyExists(bucket.to_string()));
+            }
+        }
         let mut successes = Vec::new();
         let mut errors: Vec<(usize, MinioError)> = Vec::new();
 
@@ -398,6 +406,48 @@ impl ObjectAPI for ErasureObjects {
         Ok(())
     }
 
+    async fn copy_object(
+        &self,
+        src_bucket: &str,
+        src_object: &str,
+        dst_bucket: &str,
+        dst_object: &str,
+        metadata: &[(String, String)],
+        directive: MetadataDirective,
+    ) -> MinioResult<ObjectInfo> {
+        let (data, src_info) = self.get_object(src_bucket, src_object).await?;
+        let final_metadata = match directive {
+            MetadataDirective::Copy => {
+                let mut meta = vec![("Content-Type".to_string(), src_info.content_type)];
+                for (k, v) in &src_info.user_metadata {
+                    meta.push((k.clone(), v.clone()));
+                }
+                meta
+            }
+            MetadataDirective::Replace => metadata.to_vec(),
+        };
+        self.put_object(dst_bucket, dst_object, &data, &final_metadata).await
+    }
+
+    async fn delete_objects(
+        &self,
+        bucket: &str,
+        objects: &[String],
+    ) -> MinioResult<DeleteObjectsResult> {
+        let mut deleted = Vec::new();
+        let mut errors = Vec::new();
+        for key in objects {
+            match self.delete_object(bucket, key).await {
+                Ok(()) => deleted.push(key.clone()),
+                Err(e) => {
+                    let (_, code, message) = crate::s3::error::to_s3_error_code(&e);
+                    errors.push((key.clone(), code.to_string(), message.to_string()));
+                }
+            }
+        }
+        Ok(DeleteObjectsResult { deleted, errors })
+    }
+
     /// LIST objects
     async fn list_objects(
         &self,
@@ -405,6 +455,8 @@ impl ObjectAPI for ErasureObjects {
         prefix: &str,
         delimiter: &str,
         max_keys: usize,
+        _start_after: Option<&str>,
+        _continuation_token: Option<&str>,
     ) -> MinioResult<ListObjectsResult> {
         let online = self.set.online_disks().await;
         let disk = online.first().ok_or_else(|| {
@@ -472,8 +524,55 @@ impl ObjectAPI for ErasureObjects {
             objects,
             common_prefixes: prefixes,
             is_truncated: false,
-            next_marker: String::new(),
+            next_continuation_token: String::new(),
         })
+    }
+
+    async fn new_multipart_upload(
+        &self,
+        _bucket: &str,
+        _object: &str,
+        _metadata: &[(String, String)],
+    ) -> MinioResult<MultipartInfo> {
+        Err(MinioError::Internal("multipart not implemented for erasure mode".into()))
+    }
+
+    async fn put_object_part(
+        &self,
+        _bucket: &str,
+        _object: &str,
+        _upload_id: &str,
+        _part_number: u32,
+        _data: &[u8],
+    ) -> MinioResult<String> {
+        Err(MinioError::Internal("multipart not implemented for erasure mode".into()))
+    }
+
+    async fn complete_multipart_upload(
+        &self,
+        _bucket: &str,
+        _object: &str,
+        _upload_id: &str,
+        _parts: &[CompletedPart],
+    ) -> MinioResult<ObjectInfo> {
+        Err(MinioError::Internal("multipart not implemented for erasure mode".into()))
+    }
+
+    async fn get_bucket_versioning(&self, _bucket: &str) -> MinioResult<Option<VersioningConfig>> {
+        Ok(None)
+    }
+
+    async fn set_bucket_versioning(&self, _bucket: &str, _status: &str) -> MinioResult<()> {
+        Err(MinioError::Internal("versioning not implemented for erasure mode".into()))
+    }
+
+    async fn abort_multipart_upload(
+        &self,
+        _bucket: &str,
+        _object: &str,
+        _upload_id: &str,
+    ) -> MinioResult<()> {
+        Err(MinioError::Internal("multipart not implemented for erasure mode".into()))
     }
 }
 

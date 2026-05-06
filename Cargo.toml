@@ -50,8 +50,9 @@ bytes = "1"
 tonic = "0.12"
 prost = "0.13"
 
-# JWT (Phase 3)
+# Auth
 jsonwebtoken = "9"
+hmac = "0.12"
 
 # 工具
 thiserror = "2"

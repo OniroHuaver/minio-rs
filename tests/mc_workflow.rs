@@ -62,7 +62,7 @@ async fn mc_mb_duplicate() {
 
     mc.mb("dup-bucket").await;
     let resp = mc.mb("dup-bucket").await;
-    assert_eq!(resp.status(), 200, "mc mb duplicate → 200 (idempotent)");
+    assert_eq!(resp.status(), 409, "mc mb duplicate → 409 Conflict");
 }
 
 // ============================================================================

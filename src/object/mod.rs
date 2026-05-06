@@ -11,7 +11,10 @@ pub mod set;
 pub mod standalone_objects;
 
 pub use erasure_objects::ErasureObjects;
-pub use object_api::{ListObjectsResult, MultipartInfo, ObjectAPI, ObjectInfo};
+pub use object_api::{
+    CompletedPart, DeleteObjectsResult, ListObjectsResult, MetadataDirective, MultipartInfo,
+    ObjectAPI, ObjectInfo, VersioningConfig, VersioningStatus,
+};
 pub use standalone_objects::StandaloneObjects;
 
 // ---- Test modules ----

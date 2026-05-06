@@ -15,6 +15,15 @@ pub struct ObjectInfo {
     pub user_metadata: Vec<(String, String)>,
 }
 
+/// Metadata handling directive for CopyObject.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MetadataDirective {
+    /// Preserve source object metadata.
+    Copy,
+    /// Replace with new metadata.
+    Replace,
+}
+
 /// Multipart upload information
 #[derive(Debug, Clone)]
 pub struct MultipartInfo {
@@ -30,7 +39,17 @@ pub struct ListObjectsResult {
     pub objects: Vec<ObjectInfo>,
     pub common_prefixes: Vec<String>,
     pub is_truncated: bool,
-    pub next_marker: String,
+    /// Base64-encoded next key for continuation-token pagination.
+    pub next_continuation_token: String,
+}
+
+/// Result of a multi-object delete operation.
+#[derive(Debug, Clone)]
+pub struct DeleteObjectsResult {
+    /// Keys that were successfully deleted.
+    pub deleted: Vec<String>,
+    /// Keys that failed to delete, with (key, code, message).
+    pub errors: Vec<(String, String, String)>,
 }
 
 /// ObjectAPI trait — unified abstraction for object-level operations
@@ -83,35 +102,92 @@ pub trait ObjectAPI: Send + Sync {
         prefix: &str,
         delimiter: &str,
         max_keys: usize,
+        start_after: Option<&str>,
+        continuation_token: Option<&str>,
     ) -> MinioResult<ListObjectsResult>;
 
-    // ---- Missing Object operations (TODO) ----
+    /// Delete multiple objects in a single request.
+    /// Returns (deleted_keys, errors: Vec<(key, code, message)>).
+    async fn delete_objects(
+        &self,
+        bucket: &str,
+        objects: &[String],
+    ) -> MinioResult<DeleteObjectsResult>;
 
-    // TODO: CopyObject — source/dest bucket+key, metadata directives.
-    // S3: PUT /{dest-bucket}/{dest-key} + x-amz-copy-source header
-    // async fn copy_object(
-    //     &self,
-    //     src_bucket: &str,
-    //     src_object: &str,
-    //     dst_bucket: &str,
-    //     dst_object: &str,
-    //     metadata: &[(String, String)],
-    // ) -> MinioResult<ObjectInfo>;
+    /// Get bucket versioning configuration.
+    async fn get_bucket_versioning(&self, bucket: &str) -> MinioResult<Option<VersioningConfig>>;
 
-    // TODO: DeleteObjects — multi-object delete (POST /{bucket}?delete).
-    // S3: POST with XML body listing objects, returns DeleteResult XML
-    // async fn delete_objects(
-    //     &self,
-    //     bucket: &str,
-    //     objects: &[String],
-    // ) -> MinioResult<Vec<(String, Option<String>)>>;
+    /// Set bucket versioning configuration.
+    async fn set_bucket_versioning(&self, bucket: &str, status: &str) -> MinioResult<()>;
 
-    // ---- Multipart Upload (Phase 1 optional) ----
+    /// Copy an object server-side.
+    ///
+    /// S3: `PUT /{dst-bucket}/{dst-key}` + `x-amz-copy-source` header.
+    async fn copy_object(
+        &self,
+        src_bucket: &str,
+        src_object: &str,
+        dst_bucket: &str,
+        dst_object: &str,
+        metadata: &[(String, String)],
+        directive: MetadataDirective,
+    ) -> MinioResult<ObjectInfo>;
 
-    // async fn new_multipart_upload(...);
-    // async fn put_object_part(...);
-    // async fn complete_multipart_upload(...);
-    // async fn abort_multipart_upload(...);
+    // ---- Multipart Upload ----
+
+    /// Create a new multipart upload. Returns upload metadata.
+    async fn new_multipart_upload(
+        &self,
+        bucket: &str,
+        object: &str,
+        metadata: &[(String, String)],
+    ) -> MinioResult<MultipartInfo>;
+
+    /// Upload a part. Returns the part ETag (hex string).
+    async fn put_object_part(
+        &self,
+        bucket: &str,
+        object: &str,
+        upload_id: &str,
+        part_number: u32,
+        data: &[u8],
+    ) -> MinioResult<String>;
+
+    /// Complete a multipart upload. Returns the final ObjectInfo.
+    async fn complete_multipart_upload(
+        &self,
+        bucket: &str,
+        object: &str,
+        upload_id: &str,
+        parts: &[CompletedPart],
+    ) -> MinioResult<ObjectInfo>;
+
+    /// Abort a multipart upload.
+    async fn abort_multipart_upload(
+        &self,
+        bucket: &str,
+        object: &str,
+        upload_id: &str,
+    ) -> MinioResult<()>;
+}
+
+/// Part descriptor for CompleteMultipartUpload request.
+#[derive(Debug, Clone)]
+pub struct CompletedPart {
+    pub part_number: u32,
+    pub etag: String,
+}
+
+/// Versioning configuration for a bucket.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub struct VersioningConfig {
+    pub status: VersioningStatus,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub enum VersioningStatus {
+    Enabled,
+    Suspended,
 }
 
 // TODO: ACL / Bucket Policy trait (Phase 3 — IAM/STS)

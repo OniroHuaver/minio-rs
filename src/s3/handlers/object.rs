@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{header, HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
 };
@@ -12,9 +12,10 @@ use base64::Engine;
 use bytes::Bytes;
 use uuid::Uuid;
 
+use crate::object::object_api::MetadataDirective;
 use crate::s3::error::to_s3_error_code;
 use crate::s3::request::{extract_metadata, parse_range};
-use crate::s3::response::{format_http_timestamp, s3_error_response};
+use crate::s3::response::{format_http_timestamp, s3_error_response, s3_xml_response, CopyObjectResultXml, S3_XMLNS};
 use crate::s3::state::AppState;
 
 /// Maximum object size allowed (5 GiB).
@@ -23,6 +24,7 @@ const MAX_OBJECT_SIZE: usize = 5 * 1024 * 1024 * 1024;
 pub async fn put_object_handler(
     State(state): State<Arc<AppState>>,
     Path(params): Path<HashMap<String, String>>,
+    Query(query): Query<HashMap<String, String>>,
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
@@ -30,6 +32,33 @@ pub async fn put_object_handler(
     let bucket = params.get("bucket").cloned().unwrap_or_default();
     let key = params.get("key").cloned().unwrap_or_default();
     let resource = format!("/{}/{}", bucket, key);
+
+    // UploadPart: PUT with ?partNumber=N&uploadId=ID
+    if query.contains_key("partNumber") && query.contains_key("uploadId") {
+        return crate::s3::handlers::multipart::upload_part_handler(
+            State(state),
+            Path(params),
+            Query(query),
+            body,
+        )
+        .await;
+    }
+
+    // CopyObject: PUT with x-amz-copy-source header
+    if let Some(copy_source) = headers
+        .get("x-amz-copy-source")
+        .and_then(|v| v.to_str().ok())
+    {
+        return copy_object_dispatch(
+            state,
+            &bucket,
+            &key,
+            copy_source,
+            &headers,
+            &request_id,
+        )
+        .await;
+    }
 
     // Validate object size (max 5 GiB)
     if body.len() > MAX_OBJECT_SIZE {
@@ -227,10 +256,24 @@ pub async fn head_object_handler(
 pub async fn delete_object_handler(
     State(state): State<Arc<AppState>>,
     Path(params): Path<HashMap<String, String>>,
+    Query(query): Query<HashMap<String, String>>,
 ) -> Response {
-    let request_id = Uuid::new_v4().to_string();
     let bucket = params.get("bucket").cloned().unwrap_or_default();
     let key = params.get("key").cloned().unwrap_or_default();
+
+    // AbortMultipartUpload: DELETE /{bucket}/{key}?uploadId=ID
+    if let Some(upload_id) = query.get("uploadId") {
+        if !upload_id.is_empty() {
+            return crate::s3::handlers::multipart::abort_multipart_upload_handler(
+                State(state),
+                Path(params),
+                Query(query),
+            )
+            .await;
+        }
+    }
+
+    let request_id = Uuid::new_v4().to_string();
     let resource = format!("/{}/{}", bucket, key);
 
     match state.object_api.delete_object(&bucket, &key).await {
@@ -242,6 +285,85 @@ pub async fn delete_object_handler(
             let (status, code, message) = to_s3_error_code(&e);
             tracing::error!("delete_object failed: {}: {}", resource, e);
             s3_error_response(status, code, message, &request_id, &resource).into_response()
+        }
+    }
+}
+
+/// Handle CopyObject when `x-amz-copy-source` header is present.
+async fn copy_object_dispatch(
+    state: Arc<AppState>,
+    dst_bucket: &str,
+    dst_key: &str,
+    copy_source: &str,
+    headers: &HeaderMap,
+    request_id: &str,
+) -> Response {
+    let resource = format!("/{}/{}", dst_bucket, dst_key);
+
+    // Parse x-amz-copy-source: "/src-bucket/src-key"
+    let source = copy_source
+        .strip_prefix('/')
+        .unwrap_or(copy_source);
+    let (src_bucket, src_key) = match source.split_once('/') {
+        Some((b, k)) if !b.is_empty() => (b, k),
+        _ => {
+            return s3_error_response(
+                StatusCode::BAD_REQUEST,
+                "InvalidArgument",
+                "x-amz-copy-source must be in the format /bucket/key",
+                request_id,
+                &resource,
+            )
+            .into_response();
+        }
+    };
+
+    // Parse x-amz-metadata-directive
+    let directive = headers
+        .get("x-amz-metadata-directive")
+        .and_then(|v| v.to_str().ok())
+        .map(|d| d.to_uppercase())
+        .and_then(|d| match d.as_str() {
+            "REPLACE" => Some(MetadataDirective::Replace),
+            "COPY" => Some(MetadataDirective::Copy),
+            _ => None,
+        })
+        .unwrap_or(MetadataDirective::Copy);
+
+    let metadata = extract_metadata(headers);
+
+    match state
+        .object_api
+        .copy_object(src_bucket, src_key, dst_bucket, dst_key, &metadata, directive)
+        .await
+    {
+        Ok(info) => {
+            tracing::debug!(
+                "copy_object: {}/{} -> {}/{} etag={}",
+                src_bucket,
+                src_key,
+                dst_bucket,
+                dst_key,
+                info.etag
+            );
+            let result = CopyObjectResultXml {
+                xmlns: S3_XMLNS.to_string(),
+                last_modified: format_http_timestamp(info.mod_time),
+                etag: format!("\"{}\"", info.etag),
+            };
+            s3_xml_response(&result).into_response()
+        }
+        Err(e) => {
+            let (status, code, message) = to_s3_error_code(&e);
+            tracing::error!(
+                "copy_object failed: {}/{} -> {}/{}: {}",
+                src_bucket,
+                src_key,
+                dst_bucket,
+                dst_key,
+                e
+            );
+            s3_error_response(status, code, message, request_id, &resource).into_response()
         }
     }
 }

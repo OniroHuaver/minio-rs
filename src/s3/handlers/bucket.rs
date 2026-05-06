@@ -1,17 +1,38 @@
-//! Bucket-level handlers: CreateBucket, DeleteBucket, HeadBucket
+//! Bucket-level handlers: CreateBucket, DeleteBucket, HeadBucket, GetBucketLocation
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{header, HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
 };
+use bytes::Bytes;
 use uuid::Uuid;
 
 use crate::s3::error::to_s3_error_code;
-use crate::s3::response::s3_error_response;
+use crate::s3::handlers::list::list_objects_v2_handler;
+use crate::s3::response::{s3_error_response, s3_xml_response, LocationConstraintResult, S3_XMLNS};
 use crate::s3::state::AppState;
+
+/// Dispatcher for `PUT /:bucket` — dispatches ?versioning or CreateBucket.
+pub async fn bucket_put_handler(
+    State(state): State<Arc<AppState>>,
+    Path(bucket): Path<String>,
+    Query(params): Query<HashMap<String, String>>,
+    body: Bytes,
+) -> Response {
+    if params.contains_key("versioning") {
+        return crate::s3::handlers::versioning::put_bucket_versioning_handler(
+            State(state),
+            Path(bucket),
+            body,
+        )
+        .await;
+    }
+    create_bucket_handler(State(state), Path(bucket)).await
+}
 
 pub async fn create_bucket_handler(
     State(state): State<Arc<AppState>>,
@@ -78,4 +99,32 @@ pub async fn bucket_exists_handler(
             s3_error_response(status, code, message, &request_id, &resource).into_response()
         }
     }
+}
+
+/// Dispatcher for `GET /:bucket` — routes to the correct handler based on query params.
+pub async fn bucket_get_handler(
+    State(state): State<Arc<AppState>>,
+    Path(bucket): Path<String>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    if params.contains_key("location") {
+        return get_bucket_location_handler(State(state), Path(bucket)).await;
+    }
+    if params.contains_key("versioning") {
+        return crate::s3::handlers::versioning::get_bucket_versioning_handler(State(state), Path(bucket)).await;
+    }
+    // Fallback: ListObjectsV2
+    list_objects_v2_handler(State(state), Path(bucket), Query(params)).await
+}
+
+/// `GET /:bucket?location` — GetBucketLocation
+async fn get_bucket_location_handler(
+    State(state): State<Arc<AppState>>,
+    Path(_bucket): Path<String>,
+) -> Response {
+    let location = LocationConstraintResult {
+        xmlns: S3_XMLNS.to_string(),
+        location: state.region.clone(),
+    };
+    s3_xml_response(&location).into_response()
 }

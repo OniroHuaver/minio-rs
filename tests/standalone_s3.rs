@@ -87,9 +87,9 @@ async fn standalone_create_bucket_idempotent() {
     let resp = client.create_bucket("dup").await;
     assert_eq!(resp.status(), 200);
 
-    // Second creation — make_volume/create_dir_all is idempotent
+    // Second creation — must return 409 BucketAlreadyExists
     let resp = client.create_bucket("dup").await;
-    assert_eq!(resp.status(), 200, "duplicate create_bucket should still return 200 in Phase 1");
+    assert_eq!(resp.status(), 409, "duplicate create_bucket should return 409 Conflict");
 }
 
 // ============================================================================

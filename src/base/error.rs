@@ -47,6 +47,19 @@ pub enum MinioError {
     #[error("Object already exists: {0}")]
     ObjectAlreadyExists(String),
 
+    #[error("Bucket already exists: {0}")]
+    BucketAlreadyExists(String),
+
+    // ---- Multipart Upload ----
+    #[error("NoSuchUpload: {0}")]
+    NoSuchUpload(String),
+
+    #[error("InvalidPart: {0}")]
+    InvalidPart(String),
+
+    #[error("EntityTooSmall: minimum part size is 5 MiB")]
+    EntityTooSmall,
+
     #[error("Checksum mismatch: expected {expected}, got {actual}")]
     ChecksumMismatch { expected: String, actual: String },
 
@@ -99,6 +112,10 @@ impl PartialEq for MinioError {
             (Self::ObjectNotFound(a), Self::ObjectNotFound(b)) => a == b,
             (Self::BucketNotFound(a), Self::BucketNotFound(b)) => a == b,
             (Self::ObjectAlreadyExists(a), Self::ObjectAlreadyExists(b)) => a == b,
+            (Self::BucketAlreadyExists(a), Self::BucketAlreadyExists(b)) => a == b,
+            (Self::NoSuchUpload(a), Self::NoSuchUpload(b)) => a == b,
+            (Self::InvalidPart(a), Self::InvalidPart(b)) => a == b,
+            (Self::EntityTooSmall, Self::EntityTooSmall) => true,
             (
                 Self::ChecksumMismatch {
                     expected: e1,
