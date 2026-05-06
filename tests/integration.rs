@@ -15,21 +15,7 @@ async fn setup() -> (TestServer, S3Client) {
     (server, client)
 }
 
-/// Create a bucket and assert success.
-async fn create_bucket(client: &S3Client, name: &str) {
-    let resp = client.create_bucket(name).await;
-    assert_eq!(
-        resp.status(),
-        200,
-        "create_bucket({name}) should return 200, got {}",
-        resp.status(),
-    );
-}
-
-/// Generate `len` bytes of deterministic pseudo-random data (repeat `0..=255`).
-fn make_data(len: usize) -> Vec<u8> {
-    (0..len).map(|i| (i % 256) as u8).collect()
-}
+use common::helpers::{create_bucket, make_data};
 
 // ============================================================================
 // Bucket tests

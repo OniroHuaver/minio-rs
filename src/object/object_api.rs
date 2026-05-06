@@ -85,6 +85,27 @@ pub trait ObjectAPI: Send + Sync {
         max_keys: usize,
     ) -> MinioResult<ListObjectsResult>;
 
+    // ---- Missing Object operations (TODO) ----
+
+    // TODO: CopyObject — source/dest bucket+key, metadata directives.
+    // S3: PUT /{dest-bucket}/{dest-key} + x-amz-copy-source header
+    // async fn copy_object(
+    //     &self,
+    //     src_bucket: &str,
+    //     src_object: &str,
+    //     dst_bucket: &str,
+    //     dst_object: &str,
+    //     metadata: &[(String, String)],
+    // ) -> MinioResult<ObjectInfo>;
+
+    // TODO: DeleteObjects — multi-object delete (POST /{bucket}?delete).
+    // S3: POST with XML body listing objects, returns DeleteResult XML
+    // async fn delete_objects(
+    //     &self,
+    //     bucket: &str,
+    //     objects: &[String],
+    // ) -> MinioResult<Vec<(String, Option<String>)>>;
+
     // ---- Multipart Upload (Phase 1 optional) ----
 
     // async fn new_multipart_upload(...);
@@ -92,3 +113,22 @@ pub trait ObjectAPI: Send + Sync {
     // async fn complete_multipart_upload(...);
     // async fn abort_multipart_upload(...);
 }
+
+// TODO: ACL / Bucket Policy trait (Phase 3 — IAM/STS)
+//
+// These operations are currently NOT implemented:
+//
+// Bucket-level:
+//   - GetBucketAcl / PutBucketAcl
+//   - GetBucketPolicy / PutBucketPolicy / DeleteBucketPolicy
+//   - GetBucketVersioning / PutBucketVersioning
+//   - GetBucketLocation
+//   - GetBucketTagging / PutBucketTagging / DeleteBucketTagging
+//
+// Object-level:
+//   - GetObjectAcl / PutObjectAcl
+//   - GetObjectTagging / PutObjectTagging / DeleteObjectTagging
+//   - GetObjectLegalHold / PutObjectLegalHold
+//   - GetObjectRetention / PutObjectRetention
+//
+// Router counterparts are marked with TODO in src/s3/router.rs.

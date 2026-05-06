@@ -1,6 +1,6 @@
-use std::net::{TcpListener, TcpStream};
+use std::net::TcpListener;
 use std::process::{Child, Command, Stdio};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use tempfile::TempDir;
 
@@ -19,9 +19,8 @@ impl TestServer {
     /// Start a minio server subprocess with `disk_count` disk directories.
     ///
     /// A free TCP port is acquired via the probe-bind-drop technique, ensuring
-    /// tests can run in parallel without port conflicts.  The function blocks
-    /// (synchronous poll with 200 ms interval, 30 s timeout) until the server
-    /// is accepting connections.
+    /// tests can run in parallel without port conflicts.  The function uses
+    /// tokio async I/O for the readiness poll (200 ms interval, 30 s timeout).
     pub async fn start(disk_count: usize) -> Self {
         // 1. Create temporary data directory
         let data_dir = TempDir::new().expect("create temp data dir");
@@ -42,7 +41,7 @@ impl TestServer {
         let port = probe.local_addr().expect("get probed port").port();
         drop(probe);
         // Brief yield so the OS fully releases the port
-        std::thread::sleep(Duration::from_millis(100));
+        tokio::time::sleep(Duration::from_millis(50)).await;
 
         let addr = format!("127.0.0.1:{}", port);
 
@@ -60,18 +59,16 @@ impl TestServer {
 
         let child = cmd.spawn().expect("start minio server subprocess");
 
-        // 5. Wait for the server to start listening
-        let deadline = Instant::now() + Duration::from_secs(30);
+        // 5. Wait for the server to start listening (async poll)
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
         loop {
-            match TcpStream::connect(&addr) {
-                Ok(_) => break,
-                Err(_) => {
-                    if Instant::now() > deadline {
-                        panic!("timed out waiting for minio server on {}", addr);
-                    }
-                    std::thread::sleep(Duration::from_millis(200));
-                }
+            if tokio::net::TcpStream::connect(&addr).await.is_ok() {
+                break;
             }
+            if tokio::time::Instant::now() > deadline {
+                panic!("timed out waiting for minio server on {}", addr);
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
         }
 
         Self {
