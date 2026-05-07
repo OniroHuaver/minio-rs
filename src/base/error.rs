@@ -73,6 +73,10 @@ pub enum MinioError {
     #[error("Access denied: {0}")]
     AccessDenied(String),
 
+    // ---- Server Startup ----
+    #[error("Port already in use: {0}")]
+    PortInUse(String),
+
     // ---- Internal Errors ----
     #[error("Internal error: {0}")]
     Internal(String),
@@ -129,6 +133,7 @@ impl PartialEq for MinioError {
             (Self::InvalidSignature(a), Self::InvalidSignature(b)) => a == b,
             (Self::ExpiredCredentials(a), Self::ExpiredCredentials(b)) => a == b,
             (Self::AccessDenied(a), Self::AccessDenied(b)) => a == b,
+            (Self::PortInUse(a), Self::PortInUse(b)) => a == b,
             (Self::Internal(a), Self::Internal(b)) => a == b,
             _ => false,
         }

@@ -66,6 +66,9 @@ pub fn to_s3_error_code(err: &MinioError) -> (StatusCode, &'static str, &'static
         MinioError::AccessDenied(_) => {
             (StatusCode::FORBIDDEN, "AccessDenied", "Access Denied.")
         }
+        MinioError::PortInUse(_) => {
+            (StatusCode::INTERNAL_SERVER_ERROR, "InternalError", "Internal server error")
+        }
         MinioError::Internal(_) => {
             (StatusCode::INTERNAL_SERVER_ERROR, "InternalError", "Internal server error")
         }

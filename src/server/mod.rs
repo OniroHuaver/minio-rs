@@ -4,5 +4,7 @@ pub mod cmd;
 pub mod disk;
 pub mod banner;
 pub mod run;
+pub mod signal;
+pub mod lock;
 
 pub use run::ServerConfig;

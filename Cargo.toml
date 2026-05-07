@@ -54,11 +54,15 @@ prost = "0.13"
 jsonwebtoken = "9"
 hmac = "0.12"
 
+# 文件锁
+fs2 = "0.4"
+
 # 工具
 thiserror = "2"
 async-trait = "0.1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
 uuid = { version = "1", features = ["v4", "v7"] }
 chrono = { version = "0.4", features = ["serde"] }
 base64 = "0.22"
@@ -68,6 +72,9 @@ clap = { version = "4", features = ["derive"] }
 [lints.rust]
 unsafe_code = "deny"
 missing_docs = "allow"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
 
 [dev-dependencies]
 reqwest = { version = "0.12" }
