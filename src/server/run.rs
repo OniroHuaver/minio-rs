@@ -44,6 +44,12 @@ pub async fn run(config: ServerConfig) -> MinioResult<()> {
         .collect();
     let objects: Arc<dyn ObjectAPI> = if disks.len() < 3 {
         tracing::info!("standalone mode ({} disk(s), no EC)", disks.len());
+        if disks.len() > 1 {
+            tracing::warn!(
+                "standalone mode only uses the first disk; {} other disk(s) will NOT participate in storage",
+                disks.len() - 1
+            );
+        }
         Arc::new(StandaloneObjects::new(disks.into_iter().next().unwrap()))
     } else {
         tracing::info!("erasure coding mode ({} disks)", disks.len());

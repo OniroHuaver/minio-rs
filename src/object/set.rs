@@ -15,7 +15,6 @@ use crate::base::format::{ObjectPart, XlMeta, XlMetaEntry, XlMetaVersionHeader};
 use crate::erasure::bitrot::BitrotDetector;
 use crate::erasure::Erasure;
 use futures::future::join_all;
-use sha2::{Digest, Sha256};
 use crate::storage::StorageAPI;
 use tracing::{debug, warn};
 
@@ -200,11 +199,12 @@ impl ErasureSet {
         let mod_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs() as i64;
+            .as_nanos() as i64;
 
-        // Single part object (full data as one part)
+        // Single part object (full data as one part) — MD5 hex per S3 convention
         let etag = {
-            let mut hasher = Sha256::new();
+            use md5::{Digest, Md5};
+            let mut hasher = Md5::new();
             hasher.update(data);
             format!("{:x}", hasher.finalize())
         };

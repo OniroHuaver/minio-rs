@@ -26,6 +26,13 @@ src/
 依赖方向：`server` → `s3` → `object` → `erasure` → `storage` → `base`
 所有模块通过 `crate::` 前缀引用，Cargo.toml 是全局唯一依赖声明。
 
+## 工作空间
+
+根 `Cargo.toml` 定义了 `[workspace]`，包含 `minio-rs` 自身和 `s3perf`（S3 性能压测工具）。
+- `cargo build` 编译全部成员
+- `cargo build -p s3perf` 只编译压测工具
+- s3perf 依赖（aws-sdk-s3、arrow/parquet、influxdb）独立隔离，不污染主 crate
+
 ## 测试组织
 
 | 测试类型 | 位置 | 说明 |

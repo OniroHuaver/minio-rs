@@ -64,7 +64,7 @@ pub async fn list_objects_v2_handler(
                 xmlns: S3_XMLNS.to_string(),
                 name: bucket.clone(),
                 prefix: prefix.clone(),
-                key_count: contents.len(),
+                key_count: contents.len() + common_prefixes.len(),
                 max_keys,
                 is_truncated: result.is_truncated,
                 next_continuation_token: if result.is_truncated {

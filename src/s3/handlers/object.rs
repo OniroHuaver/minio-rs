@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 use crate::object::object_api::MetadataDirective;
 use crate::s3::error::to_s3_error_code;
-use crate::s3::request::{extract_metadata, parse_range};
+use crate::s3::request::{extract_metadata, parse_range, percent_decode, RangeSpec};
 use crate::s3::response::{format_http_timestamp, s3_error_response, s3_xml_response, CopyObjectResultXml, S3_XMLNS};
 use crate::s3::state::AppState;
 
@@ -134,16 +134,44 @@ pub async fn get_object_handler(
         .and_then(|s| parse_range(s));
 
     // If a Range header was parsed, get only that portion.
-    let result = if let Some((start, end)) = range_header {
-        state
-            .object_api
-            .get_object_range(&bucket, &key, start, end - start + 1)
-            .await
-    } else {
-        state
-            .object_api
-            .get_object(&bucket, &key)
-            .await
+    let result = match range_header {
+        Some(RangeSpec::Bytes { start, end }) => {
+            state
+                .object_api
+                .get_object_range(&bucket, &key, start, end - start + 1)
+                .await
+        }
+        Some(RangeSpec::From { start }) => {
+            // Stat first to determine object size, then read from start to end
+            match state.object_api.stat_object(&bucket, &key).await {
+                Ok(info) => {
+                    state
+                        .object_api
+                        .get_object_range(&bucket, &key, start, info.size - start)
+                        .await
+                }
+                Err(e) => Err(e),
+            }
+        }
+        Some(RangeSpec::Suffix { length }) => {
+            // Stat first, then read last N bytes
+            match state.object_api.stat_object(&bucket, &key).await {
+                Ok(info) => {
+                    let start = std::cmp::max(0, info.size - length);
+                    state
+                        .object_api
+                        .get_object_range(&bucket, &key, start, length)
+                        .await
+                }
+                Err(e) => Err(e),
+            }
+        }
+        None => {
+            state
+                .object_api
+                .get_object(&bucket, &key)
+                .await
+        }
     };
 
     match result {
@@ -300,12 +328,16 @@ async fn copy_object_dispatch(
 ) -> Response {
     let resource = format!("/{}/{}", dst_bucket, dst_key);
 
-    // Parse x-amz-copy-source: "/src-bucket/src-key"
+    // Parse x-amz-copy-source: "/src-bucket/src-key" (both may be percent-encoded)
     let source = copy_source
         .strip_prefix('/')
         .unwrap_or(copy_source);
     let (src_bucket, src_key) = match source.split_once('/') {
-        Some((b, k)) if !b.is_empty() => (b, k),
+        Some((b, k)) if !b.is_empty() => {
+            let bucket_decoded = percent_decode(b);
+            let key_decoded = percent_decode(k);
+            (bucket_decoded, key_decoded)
+        }
         _ => {
             return s3_error_response(
                 StatusCode::BAD_REQUEST,
@@ -334,7 +366,7 @@ async fn copy_object_dispatch(
 
     match state
         .object_api
-        .copy_object(src_bucket, src_key, dst_bucket, dst_key, &metadata, directive)
+        .copy_object(&src_bucket, &src_key, dst_bucket, dst_key, &metadata, directive)
         .await
     {
         Ok(info) => {

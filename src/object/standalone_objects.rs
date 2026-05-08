@@ -58,11 +58,11 @@ impl StandaloneObjects {
         let mod_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs() as i64;
+            .as_nanos() as i64;
 
         let etag = {
-            use sha2::{Digest, Sha256};
-            let mut h = Sha256::new();
+            use md5::{Digest, Md5};
+            let mut h = Md5::new();
             h.update(data);
             format!("{:x}", h.finalize())
         };
@@ -282,7 +282,7 @@ impl ObjectAPI for StandaloneObjects {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs() as i64;
+            .as_nanos() as i64;
 
         let meta = UploadMeta {
             upload_id: upload_id.clone(),
@@ -312,10 +312,10 @@ impl ObjectAPI for StandaloneObjects {
     ) -> MinioResult<String> {
         let mut meta = self.read_upload_meta(upload_id).await?;
 
-        // Compute ETag for the part
+        // Compute ETag for the part (MD5 hex, per S3 single-part convention)
         let etag = {
-            use sha2::{Digest, Sha256};
-            let mut h = Sha256::new();
+            use md5::{Digest, Md5};
+            let mut h = Md5::new();
             h.update(data);
             format!("{:x}", h.finalize())
         };
@@ -377,8 +377,9 @@ impl ObjectAPI for StandaloneObjects {
                 )));
             }
 
-            // Minimum part size check (except last part)
-            if cp.part_number < parts.len() as u32 && up.size < 5 * 1024 * 1024 {
+            // Minimum part size check (except last part — the one with highest PartNumber)
+            let max_part_number = parts.iter().map(|p| p.part_number).max().unwrap_or(0);
+            if cp.part_number < max_part_number && up.size < 5 * 1024 * 1024 {
                 return Err(MinioError::EntityTooSmall);
             }
 
@@ -410,12 +411,21 @@ impl ObjectAPI for StandaloneObjects {
         let mod_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs() as i64;
+            .as_nanos() as i64;
 
+        // S3 multipart ETag = MD5(concat(binary_MD5(part1), ..., binary_MD5(partN))) + "-N"
         let etag = {
-            use sha2::{Digest, Sha256};
-            let mut h = Sha256::new();
-            h.update(&data);
+            use md5::{Digest, Md5};
+            let mut concat = Vec::with_capacity(16 * parts.len());
+            for part in &meta.parts {
+                let bin = hex::decode(&part.etag)
+                    .unwrap_or_default();
+                if bin.len() == 16 {
+                    concat.extend_from_slice(&bin);
+                }
+            }
+            let mut h = Md5::new();
+            h.update(&concat);
             format!("{:x}-{}", h.finalize(), parts.len())
         };
 
@@ -456,14 +466,16 @@ impl ObjectAPI for StandaloneObjects {
             .write_all(bucket, &Self::meta_path(object), &xl_meta.to_bytes()?)
             .await?;
 
-        // Clean up staging
-        let _ = self
-            .disk
-            .delete(
-                crate::base::constants::MULTIPART_DIR,
-                &Self::part_path(upload_id, 1),
-            )
-            .await;
+        // Clean up staging — all uploaded parts + upload.meta
+        for part in &meta.parts {
+            let _ = self
+                .disk
+                .delete(
+                    crate::base::constants::MULTIPART_DIR,
+                    &Self::part_path(upload_id, part.number),
+                )
+                .await;
+        }
         let _ = self
             .disk
             .delete(
@@ -553,10 +565,15 @@ impl ObjectAPI for StandaloneObjects {
         offset: i64,
         length: i64,
     ) -> MinioResult<(Vec<u8>, ObjectInfo)> {
-        let (data, info) = self.get_object(bucket, object).await?;
-        let start = offset.min(data.len() as i64).max(0) as usize;
-        let end = (start as i64 + length).min(data.len() as i64).max(0) as usize;
-        Ok((data[start..end].to_vec(), info))
+        // Read metadata first (small), then stream only the requested byte range.
+        let info = self.stat_object(bucket, object).await
+            .map_err(|e| map_not_found(e, bucket, object))?;
+        let data = self
+            .disk
+            .read_range(bucket, &Self::data_path(object), offset, length)
+            .await
+            .map_err(|e| map_not_found(e, bucket, object))?;
+        Ok((data, info))
     }
 
     async fn stat_object(&self, bucket: &str, object: &str) -> MinioResult<ObjectInfo> {
@@ -585,7 +602,10 @@ impl ObjectAPI for StandaloneObjects {
         let mod_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs() as i64;
+            .as_nanos() as i64;
+
+        // Delete the data file so disk space is reclaimed.
+        let _ = self.disk.delete(bucket, &Self::data_path(object)).await;
 
         let version_id = uuid::Uuid::now_v7().to_string();
         let mut header = XlMetaVersionHeader::new(version_id.clone());

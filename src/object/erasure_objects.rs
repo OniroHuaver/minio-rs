@@ -372,7 +372,7 @@ impl ObjectAPI for ErasureObjects {
         let mod_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs() as i64;
+            .as_nanos() as i64;
 
         let version_id = Uuid::now_v7().to_string();
         let mut header = XlMetaVersionHeader::new(version_id.clone());

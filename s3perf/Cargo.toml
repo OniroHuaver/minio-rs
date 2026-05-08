@@ -1,0 +1,109 @@
+[package]
+name = "s3perf"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance S3 benchmarking tool"
+
+[dependencies]
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# S3 client - using official AWS SDK
+aws-sdk-s3 = "1"
+aws-credential-types = "1"
+aws-config = "1"
+aws-smithy-types = "1"
+aws-smithy-runtime-api = { version = "1.12", features = ["client", "http-1x"] }
+aws-smithy-http-client = { version = "1.1", features = ["default-client", "rustls-aws-lc"] }
+rustls = { version = "0.23", default-features = false, features = ["std", "tls12", "aws_lc_rs"] }
+rustls-native-certs = "0.8"
+rustls-pemfile = "2"
+hyper = { version = "1", features = ["client", "http1"] }
+hyper-util = { version = "0.1", features = ["client-legacy", "tokio", "http1"] }
+hyper-rustls = { version = "0.27", default-features = false, features = ["http1", "tls12", "aws-lc-rs", "native-tokio"] }
+tower = "0.5"
+http-body-util = "0.1"
+
+# HTTP client for distributed mode
+reqwest = { version = "0.12", features = ["json"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+
+# Compression
+zstd = { version = "0.13", features = ["zstdmt"] }
+
+# CSV
+csv = "1"
+
+# Random
+rand = { version = "0.8", features = ["small_rng"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Async trait
+async-trait = "0.1"
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Cancellation
+tokio-util = { version = "0.7" }
+
+# URL parsing
+url = "2"
+
+# Base64
+base64 = "0.22"
+
+# Hex encoding
+hex = "0.4"
+
+# MD5 (Content-MD5 for PutObject)
+md5 = "0.7"
+
+# ZIP archive (zip / s3zip-style benchmark)
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+# UUID
+uuid = { version = "1", features = ["v4"] }
+
+# Bytes
+bytes = "1"
+
+# Ring buffer / dashmap for concurrent access
+dashmap = "6"
+
+# WebSocket (distributed mode)
+tokio-tungstenite = { version = "0.24" }
+futures-util = "0.3"
+axum = { version = "0.7", features = ["ws"] }
+
+# InfluxDB v2
+influxdb = { version = "0.7" }
+
+# Iceberg: Parquet/Arrow
+parquet = { version = "53", features = ["arrow"] }
+arrow = { version = "53" }
+# SigV4 signing & crypto
+hmac = "0.12"
+sha2 = "0.10"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3"
+
+[[bin]]
+name = "s3perf"
+path = "src/main.rs"
