@@ -17,6 +17,7 @@ use crate::erasure::Erasure;
 use futures::future::join_all;
 use crate::storage::StorageAPI;
 use tracing::{debug, warn};
+use uuid::Uuid;
 
 /// ErasureSet — a group of disks + EC engine
 ///
@@ -110,14 +111,14 @@ impl ErasureSet {
 
     /// Writes object: EC encode -> Bitrot wrap -> parallel disk write
     ///
-    /// Returns the number of successful writes; caller checks write quorum.
+    /// Returns per-disk results; caller checks write quorum from the count.
     pub async fn write_shards(
         &self,
         volume: &str,
         path: &str,
         version_id: &str,
         shards: &[Vec<u8>],
-    ) -> MinioResult<usize> {
+    ) -> MinioResult<Vec<bool>> {
         if shards.len() != self.disks.len() {
             return Err(MinioError::Internal(format!(
                 "shard count mismatch: expected {}, got {}",
@@ -150,34 +151,51 @@ impl ErasureSet {
             .collect();
 
         let results = join_all(futures).await;
-        let successes = results.iter().filter(|&&s| s).count();
-        Ok(successes)
+        Ok(results)
     }
 
-    /// Writes xl.meta to all disks
+    /// Writes xl.meta to all disks via temp-file + atomic rename
+    ///
+    /// Each disk: `write_all(tmp) → rename(tmp, final)`. On rename failure,
+    /// best-effort cleanup of the leaked temp file is attempted.
+    /// Returns per-disk results; caller checks write quorum from the count.
     pub async fn write_xl_meta(
         &self,
         volume: &str,
         path: &str,
         meta: &XlMeta,
-    ) -> MinioResult<usize> {
+    ) -> MinioResult<Vec<bool>> {
         let meta_bytes = Arc::from(meta.to_bytes()?.into_boxed_slice());
+        // Short unique tag per call to prevent concurrent-writer collisions
+        let tmp_tag = Uuid::now_v7().to_string().split('-').next().unwrap_or("tmp").to_string();
+
         let futures: Vec<_> = self
             .disks
             .iter()
             .enumerate()
             .map(|(i, disk)| {
                 let volume = volume.to_string();
-                let obj_path = format!("{path}/xl.meta");
+                let path = path.to_string();
                 let data = Arc::clone(&meta_bytes);
+                let tag = tmp_tag.clone();
                 async move {
-                    match disk.write_all(&volume, &obj_path, &data).await {
+                    let tmp_path = format!("{path}/xl.meta.{tag}");
+                    let final_path = format!("{path}/xl.meta");
+                    // Step 1: write to temp file on the same volume
+                    if let Err(e) = disk.write_all(&volume, &tmp_path, &data).await {
+                        warn!("xl.meta disk {i} temp write failed: {e}");
+                        return false;
+                    }
+                    // Step 2: atomic rename (same-filesystem = POSIX-guaranteed atomic)
+                    match disk.rename(&volume, &tmp_path, &volume, &final_path).await {
                         Ok(()) => {
-                            debug!("xl.meta disk {i} write success");
+                            debug!("xl.meta disk {i} write + rename success");
                             true
                         }
                         Err(e) => {
-                            warn!("xl.meta disk {i} write failed: {e}");
+                            warn!("xl.meta disk {i} rename failed: {e}");
+                            // Best-effort cleanup of the orphaned temp file
+                            let _ = disk.delete(&volume, &tmp_path).await;
                             false
                         }
                     }
@@ -186,16 +204,18 @@ impl ErasureSet {
             .collect();
 
         let results = join_all(futures).await;
-        Ok(results.iter().filter(|&&s| s).count())
+        Ok(results)
     }
 
-    /// Builds an XlMeta version entry
+    /// Builds an XlMeta version entry and decides whether data should be inlined
+    ///
+    /// Returns `(header, is_inline)` — `is_inline` is true when data ≤ 128 KiB.
     pub fn build_version_header(
         &self,
         version_id: &str,
         data: &[u8],
         metadata: &[(String, String)],
-    ) -> MinioResult<XlMetaVersionHeader> {
+    ) -> MinioResult<(XlMetaVersionHeader, bool)> {
         let mod_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -216,6 +236,8 @@ impl ErasureSet {
             index: 0,
         };
 
+        let is_inline = (data.len() as i64) <= crate::base::constants::SMALL_FILE_THRESHOLD;
+
         let params = self.params();
         let mut header = XlMetaVersionHeader::new(version_id.to_string());
         header.mod_time = mod_time;
@@ -224,6 +246,7 @@ impl ErasureSet {
         header.erasure_n = (params.data_blocks + params.parity_blocks) as u16;
         header.erasure_block_size = params.block_size;
         header.erasure_dist = vec![0u8; params.total_shards()]; // even distribution
+        header.flags = if is_inline { 1 << 2 } else { 0 }; // INLINE_DATA bit
         header.parts = vec![part];
         // Split metadata into system (Content-Type) and user (x-amz-meta-*)
         let mut meta_sys = Vec::new();
@@ -237,10 +260,10 @@ impl ErasureSet {
         }
         header.meta_sys = meta_sys;
         header.meta_user = meta_user;
-        // Compute cross-disk consistency signature
+        // Compute cross-disk consistency signature (after flags are set)
         header.signature = header.compute_signature()?;
 
-        Ok(header)
+        Ok((header, is_inline))
     }
 
     // ---- read path ----
@@ -369,6 +392,62 @@ impl ErasureSet {
         shards.resize(total, None);
 
         Ok(shards)
+    }
+
+    /// Deletes shard directory for a version, restricted to disks where `disk_mask[i]` is true.
+    ///
+    /// Used for rollback: when shard writes don't meet quorum, clean up the
+    /// successful disks.  Pass `None` to delete from all disks.
+    pub async fn delete_shards(
+        &self,
+        volume: &str,
+        path: &str,
+        version_id: &str,
+        disk_mask: Option<&[bool]>,
+    ) -> MinioResult<()> {
+        let shard_dir = format!("{path}/{version_id}");
+        let futures: Vec<_> = self
+            .disks
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| disk_mask.map_or(true, |mask| mask[*i]))
+            .map(|(_, disk)| {
+                let volume = volume.to_string();
+                let dir = shard_dir.clone();
+                async move {
+                    if let Err(e) = disk.delete(&volume, &dir).await {
+                        warn!("shard cleanup failed: {volume}/{dir}: {e}");
+                    }
+                }
+            })
+            .collect();
+        join_all(futures).await;
+        Ok(())
+    }
+
+    /// Deletes xl.meta from disks where `disk_mask[i]` is true.
+    pub async fn delete_xl_meta(
+        &self,
+        volume: &str,
+        path: &str,
+        disk_mask: &[bool],
+    ) -> MinioResult<()> {
+        let meta_path = format!("{path}/xl.meta");
+        let futures: Vec<_> = self
+            .disks
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| disk_mask[*i])
+            .map(|(_, disk)| {
+                let volume = volume.to_string();
+                let mpath = meta_path.clone();
+                async move {
+                    let _ = disk.delete(&volume, &mpath).await;
+                }
+            })
+            .collect();
+        join_all(futures).await;
+        Ok(())
     }
 
     /// Deletes object path (all disks)

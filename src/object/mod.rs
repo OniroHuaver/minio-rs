@@ -6,6 +6,7 @@
 //! - `erasure_objects` module: ErasureObjects — Storage API layer implementation
 
 pub mod erasure_objects;
+pub mod ns_lock;
 pub mod object_api;
 pub mod set;
 pub mod standalone_objects;

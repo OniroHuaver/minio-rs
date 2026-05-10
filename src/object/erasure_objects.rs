@@ -9,6 +9,7 @@ use crate::base::format::{VersionType, XlMeta, XlMetaEntry, XlMetaVersionHeader}
 use crate::storage::StorageAPI;
 use uuid::Uuid;
 
+use crate::object::ns_lock::NsLockMap;
 use crate::object::object_api::{
     CompletedPart, DeleteObjectsResult, ListObjectsResult, MetadataDirective, MultipartInfo,
     ObjectInfo, ObjectAPI, VersioningConfig,
@@ -22,13 +23,18 @@ pub struct ErasureObjects {
     /// EC disk set (Phase 1: single set; Phase 2: multiple sets)
     /// Actual path: `{disk}/{bucket}/{object}/xl.meta`
     set: Arc<ErasureSet>,
+    /// Per-object namespace lock (reader/writer, writer-fair)
+    ns_lock: Arc<NsLockMap>,
 }
 
 impl ErasureObjects {
     /// Create from disk list
     pub fn new(disks: Vec<Arc<dyn StorageAPI>>) -> MinioResult<Self> {
         let set = Arc::new(ErasureSet::new(disks)?);
-        Ok(Self { set })
+        Ok(Self {
+            set,
+            ns_lock: Arc::new(NsLockMap::new()),
+        })
     }
 
     /// Use custom EC parameters
@@ -38,7 +44,15 @@ impl ErasureObjects {
         parity_blocks: usize,
     ) -> MinioResult<Self> {
         let set = Arc::new(ErasureSet::with_params(disks, data_blocks, parity_blocks)?);
-        Ok(Self { set })
+        Ok(Self {
+            set,
+            ns_lock: Arc::new(NsLockMap::new()),
+        })
+    }
+
+    /// Resource key for namespace lock: `{bucket}/{object}`
+    fn lock_resource(bucket: &str, object: &str) -> String {
+        format!("{bucket}/{object}")
     }
 
     /// Check write quorum
@@ -153,6 +167,7 @@ impl ObjectAPI for ErasureObjects {
         data: &[u8],
         metadata: &[(String, String)],
     ) -> MinioResult<ObjectInfo> {
+        let _guard = self.ns_lock.lock(&Self::lock_resource(bucket, object)).await;
         self.check_write_quorum().await?;
 
         let path = Self::object_path(bucket, object);
@@ -161,12 +176,17 @@ impl ObjectAPI for ErasureObjects {
         // (1) EC encode
         let shards = self.set.erasure().encode(data)?;
         // (2) Bitrot wrap + parallel write shards
-        let shard_successes = self
+        let shard_results = self
             .set
             .write_shards(bucket, &path, &version_id, &shards)
             .await?;
+        let shard_successes = shard_results.iter().filter(|&&s| s).count();
 
         if shard_successes < self.set.params().write_quorum() {
+            // Rollback: delete shards from the disks that succeeded
+            self.set
+                .delete_shards(bucket, &path, &version_id, Some(&shard_results))
+                .await?;
             return Err(MinioError::InsufficientWriteQuorum {
                 required: self.set.params().write_quorum(),
                 actual: shard_successes,
@@ -174,17 +194,25 @@ impl ObjectAPI for ErasureObjects {
         }
 
         // (3) Build xl.meta (same version_id as shard path)
-        let header = self.set.build_version_header(&version_id, data, metadata)?;
+        let (header, is_inline) = self.set.build_version_header(&version_id, data, metadata)?;
         let meta = XlMeta {
             versions: vec![XlMetaEntry::Object {
                 header,
-                data: None,
+                data: if is_inline { Some(data.to_vec()) } else { None },
             }],
         };
 
         // (4) Write xl.meta
-        let meta_successes = self.set.write_xl_meta(bucket, &path, &meta).await?;
+        let meta_results = self.set.write_xl_meta(bucket, &path, &meta).await?;
+        let meta_successes = meta_results.iter().filter(|&&s| s).count();
         if meta_successes < self.set.params().write_quorum() {
+            // Rollback (reverse order): remove canonical record first, then shards
+            self.set
+                .delete_xl_meta(bucket, &path, &meta_results)
+                .await?;
+            self.set
+                .delete_shards(bucket, &path, &version_id, None)
+                .await?;
             return Err(MinioError::InsufficientWriteQuorum {
                 required: self.set.params().write_quorum(),
                 actual: meta_successes,
@@ -220,6 +248,7 @@ impl ObjectAPI for ErasureObjects {
 
     /// GET object — full six-layer read path
     async fn get_object(&self, bucket: &str, object: &str) -> MinioResult<(Vec<u8>, ObjectInfo)> {
+        let _guard = self.ns_lock.rlock(&Self::lock_resource(bucket, object)).await;
         self.check_read_quorum().await?;
 
         let path = Self::object_path(bucket, object);
@@ -326,6 +355,7 @@ impl ObjectAPI for ErasureObjects {
 
     /// HEAD object (metadata only)
     async fn stat_object(&self, bucket: &str, object: &str) -> MinioResult<ObjectInfo> {
+        let _guard = self.ns_lock.rlock(&Self::lock_resource(bucket, object)).await;
         self.check_read_quorum().await?;
 
         let path = Self::object_path(bucket, object);
@@ -366,6 +396,7 @@ impl ObjectAPI for ErasureObjects {
 
     /// DELETE object — write DeleteMarker
     async fn delete_object(&self, bucket: &str, object: &str) -> MinioResult<()> {
+        let _guard = self.ns_lock.lock(&Self::lock_resource(bucket, object)).await;
         self.check_write_quorum().await?;
 
         let path = Self::object_path(bucket, object);
@@ -396,8 +427,12 @@ impl ObjectAPI for ErasureObjects {
             flags: 0,
         });
 
-        let successes = self.set.write_xl_meta(bucket, &path, &meta).await?;
+        let meta_results = self.set.write_xl_meta(bucket, &path, &meta).await?;
+        let successes = meta_results.iter().filter(|&&s| s).count();
         if successes < self.set.params().write_quorum() {
+            // Rollback: remove the newly written xl.meta from disks that succeeded;
+            // the quorum disks still hold the pre-delete version.
+            self.set.delete_xl_meta(bucket, &path, &meta_results).await?;
             return Err(MinioError::InsufficientWriteQuorum {
                 required: self.set.params().write_quorum(),
                 actual: successes,
