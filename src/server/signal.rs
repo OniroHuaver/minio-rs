@@ -5,6 +5,9 @@
 //! epoll reactor wakes us when a signal arrives. On other platforms we use
 //! tokio's built-in signal primitives.
 
+// Linux signalfd path uses libc FFI; keep `unsafe` confined to this module.
+#![allow(unsafe_code)]
+
 use std::future::Future;
 use std::pin::Pin;
 
@@ -50,7 +53,7 @@ async fn linux_signalfd() {
 
 #[cfg(target_os = "linux")]
 async fn try_signalfd() -> Result<(), std::io::Error> {
-    use std::os::fd::OwnedFd;
+    use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
     use tokio::io::unix::AsyncFd;
 
     // Build the signal set matching what we blocked in block_signals()
@@ -75,7 +78,7 @@ async fn try_signalfd() -> Result<(), std::io::Error> {
         let mut guard = async_fd.readable().await?;
         let mut info: libc::signalfd_siginfo = unsafe { std::mem::zeroed() };
 
-        let result = guard.try_io(|inner| {
+        match guard.try_io(|inner| {
             let n = unsafe {
                 libc::read(
                     inner.as_raw_fd(),
@@ -88,16 +91,14 @@ async fn try_signalfd() -> Result<(), std::io::Error> {
             } else {
                 Ok(info.ssi_signo)
             }
-        });
-
-        match result {
-            Ok(signo) => {
+        }) {
+            Ok(Ok(signo)) => {
                 let name = if signo == libc::SIGTERM as u32 { "SIGTERM" } else { "SIGINT" };
                 tracing::info!("received {name} via signalfd, initiating graceful shutdown…");
                 return Ok(());
             }
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => continue,
-            Err(e) => return Err(e),
+            Ok(Err(e)) => return Err(e),
+            Err(_would_block) => continue,
         }
     }
 }
