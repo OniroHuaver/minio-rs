@@ -17,6 +17,7 @@ path = "src/lib.rs"
 [dependencies]
 # 异步运行时
 tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["rt"] }
 futures = "0.3"
 
 # 序列化
@@ -57,6 +58,9 @@ hmac = "0.12"
 # 文件锁
 fs2 = "0.4"
 
+# 指标
+prometheus = "0.14"
+
 # 工具
 thiserror = "2"
 async-trait = "0.1"
@@ -73,7 +77,8 @@ clap = { version = "4", features = ["derive"] }
 unsafe_code = "deny"
 missing_docs = "allow"
 
-[target.'cfg(target_os = "linux")'.dependencies]
+# OS bindings (signal handling on Linux, memory info on macOS/Linux)
+[target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
 [dev-dependencies]
@@ -81,5 +86,5 @@ reqwest = { version = "0.12" }
 tempfile = "3"
 
 [workspace]
-members = ["s3perf"]
+members = ["s3perf", "crates/mcp-server"]
 default-members = [".", "s3perf"]

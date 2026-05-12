@@ -25,6 +25,11 @@ pub async fn sigv4_middleware(
     req: Request<Body>,
     next: Next,
 ) -> Result<Response, StatusCode> {
+    // Prometheus metrics can be configured for public access
+    if state.prometheus_auth_public && req.uri().path().starts_with("/minio/metrics/v3") {
+        return Ok(next.run(req).await);
+    }
+
     let creds = match &state.credentials {
         Some(c) => c.clone(),
         None => return Ok(next.run(req).await),

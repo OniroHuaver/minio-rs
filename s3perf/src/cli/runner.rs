@@ -1,6 +1,7 @@
 //! Benchmark runner entrypoints — one function per `s3perf` subcommand plus
 //! the shared `run_benchmark` orchestrator.
 
+use crate::aggregate::Aggregated;
 use crate::bench::append::AppendBenchmark;
 use crate::bench::delete::DeleteBenchmark;
 use crate::bench::fanout::FanoutBenchmark;
@@ -28,7 +29,7 @@ pub async fn run_get(
     versions: usize,
     range: Option<(i64, i64)>,
     list_existing: bool,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-get");
     common.versioned = versions > 1;
@@ -43,7 +44,7 @@ pub async fn run_put(
     md5: bool,
     checksum: Option<String>,
     use_post: bool,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let checksum_type = crate::bench::checksum::ChecksumType::from_cli_flag(
         checksum.as_deref().unwrap_or(""),
@@ -60,7 +61,7 @@ pub async fn run_put(
 pub async fn run_delete(
     bc: &BenchConfig,
     batch_size: usize,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let common = bc.build_common(collector, "s3perf-del");
     let bm = DeleteBenchmark::new(common, batch_size);
@@ -71,7 +72,7 @@ pub async fn run_delete(
 pub async fn run_list(
     bc: &BenchConfig,
     versions: bool,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-list");
     common.versioned = versions;
@@ -83,7 +84,7 @@ pub async fn run_list(
 }
 
 /// Run HEAD/STAT.
-pub async fn run_stat(bc: &BenchConfig) -> anyhow::Result<()> {
+pub async fn run_stat(bc: &BenchConfig) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-stat");
     common.auto_term_dur = None;
@@ -99,7 +100,7 @@ pub async fn run_mixed(
     stat_distrib: f64,
     put_distrib: f64,
     delete_distrib: f64,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let common = bc.build_common(collector, "s3perf-mixed");
     let distrib = MixedDistrib {
@@ -119,7 +120,7 @@ pub async fn run_versioned(
     stat_distrib: f64,
     put_distrib: f64,
     delete_distrib: f64,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     use crate::bench::versioned::{VersionedBenchmark, VersionedDistrib};
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-ver");
@@ -133,7 +134,7 @@ pub async fn run_versioned(
 pub async fn run_retention(
     bc: &BenchConfig,
     versions: usize,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     use crate::bench::retention::RetentionBenchmark;
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-ret");
@@ -150,7 +151,7 @@ pub async fn run_multipart(
     part_size: usize,
     parts: usize,
     obj_name: String,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-mp");
     common.objects = 0;
@@ -165,7 +166,7 @@ pub async fn run_multipart_put(
     parts: usize,
     part_size: usize,
     part_concurrency: usize,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-mpp");
     common.objects = 0;
@@ -178,7 +179,7 @@ pub async fn run_multipart_put(
 pub async fn run_snowball(
     bc: &BenchConfig,
     objs_per: usize,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-sb");
     common.objects = 0;
@@ -194,7 +195,7 @@ pub async fn run_snowball(
 pub async fn run_fanout(
     bc: &BenchConfig,
     copies: usize,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-fo");
     common.objects = 0;
@@ -207,7 +208,7 @@ pub async fn run_fanout(
 }
 
 /// Run AppendObject workload.
-pub async fn run_append(bc: &BenchConfig) -> anyhow::Result<()> {
+pub async fn run_append(bc: &BenchConfig) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-ap");
     common.objects = 0;
@@ -225,7 +226,7 @@ pub async fn run_append(bc: &BenchConfig) -> anyhow::Result<()> {
 pub async fn run_zip(
     bc: &BenchConfig,
     entries: usize,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-zip");
     common.objects = 0;
@@ -234,7 +235,7 @@ pub async fn run_zip(
 }
 
 /// Run a benchmark from YAML (`s3perf run <file>`).
-pub async fn execute_run_yaml(cfg: crate::config::RunFileConfig) -> anyhow::Result<()> {
+pub async fn execute_run_yaml(cfg: crate::config::RunFileConfig) -> anyhow::Result<Aggregated> {
     use crate::bench::s3_client::S3Config;
     use crate::bench::sse::SseConfig;
     use crate::cli::app::{parse_duration, parse_obj_size, parse_size};
@@ -316,7 +317,7 @@ pub async fn execute_run_yaml(cfg: crate::config::RunFileConfig) -> anyhow::Resu
 }
 
 /// Shared benchmark orchestration (prepare/start/analyze/cleanup).
-pub async fn run_benchmark(bm: Arc<dyn Benchmark>) -> anyhow::Result<()> {
+pub async fn run_benchmark(bm: Arc<dyn Benchmark>) -> anyhow::Result<Aggregated> {
     let common = bm.common();
     let dur = common.duration;
     let monitor = Arc::new(crate::api::BenchmarkMonitor::new());
@@ -347,7 +348,7 @@ pub async fn run_benchmark(bm: Arc<dyn Benchmark>) -> anyhow::Result<()> {
     };
 
     // Phase 1: Prepare
-    println!("Prepare: creating bucket and seeding objects...");
+    eprintln!("Prepare: creating bucket and seeding objects...");
     monitor.set_status("prepare");
     let ctx = CancellationToken::new();
     bm.prepare(&ctx).await?;
@@ -357,7 +358,7 @@ pub async fn run_benchmark(bm: Arc<dyn Benchmark>) -> anyhow::Result<()> {
     }
 
     // Phase 2: Start
-    println!("Benchmark: running for {}s...", dur.as_secs());
+    eprintln!("Benchmark: running for {}s...", dur.as_secs());
     monitor.start();
     let ctx = CancellationToken::new();
     let (broadcast_tx, _) = tokio::sync::broadcast::channel(4);
@@ -405,7 +406,7 @@ pub async fn run_benchmark(bm: Arc<dyn Benchmark>) -> anyhow::Result<()> {
     drop(broadcast_tx);
 
     // Phase 3: Analyze
-    println!("Analyzing results...");
+    eprintln!("Analyzing results...");
     monitor.set_status("analyze");
     if let Some((ref st, _)) = tui_state {
         st.set_phase("Analyze", "Summarizing metrics");
@@ -420,42 +421,42 @@ pub async fn run_benchmark(bm: Arc<dyn Benchmark>) -> anyhow::Result<()> {
     monitor.set_aggregated(agg.clone());
 
     // Render human-readable summary tables
-    println!();
-    println!("==========================================");
-    println!("  s3perf benchmark results");
-    println!("==========================================");
-    println!("  operations: {}", ops.len());
-    println!("  successful: {}", ok_ops.len());
-    println!("  failed: {}", err_ops.len());
+    eprintln!();
+    eprintln!("==========================================");
+    eprintln!("  s3perf benchmark results");
+    eprintln!("==========================================");
+    eprintln!("  operations: {}", ops.len());
+    eprintln!("  successful: {}", ok_ops.len());
+    eprintln!("  failed: {}", err_ops.len());
     if let Some(th) = &agg.mixed_server_stats {
-        println!("  throughput: {:.2} MiB/s, {:.2} obj/s", th.avg_mbps, th.avg_ops);
-        println!("  wall time: {:.1}s", th.duration_secs);
+        eprintln!("  throughput: {:.2} MiB/s, {:.2} obj/s", th.avg_mbps, th.avg_ops);
+        eprintln!("  wall time: {:.1}s", th.duration_secs);
     }
-    println!();
+    eprintln!();
     for op_analysis in &agg.operations {
-        println!("  [{}]", op_analysis.op_type);
-        println!(
+        eprintln!("  [{}]", op_analysis.op_type);
+        eprintln!(
             "    throughput: {:.2} MiB/s, {:.2} obj/s",
             op_analysis.throughput.avg_mbps,
             op_analysis.throughput.avg_ops,
         );
         if let Some(ss) = &op_analysis.single_sized {
-            println!(
+            eprintln!(
                 "    latency (ms): avg={:.1} median={:.1} P90={:.1} P99={:.1}",
                 ss.avg_duration_ms, ss.median_duration_ms, ss.p90_duration_ms, ss.p99_duration_ms,
             );
         }
-        println!("    errors: {}", op_analysis.errors);
+        eprintln!("    errors: {}", op_analysis.errors);
         for e in &op_analysis.first_errors {
-            println!("    error detail: {e}");
+            eprintln!("    error detail: {e}");
         }
-        println!();
+        eprintln!();
     }
-    println!("==========================================");
+    eprintln!("==========================================");
 
     // Phase 4: Cleanup
     if common.clear {
-        println!("Cleanup: removing benchmark objects...");
+        eprintln!("Cleanup: removing benchmark objects...");
         monitor.set_status("cleanup");
         if let Some((ref st, _)) = tui_state {
             st.set_phase("Cleanup", "Deleting benchmark objects");
@@ -468,7 +469,7 @@ pub async fn run_benchmark(bm: Arc<dyn Benchmark>) -> anyhow::Result<()> {
     // Optional disk export (.csv.zst + .json.zst)
     if let Some(ref path) = common.bench_data {
         if !common.discard_output {
-            println!("Saving data to: {path}");
+            eprintln!("Saving data to: {path}");
             let file = std::fs::File::create(path)?;
             let mut writer = std::io::BufWriter::new(file);
             crate::aggregate::write_csv_zst(&ops, &mut writer)?;
@@ -498,5 +499,5 @@ pub async fn run_benchmark(bm: Arc<dyn Benchmark>) -> anyhow::Result<()> {
         let _ = h.await;
     }
 
-    Ok(())
+    Ok(agg)
 }

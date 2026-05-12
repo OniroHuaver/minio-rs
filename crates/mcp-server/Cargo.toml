@@ -1,0 +1,23 @@
+[package]
+name = "mcp-server"
+version = "0.1.0"
+edition = "2021"
+description = "MCP server for minio-rs: programmatic server lifecycle and S3 benchmarking"
+
+[dependencies]
+rmcp = { version = "1", features = ["server", "macros", "schemars", "transport-io"] }
+schemars = "1"
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+
+minio-rs = { path = "../.." }
+s3perf = { path = "../../s3perf" }
+
+[[bin]]
+name = "mcp-server"
+path = "src/main.rs"

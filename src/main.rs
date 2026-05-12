@@ -52,7 +52,7 @@ fn main() {
         };
 
         // Start server; exit with code 1 on error
-        if let Err(e) = srv::run(config).await {
+        if let Err(e) = srv::run(config, None).await {
             tracing::error!("server exited with error: {e}");
             std::process::exit(1);
         }

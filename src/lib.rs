@@ -6,6 +6,7 @@ pub mod base;
 pub mod erasure;
 pub mod grid;
 pub mod iam;
+pub mod metrics;
 pub mod object;
 pub mod s3;
 pub mod server;

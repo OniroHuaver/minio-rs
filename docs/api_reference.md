@@ -522,31 +522,49 @@
 
 ## 6. Metrics API
 
-前缀：`/minio/`，注册参考原版 `cmd/metrics-router.go:53`。
+前缀：`/minio/metrics/v3`。Prometheus 指标均从此前缀下暴露。原版实现见 `cmd/metrics-v3*.go`（入口与认证亦可对照 `cmd/metrics-router.go`）。
+
+### 6.1 端点与查询参数
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| `ANY` | `/prometheus/metrics` | 旧版 Prometheus V1 |
-| `ANY` | `/v2/metrics/cluster` | 集群级指标 V2 |
-| `ANY` | `/v2/metrics/node` | 节点级指标 V2 |
-| `ANY` | `/v2/metrics/bucket` | Bucket级指标 V2 |
-| `ANY` | `/v2/metrics/resource` | 资源指标 V2 |
-| `GET` | `/metrics/v3/{path}` | 指标 V3 (按 Collector 路径) |
+| `GET` | `/minio/metrics/v3` | 根：聚合已注册子收集器（对标原版根 handler） |
+| `GET` | `/minio/metrics/v3/{path...}` | 子路径：路径即指标命名空间；父路径可聚合子路径（如 `/minio/metrics/v3/cluster` 聚合 `/cluster/health`、`/cluster/usage/objects` 等之下注册的指标） |
+| `GET` | `/minio/metrics/v3/{path...}?bucket=a,b` | 仅返回与所列 bucket 相关的指标 |
+| `GET` | `/minio/metrics/v3/{path...}?list` | 列出该路径下指标元数据（Markdown 表或 JSON） |
 
-### V3 收集器路径
+认证由环境变量 **`MINIO_PROMETHEUS_AUTH_TYPE`** 控制：**默认 `jwt`**（Bearer + `PrometheusAdminAction`）；**`public`** 跳过认证。
 
-| 路径 | 指标组 |
-|------|--------|
-| `/api/requests` | 请求速率、延迟、错误率、流量 |
-| `/bucket/api` | 每Bucket API统计 |
-| `/bucket/replication` | 每Bucket复制指标 |
-| `/system/` | 网络、磁盘、内存、CPU、进程 |
-| `/cluster/` | 健康、使用、擦除集、IAM |
-| `/ilm` | ILM指标 |
-| `/audit` | 审计指标 |
-| `/scanner` | 扫描器指标 |
+### 6.2 V3 收集器路径（`metrics-v3.go`）
 
-> **Rust 实现注解**: Metrics API 在 Rust 中使用 `prometheus-client` crate 实现。Phase 1 实现 `/prometheus/metrics` 基础版本 (请求数、错误数、延迟)。V2/V3 指标归入 Phase 2-4。Rust 端将指标注册为 `Registry` 中的 Counter/Histogram/Gauge，通过 axum middleware 自动记录请求指标:
+路径均为 `/minio/metrics/v3` 的后缀。
+
+| 路径后缀 | 内容 |
+|----------|------|
+| `/api/requests` | HTTP 请求统计、TTFB 分布 |
+| `/bucket/api` | 按 bucket 的 API 流量 |
+| `/bucket/replication` | 按 bucket 的复制状态 |
+| `/system/drive` | 磁盘用量、iostat |
+| `/system/memory` | 内存 |
+| `/system/cpu` | CPU 负载 |
+| `/system/process` | 进程级指标 |
+| `/system/network/internode` | 节点间网络 |
+| `/cluster/health` | 集群健康（节点/磁盘在线、容量等） |
+| `/cluster/usage/objects` | 对象数量/大小分布 |
+| `/cluster/usage/buckets` | bucket 级用量 |
+| `/cluster/erasure-set` | 纠删集健康 |
+| `/cluster/iam` | IAM 同步状态 |
+| `/cluster/config` | 存储类等配置 |
+| `/ilm` | 生命周期任务 |
+| `/scanner` | 扫描器进度 |
+| `/audit` | 审计日志队列 |
+| `/logger/webhook` | Webhook 日志队列 |
+| `/replication` | 集群复制队列 |
+| `/notification` | 事件通知 |
+
+Healing **累计**类指标放在 V3 中与 MinIO 一致的 MetricsGroup 下（与 cluster / scanner / erasure-set 等分组对齐）；**逐对象 heal 结果**仍走 Admin API（见 §2.3 修复、`docs/heal_metrics_spec.md`）。
+
+> **Rust 实现注解**: 使用 `prometheus-client`（或 `prometheus`）注册 `MetricDescriptor`（Counter/Gauge/Histogram），按 `collectorPath` 划分 sub-registry 或等价 Gatherer。HTTP 层用 axum 中间件写入 **HTTPStats**（atomic：状态码、TTFB、字节数），供 `/api/requests` 等 loader 读取。昂贵聚合在 group 上配置 **TTL 缓存**。详细设计见 `docs/metrics_architecture_spec.md`。
 >
 > ```rust
 > // s3/src/middleware/metrics.rs
@@ -830,14 +848,13 @@ func getRequestAuthType(r *http.Request) AuthType
 | **ListObjectsVersions** / **ListMultipartUploads** | **P2** | 版本和 multipart 列出 |
 | **Admin: 存储信息/修复/池管理/追踪** | **P2** | `s3::handlers::admin` 子集 |
 | **Admin: 速度测试** | **P2** | 性能诊断 |
-| **Metrics V1** | **P2** | 基础 Prometheus 指标 |
+| **Metrics V3** (`/minio/metrics/v3/*`) | **P2–P3** | `docs/metrics_architecture_spec.md`；含 HTTPStats、分组缓存、JWT/Public |
 | **SigV4 认证中间件** | **P3** | `s3::middleware::auth` |
 | **STS API** (AssumeRole 系列) | **P3** | `iam::sts` |
 | **Admin: 全部 IAM 端点** | **P3** | 用户/组/策略/服务账户/IDP |
 | **Admin: 配置 KV** | **P3** | 配置管理 |
 | **Admin: KMS 管理** | **P3** | KMS 状态/密钥 |
 | **KMS API** (/minio/kms/v1/) | **P3** | KMS 操作 |
-| **Metrics V2/V3** | **P3** | 详细指标收集 |
 | **Health cluster** (/cluster) | **P3** | 分布式健康检查 |
 | **Admin: 站点复制、批处理、分层** | **P4** | 高级管理 |
 | **Admin: 再平衡** | **P4** | 池再平衡 |

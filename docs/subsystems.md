@@ -277,7 +277,7 @@ MinIO 支持两种日志输出目标：**console**（始终启用，不可关闭
 
 **功能概述**
 
-MinIO 提供两套指标系统：**v2 指标**（`/minio/v2/metrics/cluster|node|bucket|resource`）和 **v3 指标**（`/minio/metrics/v3/<category>`）。v3 为当前标准版本，按路径组织类别：`/api/requests`、`/bucket/api`、`/audit`、`/cluster/*`、`/ilm`、`/logger/webhook`、`/notification`、`/replication`、`/scanner`、`/system/*`（drive/cpu/memory/network/process）。
+指标通过 **Metrics V3** 暴露：`/minio/metrics/v3/<category>`，按路径组织类别，例如 `/api/requests`、`/bucket/api`、`/audit`、`/cluster/*`、`/ilm`、`/logger/webhook`、`/notification`、`/replication`、`/scanner`、`/system/*`（drive/cpu/memory/network/process）。
 
 **关键指标类别**
 
@@ -289,7 +289,7 @@ MinIO 提供两套指标系统：**v2 指标**（`/minio/v2/metrics/cluster|node
 **Rust 实现建议（Phase 1-2）**
 
 - 使用 `prometheus` crate（`prometheus-client`）暴露 metrics
-- v3 路径结构在 Axum router 中按 prefix group 注册
+- `/minio/metrics/v3/*` 在 Axum router 中按 prefix group 注册
 - 系统指标采集使用 `sysinfo` crate
 - 擦除集指标从 `ErasureSet` 内部状态聚合
 

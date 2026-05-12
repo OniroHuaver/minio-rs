@@ -91,11 +91,25 @@ mc cp secret.txt local/bucket/ --access-key user1 --secret-key password1
 
 ## Phase 4: 高级特性（按兴趣选做）
 
+- [x] **4.0** MCP Server — 服务生命周期管理 + S3 性能压测工具集成
 - [ ] **4.1** 事件通知 — Webhook / Kafka / AMQP
 - [ ] **4.2** 站点复制 — Bucket + IAM 跨集群同步
 - [ ] **4.3** ILM 生命周期 — 对象自动过期/分层
 - [ ] **4.4** Batch Jobs — 批量操作
 - [ ] **4.5** S3 Select — SQL 查询引擎 (可选，复杂度极高)
+- [ ] **4.6** Metrics V3 — `/minio/metrics/v3/*`：路径前缀化 Gatherer、分组缓存、HTTPStats（atomic）、`?list`、`?bucket=`、父路径聚合子路径、`MINIO_PROMETHEUS_AUTH_TYPE`（见 `docs/metrics_architecture_spec.md`）
+- [ ] **4.7** Healing 可观测性 — Admin Heal 流式协议 + BackgroundHealStatus；累计指标经 V3（见 `docs/heal_metrics_spec.md`）
+
+---
+
+## Metrics 与 Healing（设计文档）
+
+对齐「数据采集 → 分组缓存 → Prometheus 输出」流水线（**Metrics V3**），以及 Healing **双通道**（V3 累计 scrape vs Admin 消费即清空）：
+
+| 文档 | 内容 |
+|------|------|
+| [metrics_architecture_spec.md](./metrics_architecture_spec.md) | Metrics V3：路径表、分组缓存、`?list` / `?bucket=`、父路径聚合、认证、请求级与时间窗采集 |
+| [heal_metrics_spec.md](./heal_metrics_spec.md) | V3 累计 vs Admin 流式、Background 状态、背压、`PopHealStatusJSON` 语义 |
 
 ---
 
@@ -106,7 +120,7 @@ mc cp secret.txt local/bucket/ --access-key user1 --secret-key password1
 | 1     | 🟢 已完成 | 2026-05-04 | 2026-05-05 | 核心存储 (全部 7 个子任务完成) |
 | 2     | 🔴 待开始 | - | - | 分布式 |
 | 3     | 🔴 待开始 | - | - | IAM |
-| 4     | 🔴 待开始 | - | - | 高级特性 |
+| 4     | 🟡 进行中 | 2026-05-12 | - | MCP Server (4.0 已完成) |
 
 ---
 
@@ -123,6 +137,7 @@ mc cp secret.txt local/bucket/ --access-key user1 --secret-key password1
 
 ## 参考资源
 
+- `docs/metrics_architecture_spec.md`、`docs/heal_metrics_spec.md`（本项目对标规格）
 - MinIO 原版 `docs/ARCHITECTURE.md`
 - MinIO 原版 `docs/STORAGE_IAM_SPEC.md`
 - MinIO 原版 `cmd/xl-storage-format-v2.go`
