@@ -81,7 +81,7 @@ impl Benchmark for GetBenchmark {
             let mut source = (self.common.source)();
 
             handles.push(tokio::spawn(async move {
-                let _permit = sem.acquire().await.unwrap();
+                let Ok(_permit) = sem.acquire().await else { return; };
                 if ctx.is_cancelled() { return; }
                 let obj = source.object();
                 let key = obj.name.clone();
@@ -102,7 +102,8 @@ impl Benchmark for GetBenchmark {
         }
 
         for h in handles { let _ = h.await; }
-        *self.objects.lock().unwrap() = Arc::try_unwrap(keys).unwrap().into_inner().unwrap();
+        *self.objects.lock().unwrap() = super::take_from_arc_mutex(keys)
+            .map_err(|e| crate::generator::Error::Bench(e.to_string()))?;
         Ok(())
     }
 
@@ -144,7 +145,7 @@ impl Benchmark for GetBenchmark {
                         break;
                     }
 
-                    let _permit = sem.acquire().await.unwrap();
+                    let Ok(_permit) = sem.acquire().await else { return; };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
@@ -231,7 +232,7 @@ impl Benchmark for GetBenchmark {
             let ctx = ctx.clone();
 
             handles.push(tokio::spawn(async move {
-                let _permit = sem.acquire().await.unwrap();
+                let Ok(_permit) = sem.acquire().await else { return; };
                 if !ctx.is_cancelled() {
                     let _ = client.delete_object().bucket(&bucket).key(&key).send().await;
                 }

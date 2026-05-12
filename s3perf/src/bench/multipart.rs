@@ -71,7 +71,7 @@ impl Benchmark for MultipartBenchmark {
             let ctx = prepare_ctx.clone();
 
             handles.push(tokio::spawn(async move {
-                let _permit = sem.acquire().await.unwrap();
+                let Ok(_permit) = sem.acquire().await else { return; };
                 if ctx.is_cancelled() {
                     return;
                 }
@@ -174,7 +174,7 @@ impl Benchmark for MultipartBenchmark {
                         break;
                     }
 
-                    let _permit = sem.acquire().await.unwrap();
+                    let Ok(_permit) = sem.acquire().await else { return; };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }

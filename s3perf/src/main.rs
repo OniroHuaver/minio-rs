@@ -1,6 +1,6 @@
 //! Binary entrypoint for the `s3perf` S3 benchmark CLI.
 
-// Optional Iceberg / generator paths are not wired for every single-machine command.
+// Distributed path and Iceberg catalog subtypes aren't exercised in every binary config.
 #![allow(dead_code)]
 
 mod aggregate;
@@ -19,6 +19,7 @@ use clap::Parser;
 use cli::app::{parse_duration, parse_obj_size, parse_size, Cli, Commands};
 use cli::{
     execute_run_yaml, run_delete, run_get, run_list, run_mixed, run_put, run_stat, run_zip,
+    BenchConfig,
 };
 use bench::s3_client::S3Config;
 use bench::sse::SseConfig;
@@ -67,6 +68,27 @@ async fn main() -> anyhow::Result<()> {
         SseConfig::None
     };
 
+    let bc = BenchConfig {
+        s3_config,
+        bucket: cli.bucket.clone(),
+        region: cli.region.clone(),
+        concurrency: cli.concurrent,
+        duration,
+        obj_size,
+        objects: cli.objects,
+        clear: !cli.noclear,
+        autoterm: cli.autoterm,
+        autoterm_dur: parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
+        autoterm_pct: cli.autoterm_pct / 100.0,
+        output: cli.benchdata.as_ref().map(|p| p.to_string_lossy().to_string()),
+        host_select,
+        hosts,
+        no_prefix: cli.noprefix,
+        prefix: cli.prefix.clone(),
+        sse,
+        rps_limit: cli.rps_limit,
+    };
+
     if let Some(bench_sub) = cli::distributed_bench_subcommand(&cli.command) {
         if cli::run_as_coordinator_if_requested(&cli, bench_sub).await? {
             return Ok(());
@@ -81,31 +103,7 @@ async fn main() -> anyhow::Result<()> {
             delete_distrib,
             versions: _ver,
         } => {
-            run_mixed(
-                s3_config,
-                cli.bucket,
-                cli.region,
-                cli.concurrent,
-                duration,
-                obj_size,
-                cli.objects,
-                get_distrib,
-                stat_distrib,
-                put_distrib,
-                delete_distrib,
-                !cli.noclear,
-                cli.autoterm,
-                parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                cli.autoterm_pct / 100.0,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select,
-                hosts,
-                cli.noprefix,
-                cli.prefix,
-                sse,
-                cli.rps_limit,
-            )
-            .await?;
+            run_mixed(&bc, get_distrib, stat_distrib, put_distrib, delete_distrib).await?;
         }
 
         Commands::Get {
@@ -126,31 +124,7 @@ async fn main() -> anyhow::Result<()> {
                         None
                     }
                 });
-
-            run_get(
-                s3_config,
-                cli.bucket,
-                cli.region,
-                cli.concurrent,
-                duration,
-                obj_size,
-                cli.objects,
-                versions,
-                range_bounds,
-                list_existing,
-                !cli.noclear,
-                cli.autoterm,
-                parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                cli.autoterm_pct / 100.0,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select,
-                hosts,
-                cli.noprefix,
-                cli.prefix,
-                sse,
-                cli.rps_limit,
-            )
-            .await?;
+            run_get(&bc, versions, range_bounds, list_existing).await?;
         }
 
         Commands::Put {
@@ -158,97 +132,19 @@ async fn main() -> anyhow::Result<()> {
             checksum,
             post,
         } => {
-            run_put(
-                s3_config,
-                cli.bucket,
-                cli.region,
-                cli.concurrent,
-                duration,
-                obj_size,
-                md5,
-                checksum,
-                post,
-                !cli.noclear,
-                cli.autoterm,
-                parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                cli.autoterm_pct / 100.0,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select,
-                hosts,
-                cli.noprefix,
-                cli.prefix,
-                sse,
-                cli.rps_limit,
-            )
-            .await?;
+            run_put(&bc, md5, checksum, post).await?;
         }
 
         Commands::Delete { batch } => {
-            run_delete(
-                s3_config,
-                cli.bucket,
-                cli.region,
-                cli.concurrent,
-                duration,
-                obj_size,
-                cli.objects,
-                batch,
-                !cli.noclear,
-                cli.autoterm,
-                parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                cli.autoterm_pct / 100.0,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select,
-                hosts,
-                cli.noprefix,
-                cli.prefix,
-                sse,
-                cli.rps_limit,
-            )
-            .await?;
+            run_delete(&bc, batch).await?;
         }
 
         Commands::List { versions } => {
-            run_list(
-                s3_config,
-                cli.bucket,
-                cli.region,
-                cli.concurrent,
-                duration,
-                obj_size,
-                cli.objects,
-                versions,
-                !cli.noclear,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select,
-                hosts,
-                cli.noprefix,
-                cli.prefix,
-                sse,
-                cli.rps_limit,
-            )
-            .await?;
+            run_list(&bc, versions).await?;
         }
 
         Commands::Stat {} => {
-            run_stat(
-                s3_config,
-                cli.bucket,
-                cli.region,
-                cli.concurrent,
-                duration,
-                obj_size,
-                cli.objects,
-                !cli.noclear,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select,
-                hosts,
-                cli.noprefix,
-                cli.prefix,
-                sse,
-                cli.rps_limit,
-            )
-            .await?;
+            run_stat(&bc).await?;
         }
 
         Commands::Versioned {
@@ -257,28 +153,11 @@ async fn main() -> anyhow::Result<()> {
             put_distrib,
             delete_distrib,
         } => {
-            cli::run_versioned(
-                s3_config, cli.bucket, cli.region, cli.concurrent,
-                duration, obj_size, cli.objects,
-                get_distrib, stat_distrib, put_distrib, delete_distrib,
-                !cli.noclear, cli.autoterm,
-                parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                cli.autoterm_pct / 100.0,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select, hosts, cli.noprefix, cli.prefix, sse, cli.rps_limit,
-            ).await?;
+            cli::run_versioned(&bc, get_distrib, stat_distrib, put_distrib, delete_distrib).await?;
         }
 
         Commands::Retention {} => {
-            cli::run_retention(
-                s3_config, cli.bucket, cli.region, cli.concurrent,
-                duration, obj_size, cli.objects, 5, // versions=5 default
-                !cli.noclear, cli.autoterm,
-                parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                cli.autoterm_pct / 100.0,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select, hosts, cli.noprefix, cli.prefix, sse, cli.rps_limit,
-            ).await?;
+            cli::run_retention(&bc, 5).await?;
         }
 
         Commands::Multipart {
@@ -287,15 +166,7 @@ async fn main() -> anyhow::Result<()> {
             obj_name,
         } => {
             let ps = parse_size(&part_size).map_err(|e| anyhow::anyhow!(e))? as usize;
-            cli::run_multipart(
-                s3_config, cli.bucket, cli.region, cli.concurrent,
-                duration, ps, parts, obj_name,
-                !cli.noclear, cli.autoterm,
-                parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                cli.autoterm_pct / 100.0,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select, hosts, cli.noprefix, cli.prefix, sse, cli.rps_limit,
-            ).await?;
+            cli::run_multipart(&bc, ps, parts, obj_name).await?;
         }
 
         Commands::MultipartPut {
@@ -304,49 +175,19 @@ async fn main() -> anyhow::Result<()> {
             part_concurrent,
         } => {
             let ps = parse_size(&part_size).map_err(|e| anyhow::anyhow!(e))? as usize;
-            cli::run_multipart_put(
-                s3_config, cli.bucket, cli.region, cli.concurrent,
-                duration, parts, ps, part_concurrent,
-                !cli.noclear, cli.autoterm,
-                parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                cli.autoterm_pct / 100.0,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select, hosts, cli.noprefix, cli.prefix, sse, cli.rps_limit,
-            ).await?;
+            cli::run_multipart_put(&bc, parts, ps, part_concurrent).await?;
         }
 
         Commands::Snowball { objs_per } => {
-            cli::run_snowball(
-                s3_config, cli.bucket, cli.region, cli.concurrent,
-                duration, obj_size, objs_per,
-                !cli.noclear, cli.autoterm,
-                parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                cli.autoterm_pct / 100.0,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select, hosts, cli.noprefix, cli.prefix, sse, cli.rps_limit,
-            ).await?;
+            cli::run_snowball(&bc, objs_per).await?;
         }
 
         Commands::Fanout { copies } => {
-            cli::run_fanout(
-                s3_config, cli.bucket, cli.region, cli.concurrent,
-                duration, obj_size, copies,
-                !cli.noclear, cli.autoterm,
-                parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                cli.autoterm_pct / 100.0,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select, hosts, cli.noprefix, cli.prefix, sse, cli.rps_limit,
-            ).await?;
+            cli::run_fanout(&bc, copies).await?;
         }
 
         Commands::Append {} => {
-            cli::run_append(
-                s3_config, cli.bucket, cli.region, cli.concurrent,
-                duration, obj_size,
-                !cli.noclear,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select, hosts, cli.noprefix, cli.prefix, sse, cli.rps_limit,
-            ).await?;
+            cli::run_append(&bc).await?;
         }
 
         Commands::Run { config } => {
@@ -356,27 +197,7 @@ async fn main() -> anyhow::Result<()> {
         }
 
         Commands::Zip { entries } => {
-            run_zip(
-                s3_config,
-                cli.bucket,
-                cli.region,
-                cli.concurrent,
-                duration,
-                obj_size,
-                entries,
-                !cli.noclear,
-                cli.autoterm,
-                parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                cli.autoterm_pct / 100.0,
-                cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                host_select,
-                hosts,
-                cli.noprefix,
-                cli.prefix,
-                sse,
-                cli.rps_limit,
-            )
-            .await?;
+            run_zip(&bc, entries).await?;
         }
 
         Commands::Analyze { file } => {
@@ -398,26 +219,17 @@ async fn main() -> anyhow::Result<()> {
 
         Commands::Iceberg(sub) => match sub {
             cli::app::IcebergCommand::CatalogRead {
-                ns_list_distrib, ns_head_distrib, ns_get_distrib,
-                table_list_distrib, table_head_distrib, table_get_distrib,
-                view_list_distrib, view_head_distrib, view_get_distrib,
+                ns_list_distrib: _, ns_head_distrib: _, ns_get_distrib: _,
+                table_list_distrib: _, table_head_distrib: _, table_get_distrib: _,
+                view_list_distrib: _, view_head_distrib: _, view_get_distrib: _,
                 page_size, namespace_width, namespace_depth, tables_per_ns, views_per_ns,
                 columns, properties, base_location, external_catalog, catalog_name,
             } => {
                 cli::run_iceberg_read(
-                    s3_config, cli.region, cli.concurrent, duration,
-                    ns_list_distrib, ns_head_distrib, ns_get_distrib,
-                    table_list_distrib, table_head_distrib, table_get_distrib,
-                    view_list_distrib, view_head_distrib, view_get_distrib,
+                    &bc, cli.remote_hosts.clone(),
                     page_size, namespace_width, namespace_depth,
                     tables_per_ns, views_per_ns, columns, properties,
                     base_location, external_catalog, catalog_name,
-                    !cli.noclear, cli.autoterm,
-                    parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                    cli.autoterm_pct / 100.0,
-                    cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                    host_select, hosts,
-                    cli.remote_hosts,
                 ).await?;
             }
             cli::app::IcebergCommand::CatalogCommits {
@@ -427,43 +239,27 @@ async fn main() -> anyhow::Result<()> {
                 columns, properties, base_location, external_catalog, catalog_name,
             } => {
                 cli::run_iceberg_commits(
-                    s3_config, cli.region, cli.concurrent, duration,
+                    &bc, cli.remote_hosts.clone(),
                     table_commits_throughput, view_commits_throughput,
                     max_retries, retry_backoff_ms, backoff_max_ms,
                     namespace_width, namespace_depth, tables_per_ns, views_per_ns,
                     columns, properties, base_location, external_catalog, catalog_name,
-                    !cli.noclear, cli.autoterm,
-                    parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                    cli.autoterm_pct / 100.0,
-                    cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                    host_select, hosts,
-                    cli.remote_hosts,
                 ).await?;
             }
             cli::app::IcebergCommand::CatalogMixed {
-                ns_list_distrib, ns_head_distrib, ns_get_distrib,
-                table_list_distrib, table_head_distrib, table_get_distrib,
-                view_list_distrib, view_head_distrib, view_get_distrib,
-                ns_update_distrib, table_update_distrib, view_update_distrib,
+                ns_list_distrib: _, ns_head_distrib: _, ns_get_distrib: _,
+                table_list_distrib: _, table_head_distrib: _, table_get_distrib: _,
+                view_list_distrib: _, view_head_distrib: _, view_get_distrib: _,
+                ns_update_distrib: _, table_update_distrib: _, view_update_distrib: _,
                 max_retries, retry_backoff_ms, backoff_max_ms, page_size,
                 namespace_width, namespace_depth, tables_per_ns, views_per_ns,
                 columns, properties, base_location, external_catalog, catalog_name,
             } => {
                 cli::run_iceberg_mixed(
-                    s3_config, cli.region, cli.concurrent, duration,
-                    ns_list_distrib, ns_head_distrib, ns_get_distrib,
-                    table_list_distrib, table_head_distrib, table_get_distrib,
-                    view_list_distrib, view_head_distrib, view_get_distrib,
-                    ns_update_distrib, table_update_distrib, view_update_distrib,
+                    &bc, cli.remote_hosts.clone(),
                     max_retries, retry_backoff_ms, backoff_max_ms, page_size,
                     namespace_width, namespace_depth, tables_per_ns, views_per_ns,
                     columns, properties, base_location, external_catalog, catalog_name,
-                    !cli.noclear, cli.autoterm,
-                    parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                    cli.autoterm_pct / 100.0,
-                    cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                    host_select, hosts,
-                    cli.remote_hosts,
                 ).await?;
             }
             cli::app::IcebergCommand::CatalogWrite { page_size } => {
@@ -474,25 +270,18 @@ async fn main() -> anyhow::Result<()> {
                 tpcds_table, cache_dir, skip_upload, simulate_read,
                 read_concurrent, read_rps_limit,
                 max_retries, retry_backoff_ms, backoff_max_ms,
-                s3_host, s3_access_key, s3_secret_key, s3_tls,
                 namespace_width, namespace_depth, tables_per_ns,
                 columns, properties, base_location, external_catalog, catalog_name,
+                ..
             } => {
                 cli::run_iceberg_sustained(
-                    s3_config, cli.region, cli.concurrent, duration,
+                    &bc, cli.remote_hosts.clone(),
                     num_files, rows_per_file, files_per_commit, tpcds, scale_factor,
                     tpcds_table, cache_dir, skip_upload, simulate_read,
                     read_concurrent, read_rps_limit,
                     max_retries, retry_backoff_ms, backoff_max_ms,
-                    s3_host, s3_access_key, s3_secret_key, s3_tls,
                     namespace_width, namespace_depth, tables_per_ns,
                     columns, properties, base_location, external_catalog, catalog_name,
-                    !cli.noclear, cli.autoterm,
-                    parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
-                    cli.autoterm_pct / 100.0,
-                    cli.benchdata.map(|p| p.to_string_lossy().to_string()),
-                    host_select, hosts,
-                    cli.remote_hosts,
                 ).await?;
             }
         },

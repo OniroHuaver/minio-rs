@@ -43,7 +43,7 @@ impl Benchmark for ListBenchmark {
                 let mut source = (self.common.source)();
 
                 handles.push(tokio::spawn(async move {
-                    let _permit = sem.acquire().await.unwrap();
+                    let Ok(_permit) = sem.acquire().await else { return; };
                     if ctx.is_cancelled() { return; }
                     let obj = source.object();
                     let key = format!("{prefix}{}", obj.name);
@@ -55,7 +55,8 @@ impl Benchmark for ListBenchmark {
         }
 
         for h in handles { let _ = h.await; }
-        *self.prefixes.lock().unwrap() = Arc::try_unwrap(prefixes).unwrap().into_inner().unwrap();
+        *self.prefixes.lock().unwrap() = super::take_from_arc_mutex(prefixes)
+            .map_err(|e| crate::generator::Error::Bench(e.to_string()))?;
         Ok(())
     }
 
@@ -95,7 +96,7 @@ impl Benchmark for ListBenchmark {
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
-                    let _permit = sem.acquire().await.unwrap();
+                    let Ok(_permit) = sem.acquire().await else { return; };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }

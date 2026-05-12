@@ -87,7 +87,7 @@ impl Benchmark for ZipBenchmark {
                         break;
                     }
 
-                    let _permit = sem.acquire().await.unwrap();
+                    let Ok(_permit) = sem.acquire().await else { return; };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }

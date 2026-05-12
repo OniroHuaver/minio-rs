@@ -17,21 +17,6 @@ pub const VALID_BENCHMARKS: &[&str] = &[
 /// Default benchmark bucket name (aligned with CLI defaults).
 pub const DEFAULT_S3PERF_BUCKET: &str = "s3perf-benchmark-bucket";
 
-/// YAML key to CLI flag renames for legacy-style keys in config files.
-const RENAME_MAP: &[(&str, &str)] = &[
-    ("sse-c-encrypt", "encrypt"),
-    ("sse-s3-encrypt", "sse-s3-encrypt"),
-    ("remote-hosts", "remote-hosts"),
-    ("server-profile", "serverprof"),
-    ("no-clear", "noclear"),
-    ("keep-data", "keepdata"),
-    ("sign-version", "signversion"),
-    ("bench-data", "benchdata"),
-    ("rps-limit", "rpslimit"),
-    ("obj.rand-size", "obj.randsize"),
-    ("obj.part-size", "obj.partsize"),
-];
-
 // --- Top-level ---
 /// Parsed run file (`s3perf:` root).
 #[derive(Debug, Deserialize)]

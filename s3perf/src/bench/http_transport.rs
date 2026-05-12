@@ -127,37 +127,6 @@ impl HttpConnector for HttpsAdapter {
     }
 }
 
-#[derive(Clone)]
-struct HttpPlainAdapter {
-    inner: Client<HyperHttpConnector, SdkBody>,
-}
-
-impl fmt::Debug for HttpPlainAdapter {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("HttpPlainAdapter")
-    }
-}
-
-impl HttpConnector for HttpPlainAdapter {
-    fn call(&self, request: HttpRequest) -> HttpConnectorFuture {
-        let request = match request.try_into_http1x() {
-            Ok(r) => r,
-            Err(err) => {
-                return HttpConnectorFuture::ready(Err(ConnectorError::user(err.into())));
-            }
-        };
-        let mut client = self.inner.clone();
-        let fut = Service::call(&mut client, request);
-        HttpConnectorFuture::new(async move {
-            let response = fut
-                .await
-                .map_err(|e| ConnectorError::other(e.into(), None))?
-                .map(SdkBody::from_body_1_x);
-            HttpResponse::try_from(response).map_err(|e| ConnectorError::other(e.into(), None))
-        })
-    }
-}
-
 /// 构建用于 HTTPS 的 Smithy HTTP 客户端（`insecure` 或额外 CA）。
 pub fn shared_https_client(insecure: bool, ca_pem: Option<&[u8]>) -> Result<SharedHttpClient, String> {
     let tls = rustls_config(insecure, ca_pem)?;
@@ -180,18 +149,4 @@ pub fn shared_https_client(insecure: bool, ca_pem: Option<&[u8]>) -> Result<Shar
         let inner = hyper_builder.build(https);
         SharedHttpConnector::new(HttpsAdapter { inner })
     }))
-}
-
-/// 明文 HTTP 的 Smithy 客户端。
-pub fn shared_http_client() -> SharedHttpClient {
-    http_client_fn(move |settings: &HttpConnectorSettings, _rc: &RuntimeComponents| {
-        let mut http = HyperHttpConnector::new();
-        if let Some(d) = settings.connect_timeout() {
-            http.set_connect_timeout(Some(d));
-        }
-        let mut hyper_builder = Client::builder(TokioExecutor::new());
-        hyper_builder.pool_timer(TokioTimer::new());
-        let inner = hyper_builder.build(http);
-        SharedHttpConnector::new(HttpPlainAdapter { inner })
-    })
 }

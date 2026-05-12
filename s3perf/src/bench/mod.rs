@@ -12,6 +12,19 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 
+// ---------------------------------------------------------------------------
+// Error-proof helpers for common unwrap patterns
+// ---------------------------------------------------------------------------
+
+/// Extract inner value from `Arc<Mutex<T>>` when the Arc is known to be unique.
+/// Replaces the `Arc::try_unwrap(x).unwrap().into_inner().unwrap()` triple-unwrap.
+pub(crate) fn take_from_arc_mutex<T: Default>(arc: Arc<Mutex<T>>) -> anyhow::Result<T> {
+    Arc::try_unwrap(arc)
+        .map_err(|_| anyhow::anyhow!("Arc still has live references"))?
+        .into_inner()
+        .map_err(|_| anyhow::anyhow!("Mutex poisoned"))
+}
+
 pub mod body;
 pub mod collector;
 pub mod http_transport;

@@ -87,7 +87,7 @@ impl Benchmark for RetentionBenchmark {
             let versions = self.common.versions;
 
             handles.push(tokio::spawn(async move {
-                let _permit = sem.acquire().await.unwrap();
+                let Ok(_permit) = sem.acquire().await else { return; };
                 if ctx.is_cancelled() { return; }
                 let mut first_obj = Some(source.object());
                 let key = first_obj.as_ref().unwrap().name.clone();
@@ -131,8 +131,8 @@ impl Benchmark for RetentionBenchmark {
         }
 
         for h in handles { let _ = h.await; }
-        *self.obj_versions.lock().unwrap() =
-            Arc::try_unwrap(obj_versions).unwrap().into_inner().unwrap();
+        *self.obj_versions.lock().unwrap() = super::take_from_arc_mutex(obj_versions)
+            .map_err(|e| crate::generator::Error::Bench(e.to_string()))?;
         Ok(())
     }
 
@@ -171,7 +171,7 @@ impl Benchmark for RetentionBenchmark {
 
                 loop {
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline { break; }
-                    let _permit = sem.acquire().await.unwrap();
+                    let Ok(_permit) = sem.acquire().await else { return; };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline { break; }
 
                     if shared_versions.is_empty() {
@@ -253,7 +253,7 @@ impl Benchmark for RetentionBenchmark {
             let version_id = version_id.clone();
 
             handles.push(tokio::spawn(async move {
-                let _permit = sem.acquire().await.unwrap();
+                let Ok(_permit) = sem.acquire().await else { return; };
                 if !ctx.is_cancelled() {
                     let _ = client.delete_object()
                         .bucket(&bucket).key(&name).version_id(&version_id)

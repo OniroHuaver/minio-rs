@@ -194,31 +194,3 @@ impl Collector for OpsCollector {
     }
 }
 
-// ---------------------------------------------------------------------------
-// NullCollector
-// ---------------------------------------------------------------------------
-pub struct NullCollector;
-
-impl Collector for NullCollector {
-    fn sender(&self) -> mpsc::UnboundedSender<Operation> {
-        let (tx, _rx) = mpsc::unbounded_channel();
-        tx
-    }
-
-    fn close(&self) {}
-    fn ops(&self) -> Vec<Operation> {
-        Vec::new()
-    }
-
-    fn auto_term(
-        &self,
-        ctx: CancellationToken,
-        _op_name: &str,
-        _threshold: f64,
-        _want_samples: usize,
-        _split_into: usize,
-        _min_dur: Duration,
-    ) -> CancellationToken {
-        ctx
-    }
-}
