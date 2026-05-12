@@ -103,11 +103,11 @@ async fn sign_request(
         hex::encode(Sha256::digest(canonical_request.as_bytes()))
     );
 
-    let k_date = hmac_sha256(format!("AWS4{secret_key}").as_bytes(), date_stamp.as_bytes());
-    let k_region = hmac_sha256(&k_date, region.as_bytes());
-    let k_service = hmac_sha256(&k_region, service.as_bytes());
-    let k_signing = hmac_sha256(&k_service, b"aws4_request");
-    let signature = hex::encode(hmac_sha256(&k_signing, string_to_sign.as_bytes()));
+    let k_date = hmac_sha256(format!("AWS4{secret_key}").as_bytes(), date_stamp.as_bytes())?;
+    let k_region = hmac_sha256(&k_date, region.as_bytes())?;
+    let k_service = hmac_sha256(&k_region, service.as_bytes())?;
+    let k_signing = hmac_sha256(&k_service, b"aws4_request")?;
+    let signature = hex::encode(hmac_sha256(&k_signing, string_to_sign.as_bytes())?);
 
     let auth_header = format!(
         "AWS4-HMAC-SHA256 Credential={access_key}/{credential_scope}, SignedHeaders={signed_headers}, Signature={signature}"
@@ -121,10 +121,10 @@ async fn sign_request(
     Ok(req)
 }
 
-fn hmac_sha256(key: &[u8], data: &[u8]) -> Vec<u8> {
+fn hmac_sha256(key: &[u8], data: &[u8]) -> Result<Vec<u8>, String> {
     use hmac::{Hmac, Mac};
     use sha2::Sha256;
-    let mut mac = Hmac::<Sha256>::new_from_slice(key).expect("HMAC key");
+    let mut mac = Hmac::<Sha256>::new_from_slice(key).map_err(|e| format!("HMAC key: {e}"))?;
     mac.update(data);
-    mac.finalize().into_bytes().to_vec()
+    Ok(mac.finalize().into_bytes().to_vec())
 }

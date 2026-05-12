@@ -26,20 +26,25 @@ pub struct DatasetCreator {
 
 impl DatasetCreator {
     /// 获取一个 catalog 实例
-    fn get_catalog(&self) -> &Arc<RestCatalog> {
+    fn get_catalog(&self) -> Result<&Arc<RestCatalog>, String> {
         if let Some(pool) = &self.catalog_pool {
-            pool.get()
+            Ok(pool.get())
         } else {
-            self.catalog.as_ref().expect("catalog not initialized")
+            self.catalog
+                .as_ref()
+                .ok_or_else(|| "catalog not initialized".to_string())
         }
     }
 
     /// 获取第一个 catalog（用于 setup/cleanup）
-    fn first_catalog(&self) -> &Arc<RestCatalog> {
+    #[allow(dead_code)]
+    fn first_catalog(&self) -> Result<&Arc<RestCatalog>, String> {
         if let Some(pool) = &self.catalog_pool {
-            pool.first()
+            Ok(pool.first())
         } else {
-            self.catalog.as_ref().expect("catalog not initialized")
+            self.catalog
+                .as_ref()
+                .ok_or_else(|| "catalog not initialized".to_string())
         }
     }
 
@@ -77,7 +82,7 @@ impl DatasetCreator {
                 _ = ctx.cancelled() => return Err("cancelled".into()),
                 _ = tokio::time::sleep(std::time::Duration::ZERO) => {},
             }
-            let cat = self.get_catalog();
+            let cat = self.get_catalog()?;
             match cat.create_namespace(&ns.path, &props_ns).await {
                 Ok(()) => {}
                 Err(e) => {
@@ -131,7 +136,7 @@ impl DatasetCreator {
                 _ = ctx.cancelled() => return Err("cancelled".into()),
                 _ = tokio::time::sleep(std::time::Duration::ZERO) => {},
             }
-                let cat = self.get_catalog();
+                let cat = self.get_catalog()?;
                 let _ = cat
                     .create_table(
                         &tbl.namespace,
@@ -154,7 +159,7 @@ impl DatasetCreator {
                 _ = ctx.cancelled() => return Err("cancelled".into()),
                 _ = tokio::time::sleep(std::time::Duration::ZERO) => {},
             }
-                let cat = self.get_catalog();
+                let cat = self.get_catalog()?;
                 let version = build_iceberg_view_version(&vw.namespace, &vw.name);
                 let _ = cat
                     .create_view(
@@ -184,27 +189,30 @@ impl DatasetCreator {
         let cfg = self.tree.config();
 
         // Delete views
-        for vw in &self.tree.all_views() {
-            let _ = ctx.cancelled();
-            let _ = self.get_catalog().drop_view(&vw.namespace, &vw.name).await;
+        if let Ok(cat) = self.get_catalog() {
+            for vw in &self.tree.all_views() {
+                let _ = ctx.cancelled();
+                let _ = cat.drop_view(&vw.namespace, &vw.name).await;
+            }
         }
 
         // Delete tables
-        for tbl in &self.tree.all_tables() {
-            let _ = ctx.cancelled();
-            let _ = self
-                .get_catalog()
-                .drop_table(&tbl.namespace, &tbl.name)
-                .await;
+        if let Ok(cat) = self.get_catalog() {
+            for tbl in &self.tree.all_tables() {
+                let _ = ctx.cancelled();
+                let _ = cat.drop_table(&tbl.namespace, &tbl.name).await;
+            }
         }
 
         // Delete namespaces (reverse order: children before parents)
-        let mut namespaces = self.tree.all_namespaces();
-        namespaces.sort_by_key(|ns| -(ns.path.len() as i32));
-        for ns in &namespaces {
-            let _ = ctx.cancelled();
-            if ns.path.len() > 0 {
-                let _ = self.get_catalog().drop_namespace(&ns.path).await;
+        if let Ok(cat) = self.get_catalog() {
+            let mut namespaces = self.tree.all_namespaces();
+            namespaces.sort_by_key(|ns| -(ns.path.len() as i32));
+            for ns in &namespaces {
+                let _ = ctx.cancelled();
+                if ns.path.len() > 0 {
+                    let _ = cat.drop_namespace(&ns.path).await;
+                }
             }
         }
 

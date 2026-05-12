@@ -1,11 +1,13 @@
 //! Server startup flow: disk check, EC pool init, HTTP serve, graceful shutdown
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::base::error::{MinioError, MinioResult};
 use crate::object::{ErasureObjects, ObjectAPI, StandaloneObjects};
 use crate::s3::AppState;
 use crate::storage::{DiskInfo, StorageAPI};
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::server::banner::print_banner;
@@ -20,17 +22,10 @@ pub struct ServerConfig {
 }
 
 /// Start the object storage server.
-///
-/// The full startup sequence:
-/// 1. Check and prepare all disk paths
-/// 2. Build `ErasureObjects` with automatic EC parity selection
-/// 3. Construct shared `AppState`
-/// 4. Build axum Router
-/// 5. Collect disk information for the startup banner
-/// 6. Bind TCP listener with SO_REUSEPORT for multi-process accept
-/// 7. Print startup banner
-/// 8. Serve HTTP with graceful shutdown (signalfd on Linux, tokio signals elsewhere)
-pub async fn run(config: ServerConfig) -> MinioResult<()> {
+pub async fn run(
+    config: ServerConfig,
+    shutdown: Option<CancellationToken>,
+) -> MinioResult<()> {
     // 0. Acquire instance lock — prevents duplicate server processes
     let _instance_lock = crate::server::lock::acquire()?;
 
@@ -50,28 +45,18 @@ pub async fn run(config: ServerConfig) -> MinioResult<()> {
                 disks.len() - 1
             );
         }
-        Arc::new(StandaloneObjects::new(disks.into_iter().next().unwrap()))
+        Arc::new(StandaloneObjects::new(
+            disks
+                .into_iter()
+                .next()
+                .ok_or_else(|| MinioError::Internal("no disks available".into()))?,
+        ))
     } else {
         tracing::info!("erasure coding mode ({} disks)", disks.len());
         Arc::new(ErasureObjects::new(disks)?)
     };
 
-    // 3. Build AppState
-    let state = Arc::new(AppState {
-        object_api: objects.clone() as Arc<dyn ObjectAPI>,
-        instance_id: Uuid::now_v7().to_string(),
-        region: "us-east-1".to_string(),
-        credentials: std::env::var("MINIO_ROOT_USER").ok().and_then(|ak| {
-            std::env::var("MINIO_ROOT_PASSWORD")
-                .ok()
-                .map(|sk| (ak, sk))
-        }),
-    });
-
-    // 4. Build S3 HTTP router
-    let app = crate::s3::router(state);
-
-    // 5. Collect disk info for startup banner
+    // 3. Collect disk info (needed for banner AND metrics)
     let disk_infos: Vec<DiskInfo> = {
         let mut infos = Vec::with_capacity(checked.len());
         for disk in &checked {
@@ -85,15 +70,76 @@ pub async fn run(config: ServerConfig) -> MinioResult<()> {
         infos
     };
 
-    // 6. Bind TCP listener (SO_REUSEPORT for multi-process accept perf)
+    // 4. Build metrics registry, HTTP stats, and system collector
+    let total_disks = config.disks.len();
+    let bundle = crate::metrics::build_registry(
+        objects.clone() as Arc<dyn ObjectAPI>,
+        &disk_infos,
+        total_disks,
+    );
+
+    // Spawn periodic system metrics refresh (every 30 s)
+    if let Some(sys_collector) = bundle.system_collector.clone() {
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(Duration::from_secs(30)).await;
+                sys_collector.refresh();
+            }
+        });
+    }
+
+    // 5. Build AppState
+    let prometheus_auth_public = std::env::var("MINIO_PROMETHEUS_AUTH_TYPE")
+        .map(|v| v.trim().eq_ignore_ascii_case("public"))
+        .unwrap_or(false);
+    if prometheus_auth_public {
+        tracing::info!("MINIO_PROMETHEUS_AUTH_TYPE=public — metrics endpoints skip auth");
+    }
+
+    let state = Arc::new(AppState {
+        object_api: objects.clone() as Arc<dyn ObjectAPI>,
+        instance_id: Uuid::now_v7().to_string(),
+        region: "us-east-1".to_string(),
+        credentials: std::env::var("MINIO_ROOT_USER").ok().and_then(|ak| {
+            std::env::var("MINIO_ROOT_PASSWORD")
+                .ok()
+                .map(|sk| (ak, sk))
+        }),
+        metrics: Arc::new(bundle.registry),
+        http_stats: bundle.http_stats,
+        prometheus_auth_public,
+    });
+
+    // 6. Build S3 HTTP router
+    let app = crate::s3::router(state);
+
+    // 7. Bind TCP listener (SO_REUSEPORT for multi-process accept perf)
     let listener = bind_tcp_listener(&config.address)?;
 
-    // 7. Print startup banner
+    // 8. Print startup banner
     print_banner(&config.address, config.console_address.as_deref(), &disk_infos);
 
-    // 8. Start HTTP server with graceful shutdown
+    // 9. Start HTTP server with graceful shutdown (OS signal or programmatic token)
+    let graceful_shutdown = async {
+        match shutdown {
+            Some(token) => {
+                tokio::select! {
+                    _ = signal::shutdown_signal() => {
+                        tracing::info!("OS signal received, shutting down");
+                    }
+                    _ = token.cancelled() => {
+                        tracing::info!("programmatic shutdown requested");
+                    }
+                }
+            }
+            None => {
+                signal::shutdown_signal().await;
+            }
+        }
+    };
+
     axum::serve(listener, app.into_make_service())
-        .with_graceful_shutdown(signal::shutdown_signal())
+        .with_graceful_shutdown(graceful_shutdown)
         .await
         .map_err(|e| MinioError::Internal(format!("HTTP server error: {e}")))?;
 
@@ -102,10 +148,6 @@ pub async fn run(config: ServerConfig) -> MinioResult<()> {
 }
 
 /// Bind a TCP listener with SO_REUSEPORT + SO_REUSEADDR.
-///
-/// SO_REUSEPORT allows multiple processes to bind to the same port; the
-/// kernel distributes incoming connections across them, improving accept
-/// throughput. SO_REUSEADDR permits immediate rebind after a restart.
 fn bind_tcp_listener(addr: &str) -> MinioResult<tokio::net::TcpListener> {
     use std::net::{SocketAddr, ToSocketAddrs};
 

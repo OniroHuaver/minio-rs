@@ -321,7 +321,7 @@ fn compute_single_sized(ops: &[&Operation]) -> SingleSizedRequests {
     let requests = ops.len();
 
     let mut durs: Vec<f64> = ops.iter().map(|o| o.duration().as_secs_f64() * 1000.0).collect();
-    durs.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    durs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
     let avg = durs.iter().sum::<f64>() / durs.len() as f64;
     let median = percentile(&durs, 0.50);
@@ -340,7 +340,7 @@ fn compute_single_sized(ops: &[&Operation]) -> SingleSizedRequests {
         (None, None, None, None, None, None)
     } else {
         let mut ttfb_sorted = ttfb_vals.clone();
-        ttfb_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        ttfb_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         (
             Some(ttfb_vals.iter().sum::<f64>() / ttfb_vals.len() as f64),
             Some(percentile(&ttfb_sorted, 0.50)),

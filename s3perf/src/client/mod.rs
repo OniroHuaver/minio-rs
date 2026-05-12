@@ -59,13 +59,18 @@ async fn handle_ws(mut ws: WebSocket) {
             err: Some(e),
             ops: None,
         };
-        let json = serde_json::to_string(&reply).unwrap();
+        let json = serde_json::to_string(&reply)
+            .unwrap_or_else(|e| format!("{{\"error\":\"ser: {e}\"}}"));
         let _ = ws.send(Message::Text(json.into())).await;
         return;
     }
 
     {
-        let mut guard = CONNECTED.get().unwrap().lock().await;
+        let mut guard = CONNECTED
+            .get()
+            .expect("CONNECTED OnceLock not initialized — call run_client first")
+            .lock()
+            .await;
         if let Some(existing) = guard.as_ref() {
             if !existing.id.is_empty() && existing.id != s_info.id {
                 let reply = ClientReply {
@@ -80,7 +85,8 @@ async fn handle_ws(mut ws: WebSocket) {
                     err: Some("another coordinator is already attached".into()),
                     ops: None,
                 };
-                let json = serde_json::to_string(&reply).unwrap();
+                let json = serde_json::to_string(&reply)
+                    .unwrap_or_else(|e| format!("{{\"error\":\"ser: {e}\"}}"));
                 let _ = ws.send(Message::Text(json.into())).await;
                 return;
             }
@@ -103,7 +109,8 @@ async fn handle_ws(mut ws: WebSocket) {
             err: None,
             ops: None,
         };
-        let json = serde_json::to_string(&reply).unwrap();
+        let json = serde_json::to_string(&reply)
+            .unwrap_or_else(|e| format!("{{\"error\":\"ser: {e}\"}}"));
         let _ = ws.send(Message::Text(json.into())).await;
     }
 
@@ -111,7 +118,8 @@ async fn handle_ws(mut ws: WebSocket) {
         match read_request(&mut ws).await {
             Ok(req) => {
                 let reply = build_reply(&req);
-                let json = serde_json::to_string(&reply).unwrap();
+                let json = serde_json::to_string(&reply)
+            .unwrap_or_else(|e| format!("{{\"error\":\"ser: {e}\"}}"));
                 if let Err(e) = ws.send(Message::Text(json.into())).await {
                     error!("failed to send reply: {e}");
                     break;
@@ -124,7 +132,11 @@ async fn handle_ws(mut ws: WebSocket) {
         }
     }
 
-    let mut guard = CONNECTED.get().unwrap().lock().await;
+    let mut guard = CONNECTED
+        .get()
+        .expect("CONNECTED OnceLock not initialized")
+        .lock()
+        .await;
     *guard = None;
     info!("coordinator websocket closed");
 }

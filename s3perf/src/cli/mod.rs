@@ -121,7 +121,7 @@ fn influx_url_static() -> Option<&'static str> {
 /// Build a collector and optionally spawn [`crate::influxdb::InfluxWriter`].
 fn collector_with_optional_influx() -> anyhow::Result<Arc<OpsCollector>> {
     use tokio::sync::mpsc;
-    *INFLUX_JOIN.lock().unwrap() = None;
+    *INFLUX_JOIN.lock().expect("lock poisoned") = None;
     let Some(raw) = influx_url_static() else {
         return Ok(Arc::new(OpsCollector::new()));
     };
@@ -133,12 +133,12 @@ fn collector_with_optional_influx() -> anyhow::Result<Arc<OpsCollector>> {
     let h = tokio::spawn(async move {
         writer.run().await;
     });
-    *INFLUX_JOIN.lock().unwrap() = Some(h);
+    *INFLUX_JOIN.lock().expect("lock poisoned") = Some(h);
     Ok(coll)
 }
 
 fn take_influx_join() -> Option<tokio::task::JoinHandle<()>> {
-    INFLUX_JOIN.lock().unwrap().take()
+    INFLUX_JOIN.lock().expect("lock poisoned").take()
 }
 
 fn new_host_inflight(hosts: &[String]) -> Arc<Mutex<Vec<usize>>> {

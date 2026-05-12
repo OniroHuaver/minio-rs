@@ -40,12 +40,12 @@ impl TuiState {
     }
 
     pub fn set_phase(&self, phase: &str, detail: &str) {
-        *self.phase.lock().unwrap() = phase.to_string();
-        *self.phase_detail.lock().unwrap() = detail.to_string();
+        *self.phase.lock().expect("lock poisoned") = phase.to_string();
+        *self.phase_detail.lock().expect("lock poisoned") = detail.to_string();
     }
 
     pub fn set_progress(&self, progress: f64) {
-        *self.progress.lock().unwrap() = Some(progress.clamp(0.0, 1.0));
+        *self.progress.lock().expect("lock poisoned") = Some(progress.clamp(0.0, 1.0));
     }
 
     #[allow(dead_code)]
@@ -90,9 +90,9 @@ impl TuiState {
                 prev_bytes = bytes;
                 prev_ops = ops;
 
-                let phase = self.phase.lock().unwrap().clone();
-                let detail = self.phase_detail.lock().unwrap().clone();
-                let progress = *self.progress.lock().unwrap();
+                let phase = self.phase.lock().expect("lock poisoned").clone();
+                let detail = self.phase_detail.lock().expect("lock poisoned").clone();
+                let progress = *self.progress.lock().expect("lock poisoned");
 
                 render_frame(
                     &phase,
@@ -110,9 +110,9 @@ impl TuiState {
             let bytes = self.total_bytes.load(Ordering::Relaxed);
             let ops = self.total_ops.load(Ordering::Relaxed);
             let errors = self.total_errors.load(Ordering::Relaxed);
-            let phase = self.phase.lock().unwrap().clone();
-            let detail = self.phase_detail.lock().unwrap().clone();
-            let progress = *self.progress.lock().unwrap();
+            let phase = self.phase.lock().expect("lock poisoned").clone();
+            let detail = self.phase_detail.lock().expect("lock poisoned").clone();
+            let progress = *self.progress.lock().expect("lock poisoned");
 
             let mbps = (bytes.saturating_sub(prev_bytes)) as f64 / (1024.0 * 1024.0) / 0.5;
             let ops_per_sec = (ops.saturating_sub(prev_ops)) as f64 / 0.5;
@@ -192,8 +192,8 @@ mod tests {
     fn test_new_state() {
         let cancel = CancellationToken::new();
         let state = TuiState::new(cancel.clone());
-        assert!(state.phase.lock().unwrap().is_empty());
-        assert!(state.progress.lock().unwrap().is_none());
+        assert!(state.phase.lock().expect("lock poisoned").is_empty());
+        assert!(state.progress.lock().expect("lock poisoned").is_none());
         assert_eq!(state.total_bytes.load(Ordering::Relaxed), 0);
         assert_eq!(state.total_ops.load(Ordering::Relaxed), 0);
         assert_eq!(state.total_errors.load(Ordering::Relaxed), 0);
@@ -204,24 +204,24 @@ mod tests {
     fn test_set_phase() {
         let state = TuiState::new(CancellationToken::new());
         state.set_phase("Benchmarking", "GET /bucket/key");
-        assert_eq!(*state.phase.lock().unwrap(), "Benchmarking");
-        assert_eq!(*state.phase_detail.lock().unwrap(), "GET /bucket/key");
+        assert_eq!(*state.phase.lock().expect("lock poisoned"), "Benchmarking");
+        assert_eq!(*state.phase_detail.lock().expect("lock poisoned"), "GET /bucket/key");
     }
 
     #[test]
     fn test_set_progress() {
         let state = TuiState::new(CancellationToken::new());
         state.set_progress(0.5);
-        assert_eq!(*state.progress.lock().unwrap(), Some(0.5));
+        assert_eq!(*state.progress.lock().expect("lock poisoned"), Some(0.5));
     }
 
     #[test]
     fn test_set_progress_clamp() {
         let state = TuiState::new(CancellationToken::new());
         state.set_progress(1.5);
-        assert_eq!(*state.progress.lock().unwrap(), Some(1.0));
+        assert_eq!(*state.progress.lock().expect("lock poisoned"), Some(1.0));
         state.set_progress(-0.1);
-        assert_eq!(*state.progress.lock().unwrap(), Some(0.0));
+        assert_eq!(*state.progress.lock().expect("lock poisoned"), Some(0.0));
     }
 
     #[test]

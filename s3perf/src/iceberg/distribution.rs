@@ -42,7 +42,7 @@ impl IcebergMixedDistribution {
     }
 
     pub fn get_op(&self) -> String {
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.inner.lock().expect("lock poisoned");
         if inner.ops.is_empty() {
             return String::new();
         }

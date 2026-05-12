@@ -1,5 +1,6 @@
 //! Iceberg REST Catalog benchmark entrypoints.
 
+use crate::aggregate::Aggregated;
 use crate::bench::iceberg_commits::IcebergCommitsBenchmark;
 use crate::bench::iceberg_mixed::IcebergMixedBenchmark;
 use crate::bench::iceberg_read::IcebergReadBenchmark;
@@ -15,18 +16,22 @@ use std::time::Duration;
 use super::{collector_with_optional_influx, new_host_inflight, run_benchmark, BenchConfig};
 
 /// Placeholder `catalog-write` entrypoint (use `catalog-commits` or `sustained` for real IO).
-pub async fn run_iceberg_catalog_write_stub(page_size: usize) -> anyhow::Result<()> {
+pub async fn run_iceberg_catalog_write_stub(page_size: usize) -> anyhow::Result<Aggregated> {
     tracing::info!(
         "iceberg catalog-write (page_size={page_size}) is stubbed; run `iceberg catalog-commits` or `iceberg sustained` instead."
     );
-    Ok(())
+    Ok(Aggregated {
+        mixed: false,
+        operations: vec![],
+        mixed_server_stats: None,
+        mixed_throughput_by_host: std::collections::HashMap::new(),
+    })
 }
 
-fn build_iceberg_common(bc: &BenchConfig, remote_hosts: Option<String>) -> Common {
-    let collector = collector_with_optional_influx()
-        .expect("failed to initialize OpsCollector / Influx writer");
+fn build_iceberg_common(bc: &BenchConfig, remote_hosts: Option<String>) -> anyhow::Result<Common> {
+    let collector = collector_with_optional_influx()?;
     let host_inflight = new_host_inflight(&bc.hosts);
-    Common {
+    Ok(Common {
         concurrency: bc.concurrency,
         duration: bc.duration,
         bucket: "iceberg-bench".into(),
@@ -53,7 +58,7 @@ fn build_iceberg_common(bc: &BenchConfig, remote_hosts: Option<String>) -> Commo
         rps_limiter: crate::bench::rate_limiter::opt_rps_limiter(None),
         sse: SseConfig::None,
         checksum: None,
-    }
+    })
 }
 
 pub async fn run_iceberg_read(
@@ -63,8 +68,8 @@ pub async fn run_iceberg_read(
     tables_per_ns: usize, views_per_ns: usize,
     columns: usize, properties: usize, base_location: String,
     external_catalog: Option<String>, catalog_name: String,
-) -> anyhow::Result<()> {
-    let common = build_iceberg_common(bc, remote_hosts);
+) -> anyhow::Result<Aggregated> {
+    let common = build_iceberg_common(bc, remote_hosts)?;
 
     let tree_config = TreeConfig {
         namespace_width, namespace_depth, tables_per_ns, views_per_ns,
@@ -107,8 +112,8 @@ pub async fn run_iceberg_commits(
     tables_per_ns: usize, views_per_ns: usize,
     columns: usize, properties: usize, base_location: String,
     external_catalog: Option<String>, catalog_name: String,
-) -> anyhow::Result<()> {
-    let common = build_iceberg_common(bc, remote_hosts);
+) -> anyhow::Result<Aggregated> {
+    let common = build_iceberg_common(bc, remote_hosts)?;
 
     let tree_config = TreeConfig {
         namespace_width, namespace_depth, tables_per_ns, views_per_ns,
@@ -150,8 +155,8 @@ pub async fn run_iceberg_mixed(
     tables_per_ns: usize, views_per_ns: usize,
     columns: usize, properties: usize, base_location: String,
     external_catalog: Option<String>, catalog_name: String,
-) -> anyhow::Result<()> {
-    let common = build_iceberg_common(bc, remote_hosts);
+) -> anyhow::Result<Aggregated> {
+    let common = build_iceberg_common(bc, remote_hosts)?;
 
     let tree_config = TreeConfig {
         namespace_width, namespace_depth, tables_per_ns, views_per_ns,
@@ -200,8 +205,8 @@ pub async fn run_iceberg_sustained(
     tables_per_ns: usize, columns: usize, properties: usize,
     base_location: String, external_catalog: Option<String>,
     catalog_name: String,
-) -> anyhow::Result<()> {
-    let common = build_iceberg_common(bc, remote_hosts);
+) -> anyhow::Result<Aggregated> {
+    let common = build_iceberg_common(bc, remote_hosts)?;
 
     let tree_config = TreeConfig {
         namespace_width, namespace_depth, tables_per_ns,

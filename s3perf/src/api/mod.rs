@@ -52,7 +52,7 @@ impl BenchmarkMonitor {
     }
 
     pub fn start(&self) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.lock().expect("lock poisoned");
         state.start_time = Some(Utc::now());
         state.collecting = true;
         state.done = false;
@@ -60,7 +60,7 @@ impl BenchmarkMonitor {
     }
 
     pub fn status(&self) -> BenchmarkStatus {
-        let state = self.state.lock().unwrap();
+        let state = self.state.lock().expect("lock poisoned");
         BenchmarkStatus {
             last_status: state.last_status.clone(),
             last_error: state.last_error.clone(),
@@ -71,7 +71,7 @@ impl BenchmarkMonitor {
     }
 
     pub fn set_done(&self, filename: Option<String>) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.lock().expect("lock poisoned");
         state.done = true;
         state.collecting = false;
         state.filename = filename;
@@ -79,22 +79,22 @@ impl BenchmarkMonitor {
     }
 
     pub fn set_status(&self, msg: &str) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.lock().expect("lock poisoned");
         state.last_status = msg.to_string();
     }
 
     pub fn set_error(&self, msg: &str) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.lock().expect("lock poisoned");
         state.last_error = msg.to_string();
     }
 
     pub fn set_aggregated(&self, agg: Aggregated) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.lock().expect("lock poisoned");
         state.aggregated = Some(agg);
     }
 
     pub fn add_ops(&self, ops: &[Operation]) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.lock().expect("lock poisoned");
         state.operations.extend_from_slice(ops);
     }
 }
