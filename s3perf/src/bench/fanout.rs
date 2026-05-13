@@ -75,7 +75,9 @@ impl Benchmark for FanoutBenchmark {
                         break;
                     }
 
-                    let Ok(_permit) = sem.acquire().await else { return; };
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
@@ -84,12 +86,11 @@ impl Benchmark for FanoutBenchmark {
                     let obj = source.object();
                     let size = obj.size;
                     let base_name = obj.name.clone();
-                    let bytes = match tokio::task::spawn_blocking(move || read_object_bytes(obj))
-                        .await
-                    {
-                        Ok(Ok(b)) => b,
-                        _ => continue,
-                    };
+                    let bytes =
+                        match tokio::task::spawn_blocking(move || read_object_bytes(obj)).await {
+                            Ok(Ok(b)) => b,
+                            _ => continue,
+                        };
 
                     common.throttle_rps().await;
 
@@ -147,11 +148,7 @@ impl Benchmark for FanoutBenchmark {
                         client_id: client_id.clone(),
                         endpoint,
                         obj_per_op: copies as u32,
-                        size: if all_ok {
-                            size * copies as i64
-                        } else {
-                            0
-                        },
+                        size: if all_ok { size * copies as i64 } else { 0 },
                         thread: thread_id as u32,
                         categories: 0,
                     });

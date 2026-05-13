@@ -99,7 +99,11 @@ async fn mc_cat_read_object() {
     assert_eq!(resp.status(), 200, "mc cat → 200");
 
     let body = resp.bytes().await.expect("body");
-    assert_eq!(body.as_ref(), content, "mc cat output must match mc cp input");
+    assert_eq!(
+        body.as_ref(),
+        content,
+        "mc cat output must match mc cp input"
+    );
 }
 
 #[tokio::test]
@@ -202,7 +206,11 @@ async fn mc_full_workflow() {
     );
 
     // Step 5: Verify ETag consistency
-    assert_eq!(cat_etag.as_deref(), put_etag.as_deref(), "ETag on cat must match ETag on cp");
+    assert_eq!(
+        cat_etag.as_deref(),
+        put_etag.as_deref(),
+        "ETag on cat must match ETag on cp"
+    );
 
     // Step 6: mc rm local/testbucket/hello.txt
     let resp = mc.rm("testbucket", "hello.txt").await;
@@ -217,8 +225,7 @@ async fn mc_full_workflow() {
     assert_eq!(resp.status(), 200);
     let list_body = resp.text().await.expect("body");
     assert!(
-        list_body.contains("<KeyCount>0</KeyCount>") ||
-        list_body.matches("<Key>").count() == 0,
+        list_body.contains("<KeyCount>0</KeyCount>") || list_body.matches("<Key>").count() == 0,
         "listing after rm should be empty or KeyCount=0"
     );
 }
@@ -279,8 +286,10 @@ async fn mc_workflow_nested_keys() {
     mc.mb("nested").await;
 
     // Create objects with "/" in key
-    mc.cp("nested", "photos/2024/sunset.jpg", b"JPEG_DATA").await;
-    mc.cp("nested", "photos/2024/sunrise.jpg", b"JPEG_DATA").await;
+    mc.cp("nested", "photos/2024/sunset.jpg", b"JPEG_DATA")
+        .await;
+    mc.cp("nested", "photos/2024/sunrise.jpg", b"JPEG_DATA")
+        .await;
     mc.cp("nested", "docs/readme.txt", b"README").await;
 
     // Read back a nested key

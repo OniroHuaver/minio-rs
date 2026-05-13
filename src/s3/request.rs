@@ -117,8 +117,12 @@ pub fn percent_decode(input: &str) -> String {
                 }
             }
             out.push('%');
-            if let Some(hi) = hi { out.push(hi as char); }
-            if let Some(lo) = lo { out.push(lo as char); }
+            if let Some(hi) = hi {
+                out.push(hi as char);
+            }
+            if let Some(lo) = lo {
+                out.push(lo as char);
+            }
         } else {
             out.push(b as char);
         }
@@ -142,10 +146,28 @@ mod tests {
 
     #[test]
     fn test_parse_range_valid() {
-        assert_eq!(parse_range("bytes=0-1023"), Some(RangeSpec::Bytes { start: 0, end: 1023 }));
-        assert_eq!(parse_range("bytes=100-200"), Some(RangeSpec::Bytes { start: 100, end: 200 }));
-        assert_eq!(parse_range("bytes=500-"), Some(RangeSpec::From { start: 500 }));
-        assert_eq!(parse_range("bytes=-100"), Some(RangeSpec::Suffix { length: 100 }));
+        assert_eq!(
+            parse_range("bytes=0-1023"),
+            Some(RangeSpec::Bytes {
+                start: 0,
+                end: 1023
+            })
+        );
+        assert_eq!(
+            parse_range("bytes=100-200"),
+            Some(RangeSpec::Bytes {
+                start: 100,
+                end: 200
+            })
+        );
+        assert_eq!(
+            parse_range("bytes=500-"),
+            Some(RangeSpec::From { start: 500 })
+        );
+        assert_eq!(
+            parse_range("bytes=-100"),
+            Some(RangeSpec::Suffix { length: 100 })
+        );
     }
 
     #[test]
@@ -168,8 +190,14 @@ mod tests {
     #[test]
     fn test_extract_metadata_content_type() {
         let mut headers = HeaderMap::new();
-        headers.insert(HeaderName::from_static("content-type"), "text/plain".parse().unwrap());
-        headers.insert(HeaderName::from_static("x-amz-meta-color"), "red".parse().unwrap());
+        headers.insert(
+            HeaderName::from_static("content-type"),
+            "text/plain".parse().unwrap(),
+        );
+        headers.insert(
+            HeaderName::from_static("x-amz-meta-color"),
+            "red".parse().unwrap(),
+        );
 
         let meta = extract_metadata(&headers);
         assert!(meta.contains(&("Content-Type".to_string(), "text/plain".to_string())));

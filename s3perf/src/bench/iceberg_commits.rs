@@ -59,33 +59,25 @@ fn spawn_update_worker(
                 "TABLE" if !tables.is_empty() => {
                     let t = &tables[idx % tables.len()];
                     idx += 1;
-                    let file = format!(
-                        "{}/{}/{}",
-                        endpoint,
-                        t.namespace.join("."),
-                        t.name
-                    );
+                    let file = format!("{}/{}/{}", endpoint, t.namespace.join("."), t.name);
                     Some((t.namespace.clone(), t.name.clone(), file))
                 }
                 "VIEW" if !views.is_empty() => {
                     let v = &views[idx % views.len()];
                     idx += 1;
-                    let file = format!(
-                        "{}/{}/{}",
-                        endpoint,
-                        v.namespace.join("."),
-                        v.name
-                    );
+                    let file = format!("{}/{}/{}", endpoint, v.namespace.join("."), v.name);
                     Some((v.namespace.clone(), v.name.clone(), file))
                 }
                 _ => None,
             };
 
             if let Some((_ns, _name, file)) = item {
-                if idx % (match worker_type {
-                    "TABLE" => table_count.max(1),
-                    _ => view_count.max(1),
-                }) == 0
+                if idx
+                    % (match worker_type {
+                        "TABLE" => table_count.max(1),
+                        _ => view_count.max(1),
+                    })
+                    == 0
                 {
                     global_id.fetch_add(1, Ordering::Relaxed);
                 }
@@ -135,12 +127,13 @@ impl Benchmark for IcebergCommitsBenchmark {
         if self.common.client_idx > 0 {
             return Ok(());
         }
-        let cat = RestCatalog::new(&self.catalog_config)
-            .map_err(|e| crate::generator::Error::S3(e))?;
+        let cat =
+            RestCatalog::new(&self.catalog_config).map_err(|e| crate::generator::Error::S3(e))?;
         let tree = Tree::new(self.tree_config.clone());
         let creator = DatasetCreator {
             catalog: Some(Arc::new(cat)),
-            catalog_pool: None, tree,
+            catalog_pool: None,
+            tree,
             catalog_uri: self.catalog_config.catalog_uri.clone(),
             access_key: self.catalog_config.access_key.clone(),
             secret_key: self.catalog_config.secret_key.clone(),
@@ -149,7 +142,9 @@ impl Benchmark for IcebergCommitsBenchmark {
             external_catalog: self.external_catalog.clone(),
             on_progress: None,
         };
-        creator.create_all(ctx).await
+        creator
+            .create_all(ctx)
+            .await
             .map_err(|e| crate::generator::Error::S3(e))?;
         Ok(())
     }
@@ -192,8 +187,10 @@ impl Benchmark for IcebergCommitsBenchmark {
                 self.tree_config.clone(),
                 self.external_catalog.clone(),
                 self.retry_config.clone(),
-                tables.len(), views.len(),
-                tables.clone(), views.clone(),
+                tables.len(),
+                views.len(),
+                tables.clone(),
+                views.clone(),
                 i,
             ));
         }
@@ -209,8 +206,10 @@ impl Benchmark for IcebergCommitsBenchmark {
                 self.tree_config.clone(),
                 self.external_catalog.clone(),
                 self.retry_config.clone(),
-                tables.len(), views.len(),
-                tables.clone(), views.clone(),
+                tables.len(),
+                views.len(),
+                tables.clone(),
+                views.clone(),
                 i + table_workers,
             ));
         }
@@ -225,13 +224,22 @@ impl Benchmark for IcebergCommitsBenchmark {
     }
 
     async fn cleanup(&self, ctx: &CancellationToken) {
-        if self.common.client_idx > 0 { return; }
-        let Ok(cat) = RestCatalog::new(&self.catalog_config) else { return };
-        let tree = self.tree.lock().unwrap().take()
+        if self.common.client_idx > 0 {
+            return;
+        }
+        let Ok(cat) = RestCatalog::new(&self.catalog_config) else {
+            return;
+        };
+        let tree = self
+            .tree
+            .lock()
+            .unwrap()
+            .take()
             .unwrap_or_else(|| Tree::new(self.tree_config.clone()));
         let creator = DatasetCreator {
             catalog: Some(Arc::new(cat)),
-            catalog_pool: None, tree,
+            catalog_pool: None,
+            tree,
             catalog_uri: self.catalog_config.catalog_uri.clone(),
             access_key: self.catalog_config.access_key.clone(),
             secret_key: self.catalog_config.secret_key.clone(),
@@ -243,6 +251,10 @@ impl Benchmark for IcebergCommitsBenchmark {
         creator.delete_all(ctx).await;
     }
 
-    fn common(&self) -> &Common { &self.common }
-    fn ops(&self) -> Vec<Operation> { self.ops.lock().unwrap().to_vec() }
+    fn common(&self) -> &Common {
+        &self.common
+    }
+    fn ops(&self) -> Vec<Operation> {
+        self.ops.lock().unwrap().to_vec()
+    }
 }

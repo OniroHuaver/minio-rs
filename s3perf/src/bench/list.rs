@@ -13,7 +13,11 @@ pub struct ListBenchmark {
 
 impl ListBenchmark {
     pub fn new(common: Common, versions: bool) -> Self {
-        Self { common, prefixes: Mutex::new(Vec::new()), versions }
+        Self {
+            common,
+            prefixes: Mutex::new(Vec::new()),
+            versions,
+        }
     }
 }
 
@@ -21,7 +25,11 @@ impl ListBenchmark {
 impl Benchmark for ListBenchmark {
     async fn prepare(&self, ctx: &CancellationToken) -> crate::generator::Result<()> {
         let client = (self.common.client_factory)(0);
-        let _ = client.create_bucket().bucket(&self.common.bucket).send().await;
+        let _ = client
+            .create_bucket()
+            .bucket(&self.common.bucket)
+            .send()
+            .await;
 
         let n_prefixes = self.common.concurrency;
         let objs_per_prefix = self.common.objects / n_prefixes.max(1);
@@ -30,7 +38,9 @@ impl Benchmark for ListBenchmark {
         let prefixes = Arc::new(Mutex::new(Vec::new()));
 
         for p in 0..n_prefixes {
-            if ctx.is_cancelled() { break; }
+            if ctx.is_cancelled() {
+                break;
+            }
             let prefix = format!("{}/dir-{:04x}/", self.common.prefix(), p);
             prefixes.lock().unwrap().push(prefix.clone());
 
@@ -43,18 +53,30 @@ impl Benchmark for ListBenchmark {
                 let mut source = (self.common.source)();
 
                 handles.push(tokio::spawn(async move {
-                    let Ok(_permit) = sem.acquire().await else { return; };
-                    if ctx.is_cancelled() { return; }
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
+                    if ctx.is_cancelled() {
+                        return;
+                    }
                     let obj = source.object();
                     let key = format!("{prefix}{}", obj.name);
                     if let Ok(body) = crate::bench::body::byte_stream_from_object(obj).await {
-                        let _ = client.put_object().bucket(&bucket).key(&key).body(body).send().await;
+                        let _ = client
+                            .put_object()
+                            .bucket(&bucket)
+                            .key(&key)
+                            .body(body)
+                            .send()
+                            .await;
                     }
                 }));
             }
         }
 
-        for h in handles { let _ = h.await; }
+        for h in handles {
+            let _ = h.await;
+        }
         *self.prefixes.lock().unwrap() = super::take_from_arc_mutex(prefixes)
             .map_err(|e| crate::generator::Error::Bench(e.to_string()))?;
         Ok(())
@@ -96,7 +118,9 @@ impl Benchmark for ListBenchmark {
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
-                    let Ok(_permit) = sem.acquire().await else { return; };
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
@@ -161,7 +185,9 @@ impl Benchmark for ListBenchmark {
             _ = ctx.cancelled() => {}
             _ = tokio::time::sleep(dur) => {}
         }
-        for h in handles { h.abort(); }
+        for h in handles {
+            h.abort();
+        }
         Ok(())
     }
 

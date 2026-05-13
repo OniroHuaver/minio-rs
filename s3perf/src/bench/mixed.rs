@@ -2,8 +2,8 @@
 
 use crate::bench::{Benchmark, Common, Operation};
 use chrono::Utc;
-use rand::Rng;
 use rand::seq::SliceRandom;
+use rand::Rng;
 use std::sync::{Arc, Mutex};
 use tokio_util::sync::CancellationToken;
 
@@ -35,13 +35,21 @@ impl MixedDistrib {
     pub fn select_op(&self, rng: &mut impl Rng) -> &str {
         let mut v: f64 = rng.gen();
         v -= self.get;
-        if v <= 0.0 { return "GET"; }
+        if v <= 0.0 {
+            return "GET";
+        }
         v -= self.stat;
-        if v <= 0.0 { return "STAT"; }
+        if v <= 0.0 {
+            return "STAT";
+        }
         v -= self.put;
-        if v <= 0.0 { return "PUT"; }
+        if v <= 0.0 {
+            return "PUT";
+        }
         v -= self.delete;
-        if v <= 0.0 { return "DELETE"; }
+        if v <= 0.0 {
+            return "DELETE";
+        }
         "GET" // fallback
     }
 
@@ -52,7 +60,12 @@ impl MixedDistrib {
 
 impl Default for MixedDistrib {
     fn default() -> Self {
-        Self { get: 0.45, stat: 0.05, put: 0.25, delete: 0.25 }
+        Self {
+            get: 0.45,
+            stat: 0.05,
+            put: 0.25,
+            delete: 0.25,
+        }
     }
 }
 
@@ -64,7 +77,11 @@ pub struct MixedBenchmark {
 
 impl MixedBenchmark {
     pub fn new(common: Common, distrib: MixedDistrib) -> Self {
-        Self { common, distrib, objects: Mutex::new(Vec::new()) }
+        Self {
+            common,
+            distrib,
+            objects: Mutex::new(Vec::new()),
+        }
     }
 }
 
@@ -73,14 +90,20 @@ impl Benchmark for MixedBenchmark {
     async fn prepare(&self, ctx: &CancellationToken) -> crate::generator::Result<()> {
         self.distrib.validate()?;
         let client = (self.common.client_factory)(0);
-        let _ = client.create_bucket().bucket(&self.common.bucket).send().await;
+        let _ = client
+            .create_bucket()
+            .bucket(&self.common.bucket)
+            .send()
+            .await;
 
         let sem = Arc::new(tokio::sync::Semaphore::new(self.common.concurrency));
         let mut handles = Vec::new();
         let keys = Arc::new(Mutex::new(Vec::new()));
 
         for _i in 0..self.common.objects {
-            if ctx.is_cancelled() { break; }
+            if ctx.is_cancelled() {
+                break;
+            }
             let client = client.clone();
             let bucket = self.common.bucket.clone();
             let sem = sem.clone();
@@ -89,17 +112,29 @@ impl Benchmark for MixedBenchmark {
             let mut source = (self.common.source)();
 
             handles.push(tokio::spawn(async move {
-                let Ok(_permit) = sem.acquire().await else { return; };
-                if ctx.is_cancelled() { return; }
+                let Ok(_permit) = sem.acquire().await else {
+                    return;
+                };
+                if ctx.is_cancelled() {
+                    return;
+                }
                 let obj = source.object();
                 let key = obj.name.clone();
                 if let Ok(body) = crate::bench::body::byte_stream_from_object(obj).await {
-                    let _ = client.put_object().bucket(&bucket).key(&key).body(body).send().await;
+                    let _ = client
+                        .put_object()
+                        .bucket(&bucket)
+                        .key(&key)
+                        .body(body)
+                        .send()
+                        .await;
                 }
                 keys.lock().unwrap().push(key);
             }));
         }
-        for h in handles { let _ = h.await; }
+        for h in handles {
+            let _ = h.await;
+        }
         *self.objects.lock().unwrap() = super::take_from_arc_mutex(keys)
             .map_err(|e| crate::generator::Error::Bench(e.to_string()))?;
         Ok(())
@@ -144,7 +179,9 @@ impl Benchmark for MixedBenchmark {
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
-                    let Ok(_permit) = sem.acquire().await else { return; };
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
@@ -235,7 +272,12 @@ impl Benchmark for MixedBenchmark {
                         }
                         "DELETE" => {
                             let key = objects.choose(&mut rng).cloned().unwrap_or_default();
-                            let res = client.delete_object().bucket(&bucket).key(&key).send().await;
+                            let res = client
+                                .delete_object()
+                                .bucket(&bucket)
+                                .key(&key)
+                                .send()
+                                .await;
                             end = Utc::now();
                             result_op_type = "DELETE";
                             file = key;
@@ -276,7 +318,9 @@ impl Benchmark for MixedBenchmark {
             _ = ctx.cancelled() => {}
             _ = tokio::time::sleep(dur) => {}
         }
-        for h in handles { h.abort(); }
+        for h in handles {
+            h.abort();
+        }
         Ok(())
     }
 
@@ -297,9 +341,16 @@ impl Benchmark for MixedBenchmark {
             let sem = sem.clone();
             let ctx = ctx.clone();
             handles.push(tokio::spawn(async move {
-                let Ok(_permit) = sem.acquire().await else { return; };
+                let Ok(_permit) = sem.acquire().await else {
+                    return;
+                };
                 if !ctx.is_cancelled() {
-                    let _ = client.delete_object().bucket(&bucket).key(&key).send().await;
+                    let _ = client
+                        .delete_object()
+                        .bucket(&bucket)
+                        .key(&key)
+                        .send()
+                        .await;
                 }
             }));
         }

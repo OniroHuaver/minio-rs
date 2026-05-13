@@ -13,7 +13,7 @@ use uuid::Uuid;
 use crate::s3::error::to_s3_error_code;
 use crate::s3::request::DeleteObjectsBody;
 use crate::s3::response::{
-    s3_error_response, s3_xml_response, DeleteErrorXml, DeleteResultXml, DeletedEntry,
+    DeleteErrorXml, DeleteResultXml, DeletedEntry, s3_error_response, s3_xml_response,
 };
 
 use crate::s3::state::AppState;
@@ -43,11 +43,7 @@ pub async fn delete_objects_handler(
         }
     };
 
-    let keys: Vec<String> = delete_req
-        .objects
-        .iter()
-        .map(|o| o.key.clone())
-        .collect();
+    let keys: Vec<String> = delete_req.objects.iter().map(|o| o.key.clone()).collect();
     let quiet = delete_req.quiet.unwrap_or(false);
 
     match state.object_api.delete_objects(&bucket, &keys).await {

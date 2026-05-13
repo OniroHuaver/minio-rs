@@ -4,9 +4,9 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::grid::connection::{auth_validate_token, Connection};
-use crate::grid::handler::{HandlerRegistry, SingleHandler};
 use crate::grid::AuthValidateFn;
+use crate::grid::connection::{Connection, auth_validate_token};
+use crate::grid::handler::{HandlerRegistry, SingleHandler};
 
 /// Configuration for Manager initialization.
 #[derive(Clone)]

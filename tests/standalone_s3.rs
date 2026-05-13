@@ -46,7 +46,10 @@ async fn standalone_list_buckets_empty() {
     let resp = client.list_buckets().await;
     assert_eq!(resp.status(), 200, "list_buckets on empty server → 200");
     let body = resp.text().await.expect("body");
-    assert!(body.contains("<ListAllMyBucketsResult"), "should be ListAllMyBucketsResult XML");
+    assert!(
+        body.contains("<ListAllMyBucketsResult"),
+        "should be ListAllMyBucketsResult XML"
+    );
     assert!(body.contains("xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\""));
 }
 
@@ -63,7 +66,10 @@ async fn standalone_list_buckets_with_data() {
     let body = resp.text().await.expect("body");
 
     for name in &["alpha", "bravo", "charlie"] {
-        assert!(body.contains(name), "list response should contain bucket `{name}`");
+        assert!(
+            body.contains(name),
+            "list response should contain bucket `{name}`"
+        );
     }
 }
 
@@ -89,7 +95,11 @@ async fn standalone_create_bucket_idempotent() {
 
     // Second creation — must return 409 BucketAlreadyExists
     let resp = client.create_bucket("dup").await;
-    assert_eq!(resp.status(), 409, "duplicate create_bucket should return 409 Conflict");
+    assert_eq!(
+        resp.status(),
+        409,
+        "duplicate create_bucket should return 409 Conflict"
+    );
 }
 
 // ============================================================================
@@ -154,9 +164,14 @@ async fn standalone_list_objects_v2_empty_bucket() {
     let resp = client.list_objects_v2("empty-list", "", "", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.expect("body");
-    assert!(body.contains("<ListBucketResult"), "should be ListBucketResult XML");
-    assert!(body.contains("<KeyCount>0</KeyCount>") || body.contains("<KeyCount>0</KeyCount>"),
-        "empty bucket should have KeyCount=0");
+    assert!(
+        body.contains("<ListBucketResult"),
+        "should be ListBucketResult XML"
+    );
+    assert!(
+        body.contains("<KeyCount>0</KeyCount>") || body.contains("<KeyCount>0</KeyCount>"),
+        "empty bucket should have KeyCount=0"
+    );
 }
 
 #[tokio::test]
@@ -199,9 +214,18 @@ async fn standalone_list_objects_v2_with_prefix() {
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.expect("body");
 
-    assert!(body.contains("alpha.txt"), "should contain alpha.txt under prefix a/");
-    assert!(body.contains("apple.txt"), "should contain apple.txt under prefix a/");
-    assert!(!body.contains("banana.txt"), "should NOT contain banana.txt under prefix a/");
+    assert!(
+        body.contains("alpha.txt"),
+        "should contain alpha.txt under prefix a/"
+    );
+    assert!(
+        body.contains("apple.txt"),
+        "should contain apple.txt under prefix a/"
+    );
+    assert!(
+        !body.contains("banana.txt"),
+        "should NOT contain banana.txt under prefix a/"
+    );
 }
 
 #[tokio::test]
@@ -209,16 +233,26 @@ async fn standalone_list_objects_v2_with_delimiter() {
     let (_server, client) = setup_standalone().await;
     create_bucket(&client, "delim-test").await;
 
-    client.put_object("delim-test", "photos/sunset.jpg", b"img").await;
-    client.put_object("delim-test", "photos/sunrise.jpg", b"img").await;
+    client
+        .put_object("delim-test", "photos/sunset.jpg", b"img")
+        .await;
+    client
+        .put_object("delim-test", "photos/sunrise.jpg", b"img")
+        .await;
     client.put_object("delim-test", "readme.txt", b"txt").await;
 
     let resp = client.list_objects_v2("delim-test", "", "/", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.expect("body");
 
-    assert!(body.contains("readme.txt"), "top-level object should appear in listing");
-    assert!(body.contains("<CommonPrefixes>"), "should have CommonPrefixes for photos/");
+    assert!(
+        body.contains("readme.txt"),
+        "top-level object should appear in listing"
+    );
+    assert!(
+        body.contains("<CommonPrefixes>"),
+        "should have CommonPrefixes for photos/"
+    );
     // NOTE: photos/sunset.jpg won't be individually listed because it's under "photos/" dir
     // and with delimiter="/", only the prefix "photos/" appears in CommonPrefixes
 }
@@ -267,7 +301,11 @@ async fn standalone_get_object_roundtrip() {
     let resp = client.get_object("roundtrip", "data.bin").await;
     assert_eq!(resp.status(), 200, "get_object → 200");
     let body = resp.bytes().await.expect("body");
-    assert_eq!(body.as_ref(), data.as_slice(), "GET data must match PUT data");
+    assert_eq!(
+        body.as_ref(),
+        data.as_slice(),
+        "GET data must match PUT data"
+    );
 }
 
 #[tokio::test]
@@ -288,7 +326,12 @@ async fn standalone_get_object_with_metadata_headers() {
 
     let data = b"metadata test data";
     let resp = client
-        .put_object_with_meta("meta-bucket", "meta.txt", data, &[("color", "red"), ("author", "alice")])
+        .put_object_with_meta(
+            "meta-bucket",
+            "meta.txt",
+            data,
+            &[("color", "red"), ("author", "alice")],
+        )
         .await;
     assert_eq!(resp.status(), 200);
 
@@ -296,8 +339,14 @@ async fn standalone_get_object_with_metadata_headers() {
     assert_eq!(resp.status(), 200);
 
     // User metadata should be returned as x-amz-meta-* headers
-    let color = resp.headers().get("x-amz-meta-color").and_then(|v| v.to_str().ok());
-    let author = resp.headers().get("x-amz-meta-author").and_then(|v| v.to_str().ok());
+    let color = resp
+        .headers()
+        .get("x-amz-meta-color")
+        .and_then(|v| v.to_str().ok());
+    let author = resp
+        .headers()
+        .get("x-amz-meta-author")
+        .and_then(|v| v.to_str().ok());
     assert_eq!(color, Some("red"), "x-amz-meta-color should be `red`");
     assert_eq!(author, Some("alice"), "x-amz-meta-author should be `alice`");
 
@@ -326,7 +375,10 @@ async fn standalone_head_object_ok() {
     assert_eq!(head_etag, put_etag, "HEAD etag must match PUT etag");
 
     // Content-Type should be set
-    let content_type = resp.headers().get("content-type").and_then(|v| v.to_str().ok());
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok());
     assert!(content_type.is_some(), "HEAD should include Content-Type");
 }
 
@@ -375,18 +427,26 @@ async fn standalone_delete_then_reput() {
     create_bucket(&client, "delete-reput").await;
 
     let original = b"original content";
-    client.put_object("delete-reput", "cycle.txt", original).await;
+    client
+        .put_object("delete-reput", "cycle.txt", original)
+        .await;
     client.delete_object("delete-reput", "cycle.txt").await;
 
     // PUT again after DELETE — overwrites xl.meta with fresh Object entry
     let new_data = b"new content after delete";
-    let resp = client.put_object("delete-reput", "cycle.txt", new_data).await;
+    let resp = client
+        .put_object("delete-reput", "cycle.txt", new_data)
+        .await;
     assert_eq!(resp.status(), 200, "re-PUT after DELETE → 200");
 
     let resp = client.get_object("delete-reput", "cycle.txt").await;
     assert_eq!(resp.status(), 200);
     let body = resp.bytes().await.expect("body");
-    assert_eq!(body.as_ref(), new_data, "re-PUT data should be the new content");
+    assert_eq!(
+        body.as_ref(),
+        new_data,
+        "re-PUT data should be the new content"
+    );
 }
 
 // ============================================================================
@@ -401,10 +461,16 @@ async fn standalone_get_object_range() {
     let data = make_data(512);
     client.put_object("range-test", "range.bin", &data).await;
 
-    let resp = client.get_object_range("range-test", "range.bin", "bytes=0-99").await;
+    let resp = client
+        .get_object_range("range-test", "range.bin", "bytes=0-99")
+        .await;
     assert_eq!(resp.status(), 206, "range GET → 206 Partial Content");
     let body = resp.bytes().await.expect("body");
-    assert_eq!(body.as_ref(), &data[..100], "range body [0,99] should match");
+    assert_eq!(
+        body.as_ref(),
+        &data[..100],
+        "range body [0,99] should match"
+    );
 }
 
 // ============================================================================

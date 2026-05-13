@@ -34,7 +34,11 @@ pub fn compare_files(before: &str, after: &str) -> anyhow::Result<()> {
             Ok(crate::aggregate::read_json_zst(&mut reader)?)
         } else if path.ends_with(".csv.zst") {
             let ops = crate::aggregate::read_csv_zst(&mut reader)?;
-            Ok(crate::aggregate::analyze(&ops, std::time::Duration::from_secs(1), 20))
+            Ok(crate::aggregate::analyze(
+                &ops,
+                std::time::Duration::from_secs(1),
+                20,
+            ))
         } else {
             anyhow::bail!("unsupported file format: {path}")
         }

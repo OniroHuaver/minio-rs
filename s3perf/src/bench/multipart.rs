@@ -10,14 +10,19 @@ use tokio_util::sync::CancellationToken;
 
 pub struct MultipartBenchmark {
     common: Common,
-    part_size: usize,   // --part.size default 5MiB
-    parts: usize,       // --parts default 200
-    obj_name: String,   // --obj.name default `s3perf-multipart.bin`
+    part_size: usize, // --part.size default 5MiB
+    parts: usize,     // --parts default 200
+    obj_name: String, // --obj.name default `s3perf-multipart.bin`
 }
 
 impl MultipartBenchmark {
     pub fn new(common: Common, part_size: usize, parts: usize, obj_name: String) -> Self {
-        Self { common, part_size, parts, obj_name }
+        Self {
+            common,
+            part_size,
+            parts,
+            obj_name,
+        }
     }
 }
 
@@ -71,7 +76,9 @@ impl Benchmark for MultipartBenchmark {
             let ctx = prepare_ctx.clone();
 
             handles.push(tokio::spawn(async move {
-                let Ok(_permit) = sem.acquire().await else { return; };
+                let Ok(_permit) = sem.acquire().await else {
+                    return;
+                };
                 if ctx.is_cancelled() {
                     return;
                 }
@@ -174,7 +181,9 @@ impl Benchmark for MultipartBenchmark {
                         break;
                     }
 
-                    let Ok(_permit) = sem.acquire().await else { return; };
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }

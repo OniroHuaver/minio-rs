@@ -6,7 +6,7 @@
 use std::sync::Arc;
 
 use crate::base::error::{MinioError, MinioResult};
-use crate::base::format::{ObjectPart, XlMeta, XlMetaEntry, XlMetaVersionHeader, VersionType};
+use crate::base::format::{ObjectPart, VersionType, XlMeta, XlMetaEntry, XlMetaVersionHeader};
 use crate::object::object_api::{
     CompletedPart, DeleteObjectsResult, ListObjectsResult, MetadataDirective, MultipartInfo,
     ObjectAPI, ObjectInfo, VersioningConfig, VersioningStatus,
@@ -54,7 +54,12 @@ impl StandaloneObjects {
         format!("{object}/data")
     }
 
-    fn build_meta(&self, _object: &str, data: &[u8], metadata: &[(String, String)]) -> MinioResult<XlMeta> {
+    fn build_meta(
+        &self,
+        _object: &str,
+        data: &[u8],
+        metadata: &[(String, String)],
+    ) -> MinioResult<XlMeta> {
         let mod_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -95,10 +100,7 @@ impl StandaloneObjects {
         header.signature = header.compute_signature()?;
 
         Ok(XlMeta {
-            versions: vec![XlMetaEntry::Object {
-                header,
-                data: None,
-            }],
+            versions: vec![XlMetaEntry::Object { header, data: None }],
         })
     }
 
@@ -131,7 +133,10 @@ impl StandaloneObjects {
     async fn read_upload_meta(&self, upload_id: &str) -> MinioResult<UploadMeta> {
         let data = self
             .disk
-            .read_all(crate::base::constants::MULTIPART_DIR, &Self::upload_meta_path(upload_id))
+            .read_all(
+                crate::base::constants::MULTIPART_DIR,
+                &Self::upload_meta_path(upload_id),
+            )
             .await
             .map_err(|_| MinioError::NoSuchUpload(upload_id.to_string()))?;
         serde_json::from_slice(&data)
@@ -178,7 +183,10 @@ impl ObjectAPI for StandaloneObjects {
 
     async fn list_buckets(&self) -> MinioResult<Vec<String>> {
         let entries = self.disk.list_dir("", "", 0).await?;
-        Ok(entries.into_iter().filter(|e| !e.starts_with('.')).collect())
+        Ok(entries
+            .into_iter()
+            .filter(|e| !e.starts_with('.'))
+            .collect())
     }
 
     async fn bucket_exists(&self, bucket: &str) -> MinioResult<bool> {
@@ -188,10 +196,8 @@ impl ObjectAPI for StandaloneObjects {
     async fn get_bucket_versioning(&self, bucket: &str) -> MinioResult<Option<VersioningConfig>> {
         let path = format!(".minio.sys/buckets/{bucket}/versioning.json");
         match self.disk.read_all("", &path).await {
-            Ok(data) => {
-                serde_json::from_slice(&data)
-                    .map_err(|e| MinioError::Internal(format!("versioning config: {e}")))
-            }
+            Ok(data) => serde_json::from_slice(&data)
+                .map_err(|e| MinioError::Internal(format!("versioning config: {e}"))),
             Err(MinioError::DiskIO(e)) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
             Err(e) => Err(e),
         }
@@ -202,12 +208,16 @@ impl ObjectAPI for StandaloneObjects {
             status: match status {
                 "Enabled" => VersioningStatus::Enabled,
                 "Suspended" => VersioningStatus::Suspended,
-                _ => return Err(MinioError::Internal(format!("invalid versioning status: {status}"))),
+                _ => {
+                    return Err(MinioError::Internal(format!(
+                        "invalid versioning status: {status}"
+                    )));
+                }
             },
         };
         let path = format!(".minio.sys/buckets/{bucket}/versioning.json");
-        let data = serde_json::to_vec(&config)
-            .map_err(|e| MinioError::Internal(format!("json: {e}")))?;
+        let data =
+            serde_json::to_vec(&config).map_err(|e| MinioError::Internal(format!("json: {e}")))?;
         self.disk.write_all("", &path, &data).await
     }
 
@@ -223,8 +233,12 @@ impl ObjectAPI for StandaloneObjects {
         let meta = self.build_meta(object, data, metadata)?;
         let meta_bytes = meta.to_bytes()?;
 
-        self.disk.write_all(bucket, &Self::data_path(object), data).await?;
-        self.disk.write_all(bucket, &Self::meta_path(object), &meta_bytes).await?;
+        self.disk
+            .write_all(bucket, &Self::data_path(object), data)
+            .await?;
+        self.disk
+            .write_all(bucket, &Self::meta_path(object), &meta_bytes)
+            .await?;
 
         let header = match &meta.versions[0] {
             XlMetaEntry::Object { header, .. } => header,
@@ -236,13 +250,18 @@ impl ObjectAPI for StandaloneObjects {
             name: object.to_string(),
             version_id: header.version_id.clone(),
             size: data.len() as i64,
-            etag: header.parts.first().map_or(String::new(), |p| p.etag.clone()),
+            etag: header
+                .parts
+                .first()
+                .map_or(String::new(), |p| p.etag.clone()),
             mod_time: header.mod_time,
-            content_type: metadata.iter()
+            content_type: metadata
+                .iter()
                 .find(|(k, _)| k.eq_ignore_ascii_case("Content-Type"))
                 .map(|(_, v)| v.clone())
                 .unwrap_or_else(|| "application/octet-stream".into()),
-            user_metadata: metadata.iter()
+            user_metadata: metadata
+                .iter()
                 .filter(|(k, _)| !k.eq_ignore_ascii_case("Content-Type"))
                 .cloned()
                 .collect(),
@@ -269,7 +288,8 @@ impl ObjectAPI for StandaloneObjects {
             }
             MetadataDirective::Replace => metadata.to_vec(),
         };
-        self.put_object(dst_bucket, dst_object, &data, &final_metadata).await
+        self.put_object(dst_bucket, dst_object, &data, &final_metadata)
+            .await
     }
 
     async fn new_multipart_upload(
@@ -366,9 +386,9 @@ impl ObjectAPI for StandaloneObjects {
             }
             prev_number = cp.part_number;
 
-            let up = uploaded
-                .get(&cp.part_number)
-                .ok_or_else(|| MinioError::InvalidPart(format!("part {} not uploaded", cp.part_number)))?;
+            let up = uploaded.get(&cp.part_number).ok_or_else(|| {
+                MinioError::InvalidPart(format!("part {} not uploaded", cp.part_number))
+            })?;
 
             if up.etag != cp.etag {
                 return Err(MinioError::InvalidPart(format!(
@@ -403,7 +423,9 @@ impl ObjectAPI for StandaloneObjects {
                     &Self::part_path(upload_id, cp.part_number),
                 )
                 .await
-                .map_err(|_| MinioError::InvalidPart(format!("cannot read part {}", cp.part_number)))?;
+                .map_err(|_| {
+                    MinioError::InvalidPart(format!("cannot read part {}", cp.part_number))
+                })?;
             data.extend_from_slice(&part_bytes);
         }
 
@@ -418,8 +440,7 @@ impl ObjectAPI for StandaloneObjects {
             use md5::{Digest, Md5};
             let mut concat = Vec::with_capacity(16 * parts.len());
             for part in &meta.parts {
-                let bin = hex::decode(&part.etag)
-                    .unwrap_or_default();
+                let bin = hex::decode(&part.etag).unwrap_or_default();
                 if bin.len() == 16 {
                     concat.extend_from_slice(&bin);
                 }
@@ -429,8 +450,7 @@ impl ObjectAPI for StandaloneObjects {
             format!("{:x}-{}", h.finalize(), parts.len())
         };
 
-        let mut header =
-            XlMetaVersionHeader::new(uuid::Uuid::now_v7().to_string());
+        let mut header = XlMetaVersionHeader::new(uuid::Uuid::now_v7().to_string());
         header.mod_time = mod_time;
         header.erasure_algorithm = 0;
         header.erasure_m = 1;
@@ -491,12 +511,14 @@ impl ObjectAPI for StandaloneObjects {
             size: total_size,
             etag,
             mod_time: header.mod_time,
-            content_type: meta.metadata
+            content_type: meta
+                .metadata
                 .iter()
                 .find(|(k, _)| k.eq_ignore_ascii_case("Content-Type"))
                 .map(|(_, v)| v.clone())
                 .unwrap_or_else(|| "application/octet-stream".into()),
-            user_metadata: meta.metadata
+            user_metadata: meta
+                .metadata
                 .iter()
                 .filter(|(k, _)| !k.eq_ignore_ascii_case("Content-Type"))
                 .cloned()
@@ -533,11 +555,17 @@ impl ObjectAPI for StandaloneObjects {
     }
 
     async fn get_object(&self, bucket: &str, object: &str) -> MinioResult<(Vec<u8>, ObjectInfo)> {
-        let meta_bytes = self.disk.read_all(bucket, &Self::meta_path(object)).await
+        let meta_bytes = self
+            .disk
+            .read_all(bucket, &Self::meta_path(object))
+            .await
             .map_err(|e| map_not_found(e, bucket, object))?;
         let (header, _) = self.read_meta(&meta_bytes)?;
 
-        let data = self.disk.read_all(bucket, &Self::data_path(object)).await
+        let data = self
+            .disk
+            .read_all(bucket, &Self::data_path(object))
+            .await
             .map_err(|e| map_not_found(e, bucket, object))?;
 
         let info = ObjectInfo {
@@ -545,13 +573,20 @@ impl ObjectAPI for StandaloneObjects {
             name: object.to_string(),
             version_id: header.version_id.clone(),
             size: data.len() as i64,
-            etag: header.parts.first().map_or(String::new(), |p| p.etag.clone()),
+            etag: header
+                .parts
+                .first()
+                .map_or(String::new(), |p| p.etag.clone()),
             mod_time: header.mod_time,
-            content_type: header.meta_sys.iter()
+            content_type: header
+                .meta_sys
+                .iter()
                 .find(|(k, _)| k == "content-type")
                 .map(|(_, v)| String::from_utf8_lossy(v).to_string())
                 .unwrap_or_else(|| "application/octet-stream".into()),
-            user_metadata: header.meta_user.iter()
+            user_metadata: header
+                .meta_user
+                .iter()
                 .map(|(k, v)| (k.clone(), String::from_utf8_lossy(v).to_string()))
                 .collect(),
         };
@@ -566,7 +601,9 @@ impl ObjectAPI for StandaloneObjects {
         length: i64,
     ) -> MinioResult<(Vec<u8>, ObjectInfo)> {
         // Read metadata first (small), then stream only the requested byte range.
-        let info = self.stat_object(bucket, object).await
+        let info = self
+            .stat_object(bucket, object)
+            .await
             .map_err(|e| map_not_found(e, bucket, object))?;
         let data = self
             .disk
@@ -577,7 +614,10 @@ impl ObjectAPI for StandaloneObjects {
     }
 
     async fn stat_object(&self, bucket: &str, object: &str) -> MinioResult<ObjectInfo> {
-        let meta_bytes = self.disk.read_all(bucket, &Self::meta_path(object)).await
+        let meta_bytes = self
+            .disk
+            .read_all(bucket, &Self::meta_path(object))
+            .await
             .map_err(|e| map_not_found(e, bucket, object))?;
         let (header, _) = self.read_meta(&meta_bytes)?;
 
@@ -586,13 +626,20 @@ impl ObjectAPI for StandaloneObjects {
             name: object.to_string(),
             version_id: header.version_id.clone(),
             size: header.parts.iter().map(|p| p.actual_size).sum(),
-            etag: header.parts.first().map_or(String::new(), |p| p.etag.clone()),
+            etag: header
+                .parts
+                .first()
+                .map_or(String::new(), |p| p.etag.clone()),
             mod_time: header.mod_time,
-            content_type: header.meta_sys.iter()
+            content_type: header
+                .meta_sys
+                .iter()
                 .find(|(k, _)| k == "content-type")
                 .map(|(_, v)| String::from_utf8_lossy(v).to_string())
                 .unwrap_or_else(|| "application/octet-stream".into()),
-            user_metadata: header.meta_user.iter()
+            user_metadata: header
+                .meta_user
+                .iter()
                 .map(|(k, v)| (k.clone(), String::from_utf8_lossy(v).to_string()))
                 .collect(),
         })
@@ -616,7 +663,9 @@ impl ObjectAPI for StandaloneObjects {
         // Read existing meta, append delete marker
         let mut meta = match self.disk.read_all(bucket, &Self::meta_path(object)).await {
             Ok(bytes) => XlMeta::from_bytes(&bytes)?,
-            Err(_) => XlMeta { versions: Vec::new() },
+            Err(_) => XlMeta {
+                versions: Vec::new(),
+            },
         };
 
         meta.versions.push(XlMetaEntry::Delete {
@@ -627,7 +676,9 @@ impl ObjectAPI for StandaloneObjects {
         });
 
         let meta_bytes = meta.to_bytes()?;
-        self.disk.write_all(bucket, &Self::meta_path(object), &meta_bytes).await?;
+        self.disk
+            .write_all(bucket, &Self::meta_path(object), &meta_bytes)
+            .await?;
         Ok(())
     }
 
@@ -672,7 +723,11 @@ impl ObjectAPI for StandaloneObjects {
             .unwrap_or_default();
 
         // Read a generous buffer to support pagination filtering
-        let buffer_size = if max_keys > 0 { (max_keys + 1) * 2 } else { 2000 };
+        let buffer_size = if max_keys > 0 {
+            (max_keys + 1) * 2
+        } else {
+            2000
+        };
         let effective_max = if max_keys == 0 { 1000 } else { max_keys };
 
         let mut entries = self.disk.list_dir(bucket, prefix, buffer_size).await?;
@@ -702,7 +757,9 @@ impl ObjectAPI for StandaloneObjects {
                 Ok(stat) if !stat.is_dir => {
                     if let Ok(bytes) = self.disk.read_all(bucket, &meta_path).await {
                         if let Ok(meta) = XlMeta::from_bytes(&bytes) {
-                            let is_deleted = meta.versions.iter()
+                            let is_deleted = meta
+                                .versions
+                                .iter()
                                 .rev()
                                 .next()
                                 .map(|v| matches!(v, XlMetaEntry::Delete { .. }))
@@ -710,7 +767,9 @@ impl ObjectAPI for StandaloneObjects {
                             if is_deleted {
                                 continue;
                             }
-                            if let Some(XlMetaEntry::Object { header, .. }) = meta.versions.iter()
+                            if let Some(XlMetaEntry::Object { header, .. }) = meta
+                                .versions
+                                .iter()
                                 .rev()
                                 .find(|v| matches!(v, XlMetaEntry::Object { .. }))
                             {
@@ -720,7 +779,10 @@ impl ObjectAPI for StandaloneObjects {
                                     name: obj_path,
                                     version_id: header.version_id.clone(),
                                     size: header.parts.iter().map(|p| p.actual_size).sum(),
-                                    etag: header.parts.first().map_or(String::new(), |p| p.etag.clone()),
+                                    etag: header
+                                        .parts
+                                        .first()
+                                        .map_or(String::new(), |p| p.etag.clone()),
                                     mod_time: header.mod_time,
                                     content_type: "application/octet-stream".into(),
                                     user_metadata: Vec::new(),

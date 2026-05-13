@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use crate::s3::error::to_s3_error_code;
 use crate::s3::response::{
-    s3_error_response, s3_xml_response, VersioningConfigurationXml, S3_XMLNS,
+    S3_XMLNS, VersioningConfigurationXml, s3_error_response, s3_xml_response,
 };
 use crate::s3::state::AppState;
 
@@ -86,7 +86,11 @@ pub async fn put_bucket_versioning_handler(
         }
     };
 
-    match state.object_api.set_bucket_versioning(&bucket, &input.status).await {
+    match state
+        .object_api
+        .set_bucket_versioning(&bucket, &input.status)
+        .await
+    {
         Ok(()) => {
             tracing::debug!("put_bucket_versioning: {} status={}", bucket, input.status);
             (StatusCode::OK, axum::http::HeaderMap::new(), String::new()).into_response()

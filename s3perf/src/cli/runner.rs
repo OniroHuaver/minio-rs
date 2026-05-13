@@ -46,9 +46,15 @@ pub async fn run_put(
     use_post: bool,
 ) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
-    let checksum_type = crate::bench::checksum::ChecksumType::from_cli_flag(
-        checksum.as_deref().unwrap_or(""),
-    ).or_else(|| if md5 { Some(crate::bench::checksum::ChecksumType::MD5) } else { None });
+    let checksum_type =
+        crate::bench::checksum::ChecksumType::from_cli_flag(checksum.as_deref().unwrap_or(""))
+            .or_else(|| {
+                if md5 {
+                    Some(crate::bench::checksum::ChecksumType::MD5)
+                } else {
+                    None
+                }
+            });
 
     let mut common = bc.build_common(collector, "s3perf-put");
     common.objects = 0;
@@ -58,10 +64,7 @@ pub async fn run_put(
 }
 
 /// Run DELETE.
-pub async fn run_delete(
-    bc: &BenchConfig,
-    batch_size: usize,
-) -> anyhow::Result<Aggregated> {
+pub async fn run_delete(bc: &BenchConfig, batch_size: usize) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let common = bc.build_common(collector, "s3perf-del");
     let bm = DeleteBenchmark::new(common, batch_size);
@@ -69,10 +72,7 @@ pub async fn run_delete(
 }
 
 /// Run LIST.
-pub async fn run_list(
-    bc: &BenchConfig,
-    versions: bool,
-) -> anyhow::Result<Aggregated> {
+pub async fn run_list(bc: &BenchConfig, versions: bool) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-list");
     common.versioned = versions;
@@ -125,16 +125,18 @@ pub async fn run_versioned(
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-ver");
     common.versioned = true;
-    let dist = VersionedDistrib { get: get_distrib, stat: stat_distrib, put: put_distrib, delete: delete_distrib };
+    let dist = VersionedDistrib {
+        get: get_distrib,
+        stat: stat_distrib,
+        put: put_distrib,
+        delete: delete_distrib,
+    };
     let bm = VersionedBenchmark::new(common, dist);
     run_benchmark(Arc::new(bm)).await
 }
 
 /// Run retention / object-lock workloads.
-pub async fn run_retention(
-    bc: &BenchConfig,
-    versions: usize,
-) -> anyhow::Result<Aggregated> {
+pub async fn run_retention(bc: &BenchConfig, versions: usize) -> anyhow::Result<Aggregated> {
     use crate::bench::retention::RetentionBenchmark;
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-ret");
@@ -176,10 +178,7 @@ pub async fn run_multipart_put(
 }
 
 /// Run snowball Tar uploads.
-pub async fn run_snowball(
-    bc: &BenchConfig,
-    objs_per: usize,
-) -> anyhow::Result<Aggregated> {
+pub async fn run_snowball(bc: &BenchConfig, objs_per: usize) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-sb");
     common.objects = 0;
@@ -192,10 +191,7 @@ pub async fn run_snowball(
 }
 
 /// Run fan-out copy workload.
-pub async fn run_fanout(
-    bc: &BenchConfig,
-    copies: usize,
-) -> anyhow::Result<Aggregated> {
+pub async fn run_fanout(bc: &BenchConfig, copies: usize) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-fo");
     common.objects = 0;
@@ -223,10 +219,7 @@ pub async fn run_append(bc: &BenchConfig) -> anyhow::Result<Aggregated> {
 }
 
 /// Run in-memory ZIP upload workload.
-pub async fn run_zip(
-    bc: &BenchConfig,
-    entries: usize,
-) -> anyhow::Result<Aggregated> {
+pub async fn run_zip(bc: &BenchConfig, entries: usize) -> anyhow::Result<Aggregated> {
     let collector = collector_with_optional_influx()?;
     let mut common = bc.build_common(collector, "s3perf-zip");
     common.objects = 0;
@@ -240,8 +233,7 @@ pub async fn execute_run_yaml(cfg: crate::config::RunFileConfig) -> anyhow::Resu
     use crate::bench::sse::SseConfig;
     use crate::cli::app::{parse_duration, parse_obj_size, parse_size};
 
-    cfg.validate()
-        .map_err(|e| anyhow::anyhow!("{e}"))?;
+    cfg.validate().map_err(|e| anyhow::anyhow!("{e}"))?;
     let r = &cfg.s3perf.remote;
     let p = &cfg.s3perf.params;
     let s3_config = S3Config {
@@ -260,14 +252,21 @@ pub async fn execute_run_yaml(cfg: crate::config::RunFileConfig) -> anyhow::Resu
         let max = match &obj_size {
             ObjSize::Fixed(s) => *s,
             ObjSize::Random { max: m } => *m,
-            ObjSize::Bucketed { buckets, .. } => buckets.first().map(|(s, _)| *s).unwrap_or(1 << 20),
+            ObjSize::Bucketed { buckets, .. } => {
+                buckets.first().map(|(s, _)| *s).unwrap_or(1 << 20)
+            }
         };
         obj_size = ObjSize::Random { max };
     }
     let autoterm_dur = parse_duration(&p.autoterm.dur).map_err(|e| anyhow::anyhow!(e))?;
     let dist = p.distribution.as_ref();
     let (g, st, pu, del) = match dist {
-        Some(d) => (d.get / 100.0, d.stat / 100.0, d.put / 100.0, d.delete / 100.0),
+        Some(d) => (
+            d.get / 100.0,
+            d.stat / 100.0,
+            d.put / 100.0,
+            d.delete / 100.0,
+        ),
         None => (0.45, 0.05, 0.25, 0.25),
     };
     let ps = parse_size("5MiB").map_err(|e| anyhow::anyhow!(e))? as usize;
@@ -301,12 +300,8 @@ pub async fn execute_run_yaml(cfg: crate::config::RunFileConfig) -> anyhow::Resu
         "list" => run_list(&bc, p.versions > 1).await,
         "stat" => run_stat(&bc).await,
         "versioned" => run_versioned(&bc, g, st, pu, del).await,
-        "retention" => {
-            run_retention(&bc, if p.versions > 0 { p.versions } else { 5 }).await
-        }
-        "multipart" => {
-            run_multipart(&bc, ps, 200, "s3perf-multipart.bin".into()).await
-        }
+        "retention" => run_retention(&bc, if p.versions > 0 { p.versions } else { 5 }).await,
+        "multipart" => run_multipart(&bc, ps, 200, "s3perf-multipart.bin".into()).await,
         "multipart-put" => run_multipart_put(&bc, 8, ps, 4).await,
         "snowball" => run_snowball(&bc, 4).await,
         "fanout" => run_fanout(&bc, 4).await,
@@ -371,23 +366,16 @@ pub async fn run_benchmark(bm: Arc<dyn Benchmark>) -> anyhow::Result<Aggregated>
 
     // Optional auto-stop based on throughput stability
     let ctx = if let Some(autoterm_dur) = common.auto_term_dur {
-        common.collector.auto_term(
-            ctx,
-            "",
-            common.auto_term_scale,
-            100,
-            25,
-            autoterm_dur,
-        )
+        common
+            .collector
+            .auto_term(ctx, "", common.auto_term_scale, 100, 25, autoterm_dur)
     } else {
         ctx
     };
 
     let bm_clone = Arc::clone(&bm);
     let bench_ctx = ctx.clone();
-    let mut bench_handle = tokio::spawn(async move {
-        bm_clone.start(&bench_ctx, wait_rx).await
-    });
+    let mut bench_handle = tokio::spawn(async move { bm_clone.start(&bench_ctx, wait_rx).await });
 
     if let Some((ref st, _)) = tui_state {
         st.set_progress(0.4);
@@ -429,7 +417,10 @@ pub async fn run_benchmark(bm: Arc<dyn Benchmark>) -> anyhow::Result<Aggregated>
     eprintln!("  successful: {}", ok_ops.len());
     eprintln!("  failed: {}", err_ops.len());
     if let Some(th) = &agg.mixed_server_stats {
-        eprintln!("  throughput: {:.2} MiB/s, {:.2} obj/s", th.avg_mbps, th.avg_ops);
+        eprintln!(
+            "  throughput: {:.2} MiB/s, {:.2} obj/s",
+            th.avg_mbps, th.avg_ops
+        );
         eprintln!("  wall time: {:.1}s", th.duration_secs);
     }
     eprintln!();
@@ -437,8 +428,7 @@ pub async fn run_benchmark(bm: Arc<dyn Benchmark>) -> anyhow::Result<Aggregated>
         eprintln!("  [{}]", op_analysis.op_type);
         eprintln!(
             "    throughput: {:.2} MiB/s, {:.2} obj/s",
-            op_analysis.throughput.avg_mbps,
-            op_analysis.throughput.avg_ops,
+            op_analysis.throughput.avg_mbps, op_analysis.throughput.avg_ops,
         );
         if let Some(ss) = &op_analysis.single_sized {
             eprintln!(

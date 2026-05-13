@@ -99,7 +99,9 @@ async fn concurrent_put_and_get() {
     let client = Arc::new(client);
 
     // PUT one object first for readers
-    client.put_object("con-mixed", "reader-target.bin", &make_data(4096)).await;
+    client
+        .put_object("con-mixed", "reader-target.bin", &make_data(4096))
+        .await;
 
     let mut handles = vec![];
 
@@ -117,7 +119,9 @@ async fn concurrent_put_and_get() {
     for _ in 0..8 {
         let c = client.clone();
         handles.push(tokio::spawn(async move {
-            c.get_object("con-mixed", "reader-target.bin").await.status()
+            c.get_object("con-mixed", "reader-target.bin")
+                .await
+                .status()
         }));
     }
 
@@ -135,7 +139,9 @@ async fn concurrent_put_and_get() {
 async fn concurrent_heads() {
     let (_server, client) = setup().await;
     create_bucket(&client, "con-head").await;
-    client.put_object("con-head", "head-target.txt", b"head me").await;
+    client
+        .put_object("con-head", "head-target.txt", b"head me")
+        .await;
 
     let client = Arc::new(client);
     let mut handles = vec![];
@@ -213,7 +219,10 @@ async fn concurrent_put_same_key_last_writer_wins() {
         let c = client.clone();
         let data = format!("writer {:02} content", i).into_bytes();
         handles.push(tokio::spawn(async move {
-            (c.put_object("con-same", "shared.txt", &data).await.status(), data)
+            (
+                c.put_object("con-same", "shared.txt", &data).await.status(),
+                data,
+            )
         }));
     }
 

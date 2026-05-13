@@ -41,13 +41,16 @@ impl Benchmark for IcebergSustainedBenchmark {
         *self.tables.lock().unwrap() = tree.all_tables();
         *self.tree.lock().unwrap() = Some(tree);
 
-        if self.common.client_idx > 0 { return Ok(()); }
-        let cat = RestCatalog::new(&self.catalog_config)
-            .map_err(|e| crate::generator::Error::S3(e))?;
+        if self.common.client_idx > 0 {
+            return Ok(());
+        }
+        let cat =
+            RestCatalog::new(&self.catalog_config).map_err(|e| crate::generator::Error::S3(e))?;
         let tree = Tree::new(self.tree_config.clone());
         let creator = DatasetCreator {
             catalog: Some(Arc::new(cat)),
-            catalog_pool: None, tree,
+            catalog_pool: None,
+            tree,
             catalog_uri: self.catalog_config.catalog_uri.clone(),
             access_key: self.catalog_config.access_key.clone(),
             secret_key: self.catalog_config.secret_key.clone(),
@@ -56,7 +59,9 @@ impl Benchmark for IcebergSustainedBenchmark {
             external_catalog: self.external_catalog.clone(),
             on_progress: None,
         };
-        creator.create_all(ctx).await
+        creator
+            .create_all(ctx)
+            .await
             .map_err(|e| crate::generator::Error::S3(e))?;
         // TODO: Generate/download parquet data files, upload if skip_upload
         Ok(())
@@ -84,19 +89,28 @@ impl Benchmark for IcebergSustainedBenchmark {
             handles.push(tokio::spawn(async move {
                 let mut tbl_idx = thread % tables.len().max(1);
                 loop {
-                    if ctx.is_cancelled() { break; }
+                    if ctx.is_cancelled() {
+                        break;
+                    }
 
                     let tbl = &tables[tbl_idx % tables.len()];
                     tbl_idx += 1;
 
                     let now = Utc::now();
                     let op = Operation {
-                        start: now, end: now, first_byte: None, last_byte: None,
-                        op_type: "COMMIT".into(), err: String::new(),
+                        start: now,
+                        end: now,
+                        first_byte: None,
+                        last_byte: None,
+                        op_type: "COMMIT".into(),
+                        err: String::new(),
                         file: format!("{}/{}/{}", catalog_name, tbl.namespace.join("."), tbl.name),
                         client_id: format!("c{}", thread),
                         endpoint: catalog_name.clone(),
-                        obj_per_op: 1, size: 0, thread: thread as u32, categories: 0,
+                        obj_per_op: 1,
+                        size: 0,
+                        thread: thread as u32,
+                        categories: 0,
                     };
                     // TODO: actual commit with parquet files
                     let _ = collector.sender().send(op);
@@ -116,19 +130,32 @@ impl Benchmark for IcebergSustainedBenchmark {
                 handles.push(tokio::spawn(async move {
                     let mut tbl_idx = thread % tables.len().max(1);
                     loop {
-                        if ctx.is_cancelled() { break; }
+                        if ctx.is_cancelled() {
+                            break;
+                        }
                         let tbl = &tables[tbl_idx % tables.len()];
                         tbl_idx += 1;
 
                         let now = Utc::now();
                         let op = Operation {
-                            start: now, end: now, first_byte: None, last_byte: None,
-                            op_type: "TABLE_GET".into(), err: String::new(),
-                            file: format!("{}/{}/{}", catalog_name, tbl.namespace.join("."), tbl.name),
+                            start: now,
+                            end: now,
+                            first_byte: None,
+                            last_byte: None,
+                            op_type: "TABLE_GET".into(),
+                            err: String::new(),
+                            file: format!(
+                                "{}/{}/{}",
+                                catalog_name,
+                                tbl.namespace.join("."),
+                                tbl.name
+                            ),
                             client_id: format!("cr{}", thread),
                             endpoint: catalog_name.clone(),
-                            obj_per_op: 1, size: 0,
-                            thread: (thread + concurrency) as u32, categories: 0,
+                            obj_per_op: 1,
+                            size: 0,
+                            thread: (thread + concurrency) as u32,
+                            categories: 0,
                         };
                         let _ = collector.sender().send(op);
                         tokio::task::yield_now().await;
@@ -139,18 +166,29 @@ impl Benchmark for IcebergSustainedBenchmark {
 
         tokio::time::sleep(self.common.duration).await;
         ctx.cancel();
-        for h in handles { let _ = h.await; }
+        for h in handles {
+            let _ = h.await;
+        }
         Ok(())
     }
 
     async fn cleanup(&self, ctx: &CancellationToken) {
-        if self.common.client_idx > 0 { return; }
-        let Ok(cat) = RestCatalog::new(&self.catalog_config) else { return };
-        let tree = self.tree.lock().unwrap().take()
+        if self.common.client_idx > 0 {
+            return;
+        }
+        let Ok(cat) = RestCatalog::new(&self.catalog_config) else {
+            return;
+        };
+        let tree = self
+            .tree
+            .lock()
+            .unwrap()
+            .take()
             .unwrap_or_else(|| Tree::new(self.tree_config.clone()));
         let creator = DatasetCreator {
             catalog: Some(Arc::new(cat)),
-            catalog_pool: None, tree,
+            catalog_pool: None,
+            tree,
             catalog_uri: self.catalog_config.catalog_uri.clone(),
             access_key: self.catalog_config.access_key.clone(),
             secret_key: self.catalog_config.secret_key.clone(),
@@ -162,6 +200,10 @@ impl Benchmark for IcebergSustainedBenchmark {
         creator.delete_all(ctx).await;
     }
 
-    fn common(&self) -> &Common { &self.common }
-    fn ops(&self) -> Vec<Operation> { self.ops.lock().unwrap().to_vec() }
+    fn common(&self) -> &Common {
+        &self.common
+    }
+    fn ops(&self) -> Vec<Operation> {
+        self.ops.lock().unwrap().to_vec()
+    }
 }

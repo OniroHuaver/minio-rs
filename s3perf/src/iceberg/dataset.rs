@@ -49,10 +49,7 @@ impl DatasetCreator {
     }
 
     /// CreateAll: 创建 warehouse → namespaces → tables → views
-    pub async fn create_all(
-        &self,
-        ctx: &CancellationToken,
-    ) -> Result<(), String> {
+    pub async fn create_all(&self, ctx: &CancellationToken) -> Result<(), String> {
         let cfg = self.tree.config();
 
         // Step 0: Ensure warehouse (AIStor Tables only)
@@ -133,18 +130,12 @@ impl DatasetCreator {
             // Synchronous creation using first catalog
             for tbl in &self.tree.all_tables() {
                 tokio::select! {
-                _ = ctx.cancelled() => return Err("cancelled".into()),
-                _ = tokio::time::sleep(std::time::Duration::ZERO) => {},
-            }
+                    _ = ctx.cancelled() => return Err("cancelled".into()),
+                    _ = tokio::time::sleep(std::time::Duration::ZERO) => {},
+                }
                 let cat = self.get_catalog()?;
                 let _ = cat
-                    .create_table(
-                        &tbl.namespace,
-                        &tbl.name,
-                        &schema,
-                        &props,
-                        &tbl.location,
-                    )
+                    .create_table(&tbl.namespace, &tbl.name, &schema, &props, &tbl.location)
                     .await;
             }
         }
@@ -156,9 +147,9 @@ impl DatasetCreator {
             let props = build_properties(cfg.properties, "view_prop");
             for vw in &self.tree.all_views() {
                 tokio::select! {
-                _ = ctx.cancelled() => return Err("cancelled".into()),
-                _ = tokio::time::sleep(std::time::Duration::ZERO) => {},
-            }
+                    _ = ctx.cancelled() => return Err("cancelled".into()),
+                    _ = tokio::time::sleep(std::time::Duration::ZERO) => {},
+                }
                 let cat = self.get_catalog()?;
                 let version = build_iceberg_view_version(&vw.namespace, &vw.name);
                 let _ = cat
@@ -217,9 +208,7 @@ impl DatasetCreator {
         }
 
         // Delete warehouse (AIStor only)
-        if self.external_catalog == ExternalCatalogType::None
-            && !self.catalog_uri.is_empty()
-        {
+        if self.external_catalog == ExternalCatalogType::None && !self.catalog_uri.is_empty() {
             let _ = warehouse::delete_warehouse(&CatalogConfig {
                 catalog_uri: self.catalog_uri.clone(),
                 warehouse: cfg.catalog_name.clone(),
@@ -240,8 +229,6 @@ pub struct IsAlreadyExists;
 impl IsAlreadyExists {
     pub fn check(err: &str) -> bool {
         let s = err.to_lowercase();
-        s.contains("alreadyexists")
-            || s.contains("already exists")
-            || s.contains("conflict")
+        s.contains("alreadyexists") || s.contains("already exists") || s.contains("conflict")
     }
 }

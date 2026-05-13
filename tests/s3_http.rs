@@ -26,7 +26,9 @@ async fn list_buckets_content_type() {
     let resp = client.list_buckets().await;
     assert_eq!(resp.status(), 200);
     assert_eq!(
-        resp.headers().get("content-type").and_then(|v| v.to_str().ok()),
+        resp.headers()
+            .get("content-type")
+            .and_then(|v| v.to_str().ok()),
         Some("application/xml")
     );
 }
@@ -38,7 +40,9 @@ async fn list_objects_content_type() {
     let resp = client.list_objects_v2("ct-list", "", "", 0).await;
     assert_eq!(resp.status(), 200);
     assert_eq!(
-        resp.headers().get("content-type").and_then(|v| v.to_str().ok()),
+        resp.headers()
+            .get("content-type")
+            .and_then(|v| v.to_str().ok()),
         Some("application/xml")
     );
 }
@@ -50,7 +54,9 @@ async fn error_response_content_type() {
     let resp = client.get_object("ct-err", "nope.txt").await;
     assert_eq!(resp.status(), 404);
     assert_eq!(
-        resp.headers().get("content-type").and_then(|v| v.to_str().ok()),
+        resp.headers()
+            .get("content-type")
+            .and_then(|v| v.to_str().ok()),
         Some("application/xml")
     );
 }
@@ -62,7 +68,10 @@ async fn get_object_content_type() {
     client.put_object("ct-obj", "file.txt", b"hello").await;
     let resp = client.get_object("ct-obj", "file.txt").await;
     assert_eq!(resp.status(), 200);
-    assert!(resp.headers().get("content-type").is_some(), "GET object should have Content-Type");
+    assert!(
+        resp.headers().get("content-type").is_some(),
+        "GET object should have Content-Type"
+    );
 }
 
 // ============================================================================
@@ -130,16 +139,29 @@ async fn put_response_has_etag() {
 async fn get_response_has_required_headers() {
     let (_server, client) = setup().await;
     create_bucket(&client, "resp-hdr").await;
-    client.put_object("resp-hdr", "headers.txt", b"content").await;
+    client
+        .put_object("resp-hdr", "headers.txt", b"content")
+        .await;
 
     let resp = client.get_object("resp-hdr", "headers.txt").await;
     assert_eq!(resp.status(), 200);
     assert!(resp.headers().get("etag").is_some(), "GET should have ETag");
-    assert!(resp.headers().get("content-type").is_some(), "GET should have Content-Type");
-    assert!(resp.headers().get("last-modified").is_some(), "GET should have Last-Modified");
-    assert!(resp.headers().get("content-length").is_some(), "GET should have Content-Length");
+    assert!(
+        resp.headers().get("content-type").is_some(),
+        "GET should have Content-Type"
+    );
+    assert!(
+        resp.headers().get("last-modified").is_some(),
+        "GET should have Last-Modified"
+    );
+    assert!(
+        resp.headers().get("content-length").is_some(),
+        "GET should have Content-Length"
+    );
     assert_eq!(
-        resp.headers().get("cache-control").and_then(|v| v.to_str().ok()),
+        resp.headers()
+            .get("cache-control")
+            .and_then(|v| v.to_str().ok()),
         Some("no-store"),
         "GET should have Cache-Control: no-store"
     );

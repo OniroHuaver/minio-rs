@@ -32,21 +32,24 @@ pub fn health_group(disk_infos: &[DiskInfo], total_disks: usize) -> MetricsGroup
 
     let online_count = disk_infos.len();
 
-    let status = prometheus::Gauge::with_opts(
-        prometheus::Opts::new("cluster_health_status", "Cluster health status (1 = online)"),
-    )
+    let status = prometheus::Gauge::with_opts(prometheus::Opts::new(
+        "cluster_health_status",
+        "Cluster health status (1 = online)",
+    ))
     .unwrap();
     status.set(if online_count > 0 { 1.0 } else { 0.0 });
 
-    let disk_online = prometheus::Gauge::with_opts(
-        prometheus::Opts::new("cluster_disk_online", "Number of online disks"),
-    )
+    let disk_online = prometheus::Gauge::with_opts(prometheus::Opts::new(
+        "cluster_disk_online",
+        "Number of online disks",
+    ))
     .unwrap();
     disk_online.set(online_count as f64);
 
-    let disk_total = prometheus::Gauge::with_opts(
-        prometheus::Opts::new("cluster_disk_total", "Total number of configured disks"),
-    )
+    let disk_total = prometheus::Gauge::with_opts(prometheus::Opts::new(
+        "cluster_disk_total",
+        "Total number of configured disks",
+    ))
     .unwrap();
     disk_total.set(total_disks as f64);
 
@@ -74,19 +77,15 @@ pub fn usage_group(_object_api: Arc<dyn crate::object::ObjectAPI>) -> MetricsGro
 
     let group = MetricsGroup::new("/cluster/usage/objects", infos);
 
-    let objects = prometheus::Gauge::with_opts(
-        prometheus::Opts::new(
-            "cluster_usage_objects_total",
-            "Total number of objects in the cluster",
-        ),
-    )
+    let objects = prometheus::Gauge::with_opts(prometheus::Opts::new(
+        "cluster_usage_objects_total",
+        "Total number of objects in the cluster",
+    ))
     .unwrap();
-    let bytes = prometheus::Gauge::with_opts(
-        prometheus::Opts::new(
-            "cluster_usage_total_bytes",
-            "Total bytes used by objects",
-        ),
-    )
+    let bytes = prometheus::Gauge::with_opts(prometheus::Opts::new(
+        "cluster_usage_total_bytes",
+        "Total bytes used by objects",
+    ))
     .unwrap();
 
     objects.set(0.0);
@@ -115,25 +114,23 @@ pub fn erasure_set_group(disk_infos: &[DiskInfo], total_disks: usize) -> Metrics
 
     let group = MetricsGroup::new("/cluster/erasure-set", infos);
 
-    let online = prometheus::Gauge::with_opts(
-        prometheus::Opts::new(
-            "cluster_erasure_set_online",
-            "Erasure set online status (1 = healthy)",
-        ),
-    )
+    let online = prometheus::Gauge::with_opts(prometheus::Opts::new(
+        "cluster_erasure_set_online",
+        "Erasure set online status (1 = healthy)",
+    ))
     .unwrap();
-    online.set(if disk_infos.len() == total_disks && !disk_infos.is_empty() {
-        1.0
-    } else {
-        0.0
-    });
+    online.set(
+        if disk_infos.len() == total_disks && !disk_infos.is_empty() {
+            1.0
+        } else {
+            0.0
+        },
+    );
 
-    let drives = prometheus::Gauge::with_opts(
-        prometheus::Opts::new(
-            "cluster_erasure_set_drives",
-            "Number of drives in the erasure set",
-        ),
-    )
+    let drives = prometheus::Gauge::with_opts(prometheus::Opts::new(
+        "cluster_erasure_set_drives",
+        "Number of drives in the erasure set",
+    ))
     .unwrap();
     drives.set(total_disks as f64);
 

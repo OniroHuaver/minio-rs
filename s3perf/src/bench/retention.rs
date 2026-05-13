@@ -2,9 +2,8 @@
 
 use crate::bench::{Benchmark, Common, Operation};
 use aws_sdk_s3::types::{
-    BucketVersioningStatus, DefaultRetention, ObjectLockConfiguration,
-    ObjectLockEnabled, ObjectLockRetention, ObjectLockRetentionMode,
-    ObjectLockRule, VersioningConfiguration,
+    BucketVersioningStatus, DefaultRetention, ObjectLockConfiguration, ObjectLockEnabled,
+    ObjectLockRetention, ObjectLockRetentionMode, ObjectLockRule, VersioningConfiguration,
 };
 use chrono::Utc;
 use rand::Rng;
@@ -18,7 +17,10 @@ pub struct RetentionBenchmark {
 
 impl RetentionBenchmark {
     pub fn new(common: Common) -> Self {
-        Self { common, obj_versions: Mutex::new(Vec::new()) }
+        Self {
+            common,
+            obj_versions: Mutex::new(Vec::new()),
+        }
     }
 }
 
@@ -74,7 +76,9 @@ impl Benchmark for RetentionBenchmark {
         let client_id = format!("client-{}", self.common.client_idx);
 
         for _i in 0..self.common.objects {
-            if ctx.is_cancelled() { break; }
+            if ctx.is_cancelled() {
+                break;
+            }
             let client = client.clone();
             let bucket = self.common.bucket.clone();
             let sem = sem.clone();
@@ -87,13 +91,19 @@ impl Benchmark for RetentionBenchmark {
             let versions = self.common.versions;
 
             handles.push(tokio::spawn(async move {
-                let Ok(_permit) = sem.acquire().await else { return; };
-                if ctx.is_cancelled() { return; }
+                let Ok(_permit) = sem.acquire().await else {
+                    return;
+                };
+                if ctx.is_cancelled() {
+                    return;
+                }
                 let mut first_obj = Some(source.object());
                 let key = first_obj.as_ref().unwrap().name.clone();
 
                 for v in 0..versions {
-                    if ctx.is_cancelled() { break; }
+                    if ctx.is_cancelled() {
+                        break;
+                    }
                     let body_obj = if v == 0 {
                         first_obj.take().expect("first version")
                     } else {
@@ -105,11 +115,19 @@ impl Benchmark for RetentionBenchmark {
                     };
                     let start = Utc::now();
                     let result = client
-                        .put_object().bucket(&bucket).key(&key).body(body).send().await;
+                        .put_object()
+                        .bucket(&bucket)
+                        .key(&key)
+                        .body(body)
+                        .send()
+                        .await;
                     let end = Utc::now();
 
                     let (err, version_id) = match &result {
-                        Ok(resp) => (String::new(), resp.version_id().unwrap_or_default().to_string()),
+                        Ok(resp) => (
+                            String::new(),
+                            resp.version_id().unwrap_or_default().to_string(),
+                        ),
                         Err(e) => (e.to_string(), String::new()),
                     };
 
@@ -118,19 +136,27 @@ impl Benchmark for RetentionBenchmark {
                     }
 
                     let _ = tx.send(Operation {
-                        start, end,
-                        first_byte: None, last_byte: Some(end),
-                        op_type: "PUT".into(), err,
+                        start,
+                        end,
+                        first_byte: None,
+                        last_byte: Some(end),
+                        op_type: "PUT".into(),
+                        err,
                         file: key.clone(),
                         client_id: client_id.clone(),
                         endpoint: host.clone(),
-                        obj_per_op: 1, size: 0, thread: 0, categories: 0,
+                        obj_per_op: 1,
+                        size: 0,
+                        thread: 0,
+                        categories: 0,
                     });
                 }
             }));
         }
 
-        for h in handles { let _ = h.await; }
+        for h in handles {
+            let _ = h.await;
+        }
         *self.obj_versions.lock().unwrap() = super::take_from_arc_mutex(obj_versions)
             .map_err(|e| crate::generator::Error::Bench(e.to_string()))?;
         Ok(())
@@ -170,16 +196,24 @@ impl Benchmark for RetentionBenchmark {
                 let deadline = tokio::time::Instant::now() + dur;
 
                 loop {
-                    if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline { break; }
-                    let Ok(_permit) = sem.acquire().await else { return; };
-                    if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline { break; }
+                    if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
+                        break;
+                    }
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
+                    if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
+                        break;
+                    }
 
                     if shared_versions.is_empty() {
                         continue;
                     }
                     let idx = rng.gen_range(0..shared_versions.len());
                     let (ref name, ref version_id) = shared_versions[idx];
-                    if name.is_empty() { continue; }
+                    if name.is_empty() {
+                        continue;
+                    }
 
                     common.throttle_rps().await;
 
@@ -190,9 +224,9 @@ impl Benchmark for RetentionBenchmark {
                     let retain_until = Utc::now() + chrono::Duration::hours(24);
                     let retention = ObjectLockRetention::builder()
                         .mode(ObjectLockRetentionMode::Governance)
-                        .retain_until_date(
-                            aws_sdk_s3::primitives::DateTime::from_secs(retain_until.timestamp()),
-                        )
+                        .retain_until_date(aws_sdk_s3::primitives::DateTime::from_secs(
+                            retain_until.timestamp(),
+                        ))
                         .build();
 
                     let start = Utc::now();
@@ -215,14 +249,19 @@ impl Benchmark for RetentionBenchmark {
                     common.release_host_index(hidx);
 
                     let _ = tx.send(Operation {
-                        start, end,
-                        first_byte: None, last_byte: None,
-                        op_type: "RETENTION".into(), err,
+                        start,
+                        end,
+                        first_byte: None,
+                        last_byte: None,
+                        op_type: "RETENTION".into(),
+                        err,
                         file: name.clone(),
                         client_id: client_id.clone(),
                         endpoint,
-                        obj_per_op: 1, size: 0,
-                        thread: thread_id as u32, categories: 0,
+                        obj_per_op: 1,
+                        size: 0,
+                        thread: thread_id as u32,
+                        categories: 0,
                     });
                 }
             }));
@@ -232,19 +271,25 @@ impl Benchmark for RetentionBenchmark {
             _ = ctx.cancelled() => {}
             _ = tokio::time::sleep(dur) => {}
         }
-        for h in handles { h.abort(); }
+        for h in handles {
+            h.abort();
+        }
         Ok(())
     }
 
     async fn cleanup(&self, ctx: &CancellationToken) {
-        if !self.common.clear { return; }
+        if !self.common.clear {
+            return;
+        }
         let client = (self.common.client_factory)(0);
         let obj_versions = self.obj_versions.lock().unwrap().clone();
         let sem = Arc::new(tokio::sync::Semaphore::new(self.common.concurrency));
         let mut handles = Vec::new();
 
         for (name, version_id) in &obj_versions {
-            if ctx.is_cancelled() { break; }
+            if ctx.is_cancelled() {
+                break;
+            }
             let client = client.clone();
             let bucket = self.common.bucket.clone();
             let sem = sem.clone();
@@ -253,18 +298,30 @@ impl Benchmark for RetentionBenchmark {
             let version_id = version_id.clone();
 
             handles.push(tokio::spawn(async move {
-                let Ok(_permit) = sem.acquire().await else { return; };
+                let Ok(_permit) = sem.acquire().await else {
+                    return;
+                };
                 if !ctx.is_cancelled() {
-                    let _ = client.delete_object()
-                        .bucket(&bucket).key(&name).version_id(&version_id)
-                        .send().await;
+                    let _ = client
+                        .delete_object()
+                        .bucket(&bucket)
+                        .key(&name)
+                        .version_id(&version_id)
+                        .send()
+                        .await;
                 }
             }));
         }
-        for h in handles { let _ = h.await; }
+        for h in handles {
+            let _ = h.await;
+        }
     }
 
-    fn common(&self) -> &Common { &self.common }
+    fn common(&self) -> &Common {
+        &self.common
+    }
 
-    fn ops(&self) -> Vec<Operation> { self.common.collector.ops() }
+    fn ops(&self) -> Vec<Operation> {
+        self.common.collector.ops()
+    }
 }

@@ -123,16 +123,11 @@ impl Tree {
             .filter(|ns| ns.path.len() == self.cfg.namespace_depth)
             .collect::<Vec<_>>();
 
-        let mut out =
-            Vec::with_capacity(leaves.len() * self.cfg.tables_per_ns);
+        let mut out = Vec::with_capacity(leaves.len() * self.cfg.tables_per_ns);
         for ns in &leaves {
             for t in 0..self.cfg.tables_per_ns {
                 let name = format!("tbl_{}", t);
-                let loc = format!(
-                    "{}/{}/{name}",
-                    self.cfg.base_location,
-                    ns.path.join("/")
-                );
+                let loc = format!("{}/{}/{name}", self.cfg.base_location, ns.path.join("/"));
                 out.push(TableInfo {
                     namespace: ns.path.clone(),
                     name,
@@ -150,16 +145,11 @@ impl Tree {
             .filter(|ns| ns.path.len() == self.cfg.namespace_depth)
             .collect::<Vec<_>>();
 
-        let mut out =
-            Vec::with_capacity(leaves.len() * self.cfg.views_per_ns);
+        let mut out = Vec::with_capacity(leaves.len() * self.cfg.views_per_ns);
         for ns in &leaves {
             for v in 0..self.cfg.views_per_ns {
                 let name = format!("view_{}", v);
-                let loc = format!(
-                    "{}/{}/{name}",
-                    self.cfg.base_location,
-                    ns.path.join("/")
-                );
+                let loc = format!("{}/{}/{name}", self.cfg.base_location, ns.path.join("/"));
                 out.push(ViewInfo {
                     namespace: ns.path.clone(),
                     name,
@@ -177,10 +167,7 @@ impl Tree {
             .collect()
     }
 
-    pub fn random_namespace<R: Rng>(
-        &self,
-        rng: &mut R,
-    ) -> NamespaceInfo {
+    pub fn random_namespace<R: Rng>(&self, rng: &mut R) -> NamespaceInfo {
         let all = self.all_namespaces();
         all[rng.gen_range(0..all.len())].clone()
     }
@@ -203,10 +190,7 @@ pub fn namespace_path(parent: &[String], name: &str) -> Vec<String> {
     p
 }
 
-pub fn to_table_identifier(
-    namespace: &[String],
-    name: &str,
-) -> Vec<String> {
+pub fn to_table_identifier(namespace: &[String], name: &str) -> Vec<String> {
     let mut p = namespace.to_vec();
     p.push(name.to_string());
     p

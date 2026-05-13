@@ -14,9 +14,9 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
+use axum::Router;
 use axum::extract::ws::WebSocketUpgrade;
 use axum::routing::get;
-use axum::Router;
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 

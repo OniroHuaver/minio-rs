@@ -136,7 +136,9 @@ impl Benchmark for SnowballBenchmark {
                         break;
                     }
 
-                    let Ok(_permit) = sem.acquire().await else { return; };
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }

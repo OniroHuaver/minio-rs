@@ -23,14 +23,23 @@ use common::helpers::{create_bucket, make_data};
 /// Verify a roundtrip: PUT data, GET back, compare byte-for-byte.
 async fn roundtrip(client: &S3Client, bucket: &str, key: &str, data: &[u8]) {
     let put = client.put_object(bucket, key, data).await;
-    assert_eq!(put.status(), 200, "PUT {key} ({:.1} MiB) failed", data.len() as f64 / 1_048_576.0);
+    assert_eq!(
+        put.status(),
+        200,
+        "PUT {key} ({:.1} MiB) failed",
+        data.len() as f64 / 1_048_576.0
+    );
 
     let etag_put = put.headers().get("etag").and_then(|v| v.to_str().ok());
     assert!(etag_put.is_some(), "PUT should return ETag");
 
     let get = client.get_object(bucket, key).await;
     assert_eq!(get.status(), 200, "GET {key} failed");
-    assert_eq!(get.bytes().await.unwrap().as_ref(), data, "data mismatch for {key}");
+    assert_eq!(
+        get.bytes().await.unwrap().as_ref(),
+        data,
+        "data mismatch for {key}"
+    );
 
     let head = client.head_object(bucket, key).await;
     assert_eq!(head.status(), 200, "HEAD {key} failed");
@@ -106,11 +115,22 @@ async fn large_multiple_objects() {
     for i in 0..3 {
         let data = make_data(sizes[i]);
         let put = client.put_object("large-multi", keys[i], &data).await;
-        assert_eq!(put.status(), 200, "PUT {key} ({size} bytes) failed", key = keys[i], size = sizes[i]);
+        assert_eq!(
+            put.status(),
+            200,
+            "PUT {key} ({size} bytes) failed",
+            key = keys[i],
+            size = sizes[i]
+        );
 
         let get = client.get_object("large-multi", keys[i]).await;
         assert_eq!(get.status(), 200);
-        assert_eq!(get.bytes().await.unwrap().as_ref(), data.as_slice(), "data mismatch for {}", keys[i]);
+        assert_eq!(
+            get.bytes().await.unwrap().as_ref(),
+            data.as_slice(),
+            "data mismatch for {}",
+            keys[i]
+        );
     }
 
     // Verify all listed correctly
@@ -120,7 +140,10 @@ async fn large_multiple_objects() {
     for key in &keys {
         assert!(body.contains(key), "list should contain {key}");
     }
-    assert!(body.contains("<KeyCount>3</KeyCount>"), "KeyCount should be 3");
+    assert!(
+        body.contains("<KeyCount>3</KeyCount>"),
+        "KeyCount should be 3"
+    );
 }
 
 // ============================================================================
@@ -139,7 +162,9 @@ async fn large_10mib_with_md5() {
     hasher.update(&data);
     let md5 = base64::engine::general_purpose::STANDARD.encode(&hasher.finalize());
 
-    let resp = client.put_object_with_md5("large-md5", "md5.bin", &data, &md5).await;
+    let resp = client
+        .put_object_with_md5("large-md5", "md5.bin", &data, &md5)
+        .await;
     assert_eq!(resp.status(), 200, "10 MiB PUT with valid MD5 → 200");
 
     // Verify data integrity
@@ -167,11 +192,18 @@ async fn large_overwrite_different_size() {
     let r2 = client.put_object("large-ow", "growing.bin", &v2).await;
     assert_eq!(r2.status(), 200);
     let etag2 = r2.headers().get("etag").and_then(|v| v.to_str().ok());
-    assert_ne!(etag1, etag2, "overwrite with different data → different ETag");
+    assert_ne!(
+        etag1, etag2,
+        "overwrite with different data → different ETag"
+    );
 
     let get = client.get_object("large-ow", "growing.bin").await;
     assert_eq!(get.status(), 200);
-    assert_eq!(get.bytes().await.unwrap().as_ref(), v2.as_slice(), "overwrite data mismatch");
+    assert_eq!(
+        get.bytes().await.unwrap().as_ref(),
+        v2.as_slice(),
+        "overwrite data mismatch"
+    );
 }
 
 // ============================================================================
@@ -191,7 +223,9 @@ async fn large_range_across_shard_boundaries() {
     let end = offset + 512 * 1024 - 1; // span 512 KiB across ~4 shards
     let range = format!("bytes={offset}-{end}");
 
-    let resp = client.get_object_range("large-range", "big.bin", &range).await;
+    let resp = client
+        .get_object_range("large-range", "big.bin", &range)
+        .await;
     assert_eq!(resp.status(), 206, "cross-shard range → 206");
     let body = resp.bytes().await.unwrap();
     let expected = &data[offset as usize..=end as usize];

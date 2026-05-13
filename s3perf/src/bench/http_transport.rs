@@ -68,7 +68,10 @@ fn install_crypto_provider() {
     let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
 }
 
-fn rustls_config(insecure: bool, ca_pem: Option<&[u8]>) -> Result<Arc<rustls::ClientConfig>, String> {
+fn rustls_config(
+    insecure: bool,
+    ca_pem: Option<&[u8]>,
+) -> Result<Arc<rustls::ClientConfig>, String> {
     install_crypto_provider();
     if insecure {
         let cfg = rustls::ClientConfig::builder()
@@ -128,25 +131,30 @@ impl HttpConnector for HttpsAdapter {
 }
 
 /// 构建用于 HTTPS 的 Smithy HTTP 客户端（`insecure` 或额外 CA）。
-pub fn shared_https_client(insecure: bool, ca_pem: Option<&[u8]>) -> Result<SharedHttpClient, String> {
+pub fn shared_https_client(
+    insecure: bool,
+    ca_pem: Option<&[u8]>,
+) -> Result<SharedHttpClient, String> {
     let tls = rustls_config(insecure, ca_pem)?;
-    Ok(http_client_fn(move |settings: &HttpConnectorSettings, _rc: &RuntimeComponents| {
-        let mut http = HyperHttpConnector::new();
-        if let Some(d) = settings.connect_timeout() {
-            http.set_connect_timeout(Some(d));
-        }
+    Ok(http_client_fn(
+        move |settings: &HttpConnectorSettings, _rc: &RuntimeComponents| {
+            let mut http = HyperHttpConnector::new();
+            if let Some(d) = settings.connect_timeout() {
+                http.set_connect_timeout(Some(d));
+            }
 
-        let tls_cfg = (*tls).clone();
-        let https: HttpsConn = hyper_rustls::HttpsConnectorBuilder::new()
-            .with_tls_config(tls_cfg)
-            .https_or_http()
-            .enable_http1()
-            .wrap_connector(http);
+            let tls_cfg = (*tls).clone();
+            let https: HttpsConn = hyper_rustls::HttpsConnectorBuilder::new()
+                .with_tls_config(tls_cfg)
+                .https_or_http()
+                .enable_http1()
+                .wrap_connector(http);
 
-        let mut hyper_builder = Client::builder(TokioExecutor::new());
-        hyper_builder.pool_timer(TokioTimer::new());
+            let mut hyper_builder = Client::builder(TokioExecutor::new());
+            hyper_builder.pool_timer(TokioTimer::new());
 
-        let inner = hyper_builder.build(https);
-        SharedHttpConnector::new(HttpsAdapter { inner })
-    }))
+            let inner = hyper_builder.build(https);
+            SharedHttpConnector::new(HttpsAdapter { inner })
+        },
+    ))
 }

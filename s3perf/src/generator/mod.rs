@@ -89,7 +89,10 @@ pub enum ObjSize {
     /// log2 随机分布，平均大小 ≈ max × 0.179151
     Random { max: i64 },
     /// 分桶: Vec<(size, weight)>
-    Bucketed { buckets: Vec<(i64, u64)>, total_weight: u64 },
+    Bucketed {
+        buckets: Vec<(i64, u64)>,
+        total_weight: u64,
+    },
 }
 
 impl ObjSize {
@@ -171,7 +174,10 @@ impl RandomReader {
 
     fn fill_at(&self, offset: u64, buf: &mut [u8]) {
         // 使用简单的 xorshift + offset 生成确定性伪随机数据
-        let mut state = self.seed.wrapping_mul(6364136223846793005).wrapping_add(offset);
+        let mut state = self
+            .seed
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(offset);
         for byte in buf.iter_mut() {
             state ^= state << 13;
             state ^= state >> 7;
@@ -202,7 +208,10 @@ impl Seek for RandomReader {
             SeekFrom::Current(p) => self.pos as i64 + p,
         };
         if new_pos < 0 {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "negative seek offset"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "negative seek offset",
+            ));
         }
         self.pos = new_pos as u64;
         Ok(self.pos)
@@ -270,7 +279,11 @@ impl Source for DefaultSource {
             prefix: self.prefix.clone(),
             version_id: String::new(),
             size,
-            last_byte: if size > 0 { Some(size as u64 - 1) } else { None },
+            last_byte: if size > 0 {
+                Some(size as u64 - 1)
+            } else {
+                None
+            },
         }
     }
 

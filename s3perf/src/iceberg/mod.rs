@@ -9,12 +9,12 @@
 //! - `retry`:     指数退避重试
 
 pub mod catalog;
-pub mod tree;
 pub mod dataset;
 pub mod distribution;
-pub mod schema;
-pub mod warehouse;
 pub mod retry;
+pub mod schema;
+pub mod tree;
+pub mod warehouse;
 
 pub use catalog::{CatalogConfig, ExternalCatalogType};
 pub use dataset::IsAlreadyExists;

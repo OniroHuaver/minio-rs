@@ -25,31 +25,31 @@ pub(crate) fn take_from_arc_mutex<T: Default>(arc: Arc<Mutex<T>>) -> anyhow::Res
         .map_err(|_| anyhow::anyhow!("Mutex poisoned"))
 }
 
-pub mod body;
-pub mod collector;
-pub mod http_transport;
-pub mod s3_client;
-pub mod sse;
-pub mod checksum;
-pub mod get;
-pub mod put;
-pub mod rate_limiter;
-pub mod delete;
-pub mod list;
-pub mod stat;
-pub mod mixed;
-pub mod versioned;
-pub mod retention;
-pub mod multipart;
-pub mod multipart_put;
-pub mod snowball;
-pub mod fanout;
 pub mod append;
-pub mod zip;
-pub mod iceberg_read;
+pub mod body;
+pub mod checksum;
+pub mod collector;
+pub mod delete;
+pub mod fanout;
+pub mod get;
+pub mod http_transport;
 pub mod iceberg_commits;
 pub mod iceberg_mixed;
+pub mod iceberg_read;
 pub mod iceberg_sustained;
+pub mod list;
+pub mod mixed;
+pub mod multipart;
+pub mod multipart_put;
+pub mod put;
+pub mod rate_limiter;
+pub mod retention;
+pub mod s3_client;
+pub mod snowball;
+pub mod sse;
+pub mod stat;
+pub mod versioned;
+pub mod zip;
 
 // ---------------------------------------------------------------------------
 // Common — shared benchmark configuration
@@ -102,11 +102,7 @@ impl Common {
         self.custom_prefix.clone().unwrap_or_else(|| {
             format!(
                 "s3perf-{}",
-                uuid::Uuid::new_v4()
-                    .to_string()
-                    .split('-')
-                    .next()
-                    .unwrap()
+                uuid::Uuid::new_v4().to_string().split('-').next().unwrap()
             )
         })
     }
@@ -329,9 +325,7 @@ impl OperationsExt for Vec<Operation> {
         let mut map: std::collections::BTreeMap<String, Vec<Operation>> =
             std::collections::BTreeMap::new();
         for o in self {
-            map.entry(o.client_id.clone())
-                .or_default()
-                .push(o.clone());
+            map.entry(o.client_id.clone()).or_default().push(o.clone());
         }
         map.into_iter().collect()
     }
@@ -348,13 +342,22 @@ impl OperationsExt for Vec<Operation> {
         self.iter().map(|o| o.duration()).sum()
     }
     fn threads(&self) -> usize {
-        self.iter().map(|o| o.thread).collect::<std::collections::BTreeSet<_>>().len()
+        self.iter()
+            .map(|o| o.thread)
+            .collect::<std::collections::BTreeSet<_>>()
+            .len()
     }
     fn hosts(&self) -> usize {
-        self.iter().map(|o| o.endpoint.as_str()).collect::<std::collections::BTreeSet<_>>().len()
+        self.iter()
+            .map(|o| o.endpoint.as_str())
+            .collect::<std::collections::BTreeSet<_>>()
+            .len()
     }
     fn clients(&self) -> usize {
-        self.iter().map(|o| o.client_id.as_str()).collect::<std::collections::BTreeSet<_>>().len()
+        self.iter()
+            .map(|o| o.client_id.as_str())
+            .collect::<std::collections::BTreeSet<_>>()
+            .len()
     }
     fn endpoints(&self) -> Vec<String> {
         let mut eps: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
@@ -439,8 +442,7 @@ impl OperationsExt for Vec<Operation> {
             .into_iter()
             .map(|(bucket, ops)| {
                 let seg_start_ms = start_ms + bucket * dur_ms;
-                let seg_start =
-                    DateTime::from_timestamp_millis(seg_start_ms).unwrap_or(start);
+                let seg_start = DateTime::from_timestamp_millis(seg_start_ms).unwrap_or(start);
                 let seg_end =
                     DateTime::from_timestamp_millis(seg_start_ms + dur_ms).unwrap_or(start);
                 let total_bytes: i64 = ops.iter().map(|o| o.size).sum();

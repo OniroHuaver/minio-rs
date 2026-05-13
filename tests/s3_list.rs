@@ -28,9 +28,18 @@ async fn list_empty_bucket() {
     let resp = client.list_objects_v2("empty", "", "", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(body.contains("<ListBucketResult"), "should have ListBucketResult");
-    assert!(body.contains("<IsTruncated>false</IsTruncated>"), "should not be truncated");
-    assert!(body.contains("<KeyCount>0</KeyCount>"), "empty bucket KeyCount should be 0");
+    assert!(
+        body.contains("<ListBucketResult"),
+        "should have ListBucketResult"
+    );
+    assert!(
+        body.contains("<IsTruncated>false</IsTruncated>"),
+        "should not be truncated"
+    );
+    assert!(
+        body.contains("<KeyCount>0</KeyCount>"),
+        "empty bucket KeyCount should be 0"
+    );
 }
 
 #[tokio::test]
@@ -47,8 +56,14 @@ async fn list_empty_bucket_xml_structure() {
     assert_eq!(ct, Some("application/xml"));
     let body = resp.text().await.unwrap();
     assert!(body.contains("<?xml"), "should have XML declaration");
-    assert!(body.contains("xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\""), "should have S3 xmlns");
-    assert!(body.contains("<Name>empty-xml</Name>"), "should have Bucket Name");
+    assert!(
+        body.contains("xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\""),
+        "should have S3 xmlns"
+    );
+    assert!(
+        body.contains("<Name>empty-xml</Name>"),
+        "should have Bucket Name"
+    );
     assert!(body.contains("<MaxKeys>"), "should have MaxKeys");
     assert!(body.contains("<IsTruncated>"), "should have IsTruncated");
 }
@@ -61,17 +76,28 @@ async fn list_empty_bucket_xml_structure() {
 async fn list_single_object() {
     let (_server, client) = setup().await;
     create_bucket(&client, "single").await;
-    client.put_object("single", "only.txt", b"the only one").await;
+    client
+        .put_object("single", "only.txt", b"the only one")
+        .await;
 
     let resp = client.list_objects_v2("single", "", "", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(body.contains("<Key>only.txt</Key>"), "should contain 'only.txt'");
+    assert!(
+        body.contains("<Key>only.txt</Key>"),
+        "should contain 'only.txt'"
+    );
     assert!(body.contains("<Size>"), "should have Size");
     assert!(body.contains("<ETag>"), "should have ETag");
     assert!(body.contains("<LastModified>"), "should have LastModified");
-    assert!(body.contains("<StorageClass>STANDARD</StorageClass>"), "should have StorageClass");
-    assert!(body.contains("<KeyCount>1</KeyCount>"), "KeyCount should be 1");
+    assert!(
+        body.contains("<StorageClass>STANDARD</StorageClass>"),
+        "should have StorageClass"
+    );
+    assert!(
+        body.contains("<KeyCount>1</KeyCount>"),
+        "KeyCount should be 1"
+    );
 }
 
 #[tokio::test]
@@ -80,16 +106,24 @@ async fn list_multiple_flat_objects() {
     create_bucket(&client, "multi").await;
 
     for i in 0..10 {
-        client.put_object("multi", &format!("file-{:02}.txt", i), b"data").await;
+        client
+            .put_object("multi", &format!("file-{:02}.txt", i), b"data")
+            .await;
     }
 
     let resp = client.list_objects_v2("multi", "", "", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
     for i in 0..10 {
-        assert!(body.contains(&format!("file-{:02}.txt", i)), "should contain file-{i:02}");
+        assert!(
+            body.contains(&format!("file-{:02}.txt", i)),
+            "should contain file-{i:02}"
+        );
     }
-    assert!(body.contains("<KeyCount>10</KeyCount>"), "KeyCount should be 10");
+    assert!(
+        body.contains("<KeyCount>10</KeyCount>"),
+        "KeyCount should be 10"
+    );
 }
 
 // ============================================================================
@@ -111,7 +145,10 @@ async fn list_with_prefix() {
     assert!(body.contains("a/one.txt"), "should match prefix a/");
     assert!(body.contains("a/two.txt"), "should match prefix a/");
     assert!(!body.contains("b/three.txt"), "should NOT match prefix a/");
-    assert!(body.contains("<KeyCount>2</KeyCount>"), "KeyCount should be 2 with prefix a/");
+    assert!(
+        body.contains("<KeyCount>2</KeyCount>"),
+        "KeyCount should be 2 with prefix a/"
+    );
 }
 
 #[tokio::test]
@@ -120,7 +157,9 @@ async fn list_prefix_no_match() {
     create_bucket(&client, "nomatch").await;
     client.put_object("nomatch", "foo/bar.txt", b"data").await;
 
-    let resp = client.list_objects_v2("nomatch", "dne-prefix/", "", 0).await;
+    let resp = client
+        .list_objects_v2("nomatch", "dne-prefix/", "", 0)
+        .await;
     // NOTE: current implementation may return 500 for non-existent directory paths.
     // S3 spec: should return 200 with KeyCount=0.
     // TODO: make list_dir tolerant of missing prefix directories.
@@ -131,7 +170,10 @@ async fn list_prefix_no_match() {
     );
     if status == 200 {
         let body = resp.text().await.unwrap();
-        assert!(body.contains("<KeyCount>0</KeyCount>"), "unmatched prefix → KeyCount 0");
+        assert!(
+            body.contains("<KeyCount>0</KeyCount>"),
+            "unmatched prefix → KeyCount 0"
+        );
     }
 }
 
@@ -144,20 +186,42 @@ async fn list_with_delimiter() {
     let (_server, client) = setup().await;
     create_bucket(&client, "delim").await;
 
-    client.put_object("delim", "photos/summer.jpg", b"img").await;
-    client.put_object("delim", "photos/winter.jpg", b"img").await;
+    client
+        .put_object("delim", "photos/summer.jpg", b"img")
+        .await;
+    client
+        .put_object("delim", "photos/winter.jpg", b"img")
+        .await;
     client.put_object("delim", "readme.txt", b"txt").await;
     client.put_object("delim", "notes.txt", b"txt").await;
 
     let resp = client.list_objects_v2("delim", "", "/", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(body.contains("readme.txt"), "top-level readme.txt should be listed");
-    assert!(body.contains("notes.txt"), "top-level notes.txt should be listed");
-    assert!(body.contains("<CommonPrefixes>"), "should have CommonPrefixes");
-    assert!(body.contains("<Prefix>photos/</Prefix>"), "CommonPrefixes should include photos/");
-    assert!(!body.contains("summer.jpg"), "summer.jpg should NOT be listed individually");
-    assert!(!body.contains("winter.jpg"), "winter.jpg should NOT be listed individually");
+    assert!(
+        body.contains("readme.txt"),
+        "top-level readme.txt should be listed"
+    );
+    assert!(
+        body.contains("notes.txt"),
+        "top-level notes.txt should be listed"
+    );
+    assert!(
+        body.contains("<CommonPrefixes>"),
+        "should have CommonPrefixes"
+    );
+    assert!(
+        body.contains("<Prefix>photos/</Prefix>"),
+        "CommonPrefixes should include photos/"
+    );
+    assert!(
+        !body.contains("summer.jpg"),
+        "summer.jpg should NOT be listed individually"
+    );
+    assert!(
+        !body.contains("winter.jpg"),
+        "winter.jpg should NOT be listed individually"
+    );
 }
 
 #[tokio::test]
@@ -165,17 +229,32 @@ async fn list_prefix_and_delimiter() {
     let (_server, client) = setup().await;
     create_bucket(&client, "pref-del").await;
 
-    client.put_object("pref-del", "data/2025/jan.csv", b"1").await;
-    client.put_object("pref-del", "data/2025/feb.csv", b"2").await;
-    client.put_object("pref-del", "data/2026/mar.csv", b"3").await;
+    client
+        .put_object("pref-del", "data/2025/jan.csv", b"1")
+        .await;
+    client
+        .put_object("pref-del", "data/2025/feb.csv", b"2")
+        .await;
+    client
+        .put_object("pref-del", "data/2026/mar.csv", b"3")
+        .await;
     client.put_object("pref-del", "data/readme.txt", b"4").await;
 
     let resp = client.list_objects_v2("pref-del", "data/", "/", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(body.contains("<Prefix>data/2025/</Prefix>"), "should have CommonPrefixes data/2025/");
-    assert!(body.contains("<Prefix>data/2026/</Prefix>"), "should have CommonPrefixes data/2026/");
-    assert!(body.contains("<Key>data/readme.txt</Key>"), "should have readme.txt as object");
+    assert!(
+        body.contains("<Prefix>data/2025/</Prefix>"),
+        "should have CommonPrefixes data/2025/"
+    );
+    assert!(
+        body.contains("<Prefix>data/2026/</Prefix>"),
+        "should have CommonPrefixes data/2026/"
+    );
+    assert!(
+        body.contains("<Key>data/readme.txt</Key>"),
+        "should have readme.txt as object"
+    );
 }
 
 // ============================================================================
@@ -188,7 +267,9 @@ async fn list_max_keys_accepted() {
     create_bucket(&client, "maxkeys").await;
 
     for i in 0..10 {
-        client.put_object("maxkeys", &format!("obj-{:02}", i), b"data").await;
+        client
+            .put_object("maxkeys", &format!("obj-{:02}", i), b"data")
+            .await;
     }
 
     let resp = client.list_objects_v2("maxkeys", "", "", 5).await;
@@ -197,7 +278,10 @@ async fn list_max_keys_accepted() {
     // NOTE: current implementation ignores max-keys for truncation purposes
     // (is_truncated is always false). The parameter is accepted but all items
     // are returned.
-    assert!(body.contains("<MaxKeys>5</MaxKeys>"), "MaxKeys should reflect the request value");
+    assert!(
+        body.contains("<MaxKeys>5</MaxKeys>"),
+        "MaxKeys should reflect the request value"
+    );
 }
 
 #[tokio::test]
@@ -206,13 +290,18 @@ async fn list_max_keys_not_truncated_when_enough() {
     create_bucket(&client, "maxkeys-fit").await;
 
     for i in 0..5 {
-        client.put_object("maxkeys-fit", &format!("o{}", i), b"x").await;
+        client
+            .put_object("maxkeys-fit", &format!("o{}", i), b"x")
+            .await;
     }
 
     let resp = client.list_objects_v2("maxkeys-fit", "", "", 100).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(body.contains("<IsTruncated>false</IsTruncated>"), "should not be truncated when max-keys > count");
+    assert!(
+        body.contains("<IsTruncated>false</IsTruncated>"),
+        "should not be truncated when max-keys > count"
+    );
 }
 
 #[tokio::test]
@@ -223,7 +312,10 @@ async fn list_max_keys_clamped() {
     let resp = client.list_objects_v2("maxkeys-clamp", "", "", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(body.contains("<MaxKeys>"), "MaxKeys should be present even with 0 input");
+    assert!(
+        body.contains("<MaxKeys>"),
+        "MaxKeys should be present even with 0 input"
+    );
 }
 
 #[tokio::test]
@@ -232,7 +324,9 @@ async fn list_max_keys_1() {
     create_bucket(&client, "max-1").await;
 
     for i in 0..5 {
-        client.put_object("max-1", &format!("o{}", i), b"data").await;
+        client
+            .put_object("max-1", &format!("o{}", i), b"data")
+            .await;
     }
 
     let resp = client.list_objects_v2("max-1", "", "", 1).await;
@@ -250,14 +344,22 @@ async fn list_max_keys_1000() {
     create_bucket(&client, "max-1k").await;
 
     for i in 0..50 {
-        client.put_object("max-1k", &format!("p-{:03}", i), b"x").await;
+        client
+            .put_object("max-1k", &format!("p-{:03}", i), b"x")
+            .await;
     }
 
     let resp = client.list_objects_v2("max-1k", "", "", 1000).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(body.contains("<MaxKeys>1000</MaxKeys>"), "MaxKeys should be 1000");
-    assert!(body.contains("<IsTruncated>false</IsTruncated>"), "should not be truncated");
+    assert!(
+        body.contains("<MaxKeys>1000</MaxKeys>"),
+        "MaxKeys should be 1000"
+    );
+    assert!(
+        body.contains("<IsTruncated>false</IsTruncated>"),
+        "should not be truncated"
+    );
 }
 
 // ============================================================================
@@ -269,16 +371,28 @@ async fn list_deeply_nested_with_delimiter() {
     let (_server, client) = setup().await;
     create_bucket(&client, "deep-list").await;
 
-    client.put_object("deep-list", "level1/level2/file1.txt", b"a").await;
-    client.put_object("deep-list", "level1/level2/file2.txt", b"b").await;
-    client.put_object("deep-list", "level1/other.txt", b"c").await;
+    client
+        .put_object("deep-list", "level1/level2/file1.txt", b"a")
+        .await;
+    client
+        .put_object("deep-list", "level1/level2/file2.txt", b"b")
+        .await;
+    client
+        .put_object("deep-list", "level1/other.txt", b"c")
+        .await;
     client.put_object("deep-list", "root.txt", b"d").await;
 
     let resp = client.list_objects_v2("deep-list", "", "/", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(body.contains("<Key>root.txt</Key>"), "root file should appear");
-    assert!(body.contains("<Prefix>level1/</Prefix>"), "level1/ should be CommonPrefixes");
+    assert!(
+        body.contains("<Key>root.txt</Key>"),
+        "root file should appear"
+    );
+    assert!(
+        body.contains("<Prefix>level1/</Prefix>"),
+        "level1/ should be CommonPrefixes"
+    );
 }
 
 // ============================================================================
@@ -290,14 +404,19 @@ async fn list_max_keys_truncation() {
     let (_server, client) = setup().await;
     create_bucket(&client, "trunc").await;
     for i in 0..20 {
-        client.put_object("trunc", &format!("obj-{:02}", i), b"data").await;
+        client
+            .put_object("trunc", &format!("obj-{:02}", i), b"data")
+            .await;
     }
     let resp = client.list_objects_v2("trunc", "", "", 5).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
     let count = body.matches("<Contents>").count();
     assert_eq!(count, 5, "max-keys=5 should return exactly 5 items");
-    assert!(body.contains("<IsTruncated>true</IsTruncated>"), "should be truncated");
+    assert!(
+        body.contains("<IsTruncated>true</IsTruncated>"),
+        "should be truncated"
+    );
 }
 
 #[tokio::test]
@@ -305,12 +424,17 @@ async fn list_continuation_token_roundtrip() {
     let (_server, client) = setup().await;
     create_bucket(&client, "cont").await;
     for i in 0..10 {
-        client.put_object("cont", &format!("item-{:02}", i), b"data").await;
+        client
+            .put_object("cont", &format!("item-{:02}", i), b"data")
+            .await;
     }
     let resp = client.list_objects_v2_full("cont", "", "", 3, "", "").await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(body.contains("<IsTruncated>true</IsTruncated>"), "first page should be truncated");
+    assert!(
+        body.contains("<IsTruncated>true</IsTruncated>"),
+        "first page should be truncated"
+    );
 }
 
 #[tokio::test]
@@ -320,10 +444,15 @@ async fn list_start_after() {
     for name in ["aaa", "bbb", "ccc", "ddd", "eee"] {
         client.put_object("startafter", name, b"data").await;
     }
-    let resp = client.list_objects_v2_full("startafter", "", "", 0, "", "bbb").await;
+    let resp = client
+        .list_objects_v2_full("startafter", "", "", 0, "", "bbb")
+        .await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(!body.contains("<Key>aaa</Key>"), "should skip keys before start-after");
+    assert!(
+        !body.contains("<Key>aaa</Key>"),
+        "should skip keys before start-after"
+    );
 }
 
 // ============================================================================
@@ -343,7 +472,9 @@ async fn list_pagination_full_roundtrip() {
 
     // buffer = (max_keys+1)*2 = 6, so ≤6 objects for full coverage
     for i in 0..6 {
-        client.put_object("paginate", &format!("obj-{:02}", i), b"data").await;
+        client
+            .put_object("paginate", &format!("obj-{:02}", i), b"data")
+            .await;
     }
 
     let mut all_keys: Vec<String> = Vec::new();
@@ -396,7 +527,11 @@ async fn list_pagination_full_roundtrip() {
     let mut dedup = all_keys.clone();
     dedup.sort();
     dedup.dedup();
-    assert_eq!(dedup.len(), all_keys.len(), "no duplicate keys across pages");
+    assert_eq!(
+        dedup.len(),
+        all_keys.len(),
+        "no duplicate keys across pages"
+    );
 }
 
 #[tokio::test]
@@ -406,7 +541,9 @@ async fn list_pagination_max_keys_1() {
 
     // buffer = (1+1)*2 = 4, so ≤4 objects
     for i in 0..4 {
-        client.put_object("pag-1", &format!("k{:02}", i), b"data").await;
+        client
+            .put_object("pag-1", &format!("k{:02}", i), b"data")
+            .await;
     }
 
     let mut all_keys: Vec<String> = Vec::new();
@@ -419,7 +556,10 @@ async fn list_pagination_max_keys_1() {
         assert_eq!(resp.status(), 200, "page {page} failed");
         let body = resp.text().await.unwrap();
         let count = body.matches("<Contents>").count();
-        assert_eq!(count, 1, "page {page}: max-keys=1 should return exactly 1 item");
+        assert_eq!(
+            count, 1,
+            "page {page}: max-keys=1 should return exactly 1 item"
+        );
 
         if let Some(key) = extract_xml_text(&body, "Key") {
             all_keys.push(key);
@@ -432,7 +572,11 @@ async fn list_pagination_max_keys_1() {
         token = extract_xml_text(&body, "NextContinuationToken").unwrap_or_default();
     }
 
-    assert_eq!(all_keys.len(), 4, "max-keys=1 should paginate through all 4 objects");
+    assert_eq!(
+        all_keys.len(),
+        4,
+        "max-keys=1 should paginate through all 4 objects"
+    );
 }
 
 #[tokio::test]
@@ -442,7 +586,9 @@ async fn list_pagination_exhaustive_no_token_leftover() {
 
     // buffer = (3+1)*2 = 8, so ≤8 objects
     for i in 0..8 {
-        client.put_object("pag-exhaust", &format!("f-{:02}", i), b"x").await;
+        client
+            .put_object("pag-exhaust", &format!("f-{:02}", i), b"x")
+            .await;
     }
 
     let mut seen: usize = 0;
@@ -474,7 +620,10 @@ async fn list_pagination_exhaustive_no_token_leftover() {
         }
     };
 
-    assert!(reached_final, "pagination must reach a non-truncated final page");
+    assert!(
+        reached_final,
+        "pagination must reach a non-truncated final page"
+    );
     assert_eq!(seen, 8, "exhaustive pagination should return all 8 objects");
 }
 
@@ -485,8 +634,12 @@ async fn list_pagination_with_prefix_filter() {
 
     // buffer = (3+1)*2 = 8, so ≤8 matching objects
     for i in 0..6 {
-        client.put_object("pag-prefix", &format!("a/obj-{:02}", i), b"a").await;
-        client.put_object("pag-prefix", &format!("b/obj-{:02}", i), b"b").await;
+        client
+            .put_object("pag-prefix", &format!("a/obj-{:02}", i), b"a")
+            .await;
+        client
+            .put_object("pag-prefix", &format!("b/obj-{:02}", i), b"b")
+            .await;
     }
 
     let mut all_keys: Vec<String> = Vec::new();
@@ -504,7 +657,10 @@ async fn list_pagination_with_prefix_filter() {
             let key_start = pos + start + 5;
             let key_end = body[key_start..].find("</Key>").unwrap();
             let key = body[key_start..key_start + key_end].to_string();
-            assert!(key.starts_with("a/"), "key '{key}' should match prefix 'a/'");
+            assert!(
+                key.starts_with("a/"),
+                "key '{key}' should match prefix 'a/'"
+            );
             all_keys.push(key);
             pos = key_start + key_end + 6;
         }
@@ -514,10 +670,17 @@ async fn list_pagination_with_prefix_filter() {
             break;
         }
         token = extract_xml_text(&body, "NextContinuationToken").unwrap_or_default();
-        assert!(!token.is_empty(), "must have continuation token for next page");
+        assert!(
+            !token.is_empty(),
+            "must have continuation token for next page"
+        );
     }
 
-    assert_eq!(all_keys.len(), 6, "should return all 6 objects matching prefix 'a/'");
+    assert_eq!(
+        all_keys.len(),
+        6,
+        "should return all 6 objects matching prefix 'a/'"
+    );
 }
 
 #[tokio::test]
@@ -531,11 +694,16 @@ async fn list_pagination_start_after_with_max_keys() {
     }
 
     // start-after="banana" + max-keys=2 → should return: cherry, date
-    let resp = client.list_objects_v2_full("pag-sa", "", "", 2, "", "banana").await;
+    let resp = client
+        .list_objects_v2_full("pag-sa", "", "", 2, "", "banana")
+        .await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
     assert!(!body.contains("<Key>apple</Key>"), "should skip apple");
-    assert!(!body.contains("<Key>banana</Key>"), "should skip banana (start-after is exclusive)");
+    assert!(
+        !body.contains("<Key>banana</Key>"),
+        "should skip banana (start-after is exclusive)"
+    );
     assert!(body.contains("<Key>cherry</Key>"), "should include cherry");
     assert!(body.contains("<Key>date</Key>"), "should include date");
     let count = body.matches("<Contents>").count();
@@ -554,12 +722,16 @@ async fn list_pagination_continuation_token_chain() {
     // buffer = (4+1)*2 = 10, so ≤10 objects; 9 here fits
     for prefix in ["a", "b", "c"] {
         for i in 0..3 {
-            client.put_object("pag-chain", &format!("{prefix}{i}"), b"data").await;
+            client
+                .put_object("pag-chain", &format!("{prefix}{i}"), b"data")
+                .await;
         }
     }
 
     // Page 1: max-keys=4
-    let resp = client.list_objects_v2_full("pag-chain", "", "", 4, "", "").await;
+    let resp = client
+        .list_objects_v2_full("pag-chain", "", "", 4, "", "")
+        .await;
     assert_eq!(resp.status(), 200);
     let body1 = resp.text().await.unwrap();
     assert!(body1.contains("<IsTruncated>true</IsTruncated>"));
@@ -567,18 +739,28 @@ async fn list_pagination_continuation_token_chain() {
     assert!(!token1.is_empty());
 
     // Page 2: use continuation token from page 1
-    let resp = client.list_objects_v2_full("pag-chain", "", "", 4, &token1, "").await;
+    let resp = client
+        .list_objects_v2_full("pag-chain", "", "", 4, &token1, "")
+        .await;
     assert_eq!(resp.status(), 200);
     let body2 = resp.text().await.unwrap();
     assert!(body2.contains("<IsTruncated>true</IsTruncated>"));
     let token2 = extract_xml_text(&body2, "NextContinuationToken").unwrap();
-    assert_ne!(token2, token1, "continuation tokens should differ across pages");
+    assert_ne!(
+        token2, token1,
+        "continuation tokens should differ across pages"
+    );
 
     // Page 3: last page
-    let resp = client.list_objects_v2_full("pag-chain", "", "", 4, &token2, "").await;
+    let resp = client
+        .list_objects_v2_full("pag-chain", "", "", 4, &token2, "")
+        .await;
     assert_eq!(resp.status(), 200);
     let body3 = resp.text().await.unwrap();
-    assert!(body3.contains("<IsTruncated>false</IsTruncated>"), "last page should not be truncated");
+    assert!(
+        body3.contains("<IsTruncated>false</IsTruncated>"),
+        "last page should not be truncated"
+    );
 }
 
 #[tokio::test]
@@ -588,7 +770,9 @@ async fn list_pagination_key_count_matches_contents() {
 
     // buffer = (3+1)*2 = 8, so ≤8 objects
     for i in 0..8 {
-        client.put_object("pag-kc", &format!("k{:03}", i), b"data").await;
+        client
+            .put_object("pag-kc", &format!("k{:03}", i), b"data")
+            .await;
     }
 
     let mut token = String::new();

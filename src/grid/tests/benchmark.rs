@@ -6,10 +6,10 @@
 use std::sync::Arc;
 use std::time::Instant;
 
-use crate::grid::connection::auth_validate_token;
-use crate::grid::connection::Connection;
-use crate::grid::handler::{single_handler_fn, HandlerRegistry};
 use crate::grid::ConnectionState;
+use crate::grid::connection::Connection;
+use crate::grid::connection::auth_validate_token;
+use crate::grid::handler::{HandlerRegistry, single_handler_fn};
 
 const HANDLER_ECHO: u8 = 100;
 
@@ -169,7 +169,8 @@ async fn bench_grid_large_payload() {
     }
     let elapsed = start.elapsed();
 
-    let mib_per_sec = (ITERATIONS * PAYLOAD_SIZE) as f64 / (1024.0 * 1024.0) / elapsed.as_secs_f64();
+    let mib_per_sec =
+        (ITERATIONS * PAYLOAD_SIZE) as f64 / (1024.0 * 1024.0) / elapsed.as_secs_f64();
 
     println!(
         "\nbench_grid_large_payload (1 MiB):\n  {} requests in {:?}\n  {:.1} MiB/s",

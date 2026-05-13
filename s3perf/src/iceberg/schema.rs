@@ -87,10 +87,7 @@ pub struct ViewRepresentation {
     pub dialect: String,
 }
 
-pub fn build_iceberg_view_version(
-    namespace: &[String],
-    view_name: &str,
-) -> ViewVersion {
+pub fn build_iceberg_view_version(namespace: &[String], view_name: &str) -> ViewVersion {
     let ns_path = namespace.join(".");
     ViewVersion {
         version_id: 1,

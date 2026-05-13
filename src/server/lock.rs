@@ -30,10 +30,7 @@ pub struct InstanceLock {
 impl Drop for InstanceLock {
     fn drop(&mut self) {
         if let Err(e) = fs::remove_file(&self.path) {
-            tracing::warn!(
-                "failed to remove lock file {}: {e}",
-                self.path.display()
-            );
+            tracing::warn!("failed to remove lock file {}: {e}", self.path.display());
         }
     }
 }
@@ -51,9 +48,8 @@ pub fn acquire() -> MinioResult<InstanceLock> {
     const STALE_LOCK_MAX_ATTEMPTS: u32 = 8;
     const STALE_LOCK_RETRY_SLEEP: Duration = Duration::from_secs(1);
 
-    let cwd = std::env::current_dir().map_err(|e| {
-        MinioError::Internal(format!("failed to get current directory: {e}"))
-    })?;
+    let cwd = std::env::current_dir()
+        .map_err(|e| MinioError::Internal(format!("failed to get current directory: {e}")))?;
     let lock_path = cwd.join(".minio.lock");
 
     let mut stale_break_attempts = 0u32;
@@ -66,7 +62,10 @@ pub fn acquire() -> MinioResult<InstanceLock> {
             .write(true)
             .open(&lock_path)
             .map_err(|e| {
-                MinioError::Internal(format!("cannot open lock file {}: {e}", lock_path.display()))
+                MinioError::Internal(format!(
+                    "cannot open lock file {}: {e}",
+                    lock_path.display()
+                ))
             })?;
 
         match file.try_lock_exclusive() {

@@ -6,8 +6,8 @@
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
-use async_trait::async_trait;
 use crate::base::error::{MinioError, MinioResult};
+use async_trait::async_trait;
 
 use crate::storage::{DiskInfo, FileStat, StorageAPI};
 
@@ -106,11 +106,7 @@ impl StorageAPI for XlStorage {
             .await
             .map_err(MinioError::DiskIO)?;
 
-        let file_len = file
-            .metadata()
-            .await
-            .map_err(MinioError::DiskIO)?
-            .len() as i64;
+        let file_len = file.metadata().await.map_err(MinioError::DiskIO)?.len() as i64;
 
         if offset < 0 || length <= 0 || offset >= file_len {
             return Ok(Vec::new());
@@ -200,12 +196,12 @@ impl StorageAPI for XlStorage {
             .map_err(MinioError::DiskIO)?;
         // count=0 means unlimited, but cap internally to prevent OOM
         const MAX_LIST_LIMIT: usize = 100_000;
-        let limit = if count == 0 { MAX_LIST_LIMIT } else { std::cmp::min(count, MAX_LIST_LIMIT) };
-        while let Some(entry) = read_dir
-            .next_entry()
-            .await
-            .map_err(MinioError::DiskIO)?
-        {
+        let limit = if count == 0 {
+            MAX_LIST_LIMIT
+        } else {
+            std::cmp::min(count, MAX_LIST_LIMIT)
+        };
+        while let Some(entry) = read_dir.next_entry().await.map_err(MinioError::DiskIO)? {
             entries.push(entry.file_name().to_string_lossy().to_string());
             if entries.len() >= limit {
                 break;
@@ -309,7 +305,10 @@ mod tests {
         storage.make_volume("bucket").await.unwrap();
 
         let data = b"hello minio-rs xl.meta format v2";
-        storage.write_all("bucket", "obj/xl.meta", data).await.unwrap();
+        storage
+            .write_all("bucket", "obj/xl.meta", data)
+            .await
+            .unwrap();
         assert!(storage.file_exists("bucket", "obj/xl.meta").await.unwrap());
 
         let read = storage.read_all("bucket", "obj/xl.meta").await.unwrap();
@@ -328,9 +327,15 @@ mod tests {
         storage.make_volume("bucket").await.unwrap();
 
         let data: Vec<u8> = (0..100u8).collect();
-        storage.write_all("bucket", "range-test", &data).await.unwrap();
+        storage
+            .write_all("bucket", "range-test", &data)
+            .await
+            .unwrap();
 
-        let part = storage.read_range("bucket", "range-test", 10, 20).await.unwrap();
+        let part = storage
+            .read_range("bucket", "range-test", 10, 20)
+            .await
+            .unwrap();
         assert_eq!(part, &data[10..30]);
 
         let _ = std::fs::remove_dir_all(&dir);
@@ -343,11 +348,20 @@ mod tests {
         storage.make_volume("bucket").await.unwrap();
 
         let content = b"before rename";
-        storage.write_all("bucket", "src.txt", content).await.unwrap();
-        storage.rename("bucket", "src.txt", "bucket", "dst.txt").await.unwrap();
+        storage
+            .write_all("bucket", "src.txt", content)
+            .await
+            .unwrap();
+        storage
+            .rename("bucket", "src.txt", "bucket", "dst.txt")
+            .await
+            .unwrap();
 
         assert!(!storage.file_exists("bucket", "src.txt").await.unwrap());
-        assert_eq!(storage.read_all("bucket", "dst.txt").await.unwrap(), content);
+        assert_eq!(
+            storage.read_all("bucket", "dst.txt").await.unwrap(),
+            content
+        );
 
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -377,7 +391,10 @@ mod tests {
         let dir = temp_dir();
         let storage = XlStorage::new(&dir, "test");
         storage.make_volume("bucket").await.unwrap();
-        storage.write_all("bucket", "stat.txt", b"hello!").await.unwrap();
+        storage
+            .write_all("bucket", "stat.txt", b"hello!")
+            .await
+            .unwrap();
 
         let stat = storage.stat_file("bucket", "stat.txt").await.unwrap();
         assert_eq!(stat.size, 6);

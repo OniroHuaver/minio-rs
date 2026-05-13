@@ -4,8 +4,8 @@
 //! - Write: `[data] -> hash64 -> [hash(8B LE) || data] -> write to disk`
 //! - Read: `[hash(8B LE) || data] -> verify hash == HighwayHash(data) -> Some(data) or None(corrupted)`
 
-use highway::HighwayHasher;
 use highway::HighwayHash;
+use highway::HighwayHasher;
 
 /// Bitrot detector — stateless, pure function
 pub struct BitrotDetector;

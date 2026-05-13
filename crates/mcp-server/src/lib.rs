@@ -111,14 +111,30 @@ pub struct RunBenchmarkParams {
     pub delete_distrib: Option<f64>,
 }
 
-fn default_access_key() -> String { "minioadmin".to_string() }
-fn default_secret_key() -> String { "minioadmin".to_string() }
-fn default_region() -> String { "us-east-1".to_string() }
-fn default_bucket() -> String { "s3perf-bench".to_string() }
-fn default_concurrency() -> usize { 4 }
-fn default_duration() -> String { "30s".to_string() }
-fn default_obj_size() -> String { "1MiB".to_string() }
-fn default_objects() -> usize { 100 }
+fn default_access_key() -> String {
+    "minioadmin".to_string()
+}
+fn default_secret_key() -> String {
+    "minioadmin".to_string()
+}
+fn default_region() -> String {
+    "us-east-1".to_string()
+}
+fn default_bucket() -> String {
+    "s3perf-bench".to_string()
+}
+fn default_concurrency() -> usize {
+    4
+}
+fn default_duration() -> String {
+    "30s".to_string()
+}
+fn default_obj_size() -> String {
+    "1MiB".to_string()
+}
+fn default_objects() -> usize {
+    100
+}
 
 // ── Tool output types ──────────────────────────────────────────────────────
 
@@ -165,7 +181,9 @@ impl McpServer {
         {
             let task = self.inner.server_task.lock().await;
             if task.is_some() {
-                return Err(err_invalid("server is already running. Stop it first with stop_server."));
+                return Err(err_invalid(
+                    "server is already running. Stop it first with stop_server.",
+                ));
             }
         }
 
@@ -240,19 +258,31 @@ impl McpServer {
     }
 
     /// Run an S3 performance benchmark against any S3-compatible endpoint.
-    #[rmcp::tool(description = "Run an S3 benchmark (mixed/get/put/delete/list/stat) against any S3-compatible endpoint")]
+    #[rmcp::tool(
+        description = "Run an S3 benchmark (mixed/get/put/delete/list/stat) against any S3-compatible endpoint"
+    )]
     async fn run_benchmark(
         &self,
         Parameters(params): Parameters<RunBenchmarkParams>,
     ) -> Result<Json<serde_json::Value>, ErrorData> {
         let endpoint = params.endpoint.clone();
-        let region = params.region.clone().unwrap_or_else(|| "us-east-1".to_string());
-        let bucket = params.bucket.clone().unwrap_or_else(|| "s3perf-bench".to_string());
+        let region = params
+            .region
+            .clone()
+            .unwrap_or_else(|| "us-east-1".to_string());
+        let bucket = params
+            .bucket
+            .clone()
+            .unwrap_or_else(|| "s3perf-bench".to_string());
 
         let s3_config = s3perf::S3Config {
             host: endpoint.clone(),
-            access_key: params.access_key.unwrap_or_else(|| "minioadmin".to_string()),
-            secret_key: params.secret_key.unwrap_or_else(|| "minioadmin".to_string()),
+            access_key: params
+                .access_key
+                .unwrap_or_else(|| "minioadmin".to_string()),
+            secret_key: params
+                .secret_key
+                .unwrap_or_else(|| "minioadmin".to_string()),
             region: region.clone(),
             tls: params.tls.unwrap_or(false),
             insecure: params.insecure.unwrap_or(false),
@@ -260,10 +290,12 @@ impl McpServer {
             ca_pem: None,
         };
 
-        let duration = s3perf::parse_duration(&params.duration.unwrap_or_else(|| "30s".to_string()))
-            .map_err(|e| err_invalid(format!("invalid duration: {e}")))?;
-        let obj_size = s3perf::parse_obj_size(&params.obj_size.unwrap_or_else(|| "1MiB".to_string()))
-            .map_err(|e| err_invalid(format!("invalid obj_size: {e}")))?;
+        let duration =
+            s3perf::parse_duration(&params.duration.unwrap_or_else(|| "30s".to_string()))
+                .map_err(|e| err_invalid(format!("invalid duration: {e}")))?;
+        let obj_size =
+            s3perf::parse_obj_size(&params.obj_size.unwrap_or_else(|| "1MiB".to_string()))
+                .map_err(|e| err_invalid(format!("invalid obj_size: {e}")))?;
 
         let bc = s3perf::BenchConfig {
             s3_config,

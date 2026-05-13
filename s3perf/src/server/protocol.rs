@@ -58,7 +58,7 @@ pub struct ServerRequest {
     pub op: ServerRequestOp,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub benchmark: Option<BenchmarkConfig>,
-    pub stage: String,       // "prepare","benchmark","cleanup","done"
+    pub stage: String, // "prepare","benchmark","cleanup","done"
     pub client_idx: usize,
     pub total_clients: usize,
     pub start_time: DateTime<Utc>,
@@ -126,9 +126,7 @@ fn expand_brace(s: &str) -> Vec<String> {
                 let hi: usize = range[dot_idx + 3..].parse().unwrap_or(lo);
                 let prefix = &s[..start];
                 let suffix = &s[end + 1..];
-                return (lo..=hi)
-                    .map(|i| format!("{prefix}{i}{suffix}"))
-                    .collect();
+                return (lo..=hi).map(|i| format!("{prefix}{i}{suffix}")).collect();
             }
         }
     }

@@ -10,8 +10,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
-static CONNECTED: std::sync::OnceLock<Arc<Mutex<Option<ServerInfo>>>> =
-    std::sync::OnceLock::new();
+static CONNECTED: std::sync::OnceLock<Arc<Mutex<Option<ServerInfo>>>> = std::sync::OnceLock::new();
 
 pub async fn run_client(listen_addr: &str) -> Result<(), String> {
     let addr: SocketAddr = listen_addr
@@ -59,8 +58,8 @@ async fn handle_ws(mut ws: WebSocket) {
             err: Some(e),
             ops: None,
         };
-        let json = serde_json::to_string(&reply)
-            .unwrap_or_else(|e| format!("{{\"error\":\"ser: {e}\"}}"));
+        let json =
+            serde_json::to_string(&reply).unwrap_or_else(|e| format!("{{\"error\":\"ser: {e}\"}}"));
         let _ = ws.send(Message::Text(json.into())).await;
         return;
     }
@@ -109,8 +108,8 @@ async fn handle_ws(mut ws: WebSocket) {
             err: None,
             ops: None,
         };
-        let json = serde_json::to_string(&reply)
-            .unwrap_or_else(|e| format!("{{\"error\":\"ser: {e}\"}}"));
+        let json =
+            serde_json::to_string(&reply).unwrap_or_else(|e| format!("{{\"error\":\"ser: {e}\"}}"));
         let _ = ws.send(Message::Text(json.into())).await;
     }
 
@@ -119,7 +118,7 @@ async fn handle_ws(mut ws: WebSocket) {
             Ok(req) => {
                 let reply = build_reply(&req);
                 let json = serde_json::to_string(&reply)
-            .unwrap_or_else(|e| format!("{{\"error\":\"ser: {e}\"}}"));
+                    .unwrap_or_else(|e| format!("{{\"error\":\"ser: {e}\"}}"));
                 if let Err(e) = ws.send(Message::Text(json.into())).await {
                     error!("failed to send reply: {e}");
                     break;
@@ -159,7 +158,10 @@ fn build_reply(req: &ServerRequest) -> ClientReply {
         ServerRequestOp::Benchmark => {
             info!(
                 "received benchmark: {}",
-                req.benchmark.as_ref().map(|b| b.command.as_str()).unwrap_or("?")
+                req.benchmark
+                    .as_ref()
+                    .map(|b| b.command.as_str())
+                    .unwrap_or("?")
             );
             ClientReply {
                 time: now,

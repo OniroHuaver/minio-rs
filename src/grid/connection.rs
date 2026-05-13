@@ -1,18 +1,18 @@
 use std::collections::{HashMap, VecDeque};
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
-use tokio::sync::{oneshot, watch, Mutex, RwLock};
+use tokio::sync::{Mutex, RwLock, oneshot, watch};
 
 use tokio_tungstenite::tungstenite;
 
+use crate::grid::AuthValidateFn;
 use crate::grid::connection_state::ConnectionState;
 use crate::grid::error::{GridError, GridResult, RemoteErr};
 use crate::grid::handler::HandlerRegistry;
-use crate::grid::message::{Flags, HandlerId, Message, Op, HANDLER_INVALID};
+use crate::grid::message::{Flags, HANDLER_INVALID, HandlerId, Message, Op};
 use crate::grid::msg_types::{ConnectReq, ConnectResp};
-use crate::grid::AuthValidateFn;
 
 #[cfg(test)]
 use crate::grid::debug::DebugMsg;
@@ -221,8 +221,7 @@ impl Connection {
             self.set_state(ConnectionState::ConnectionError);
             return Err(GridError::WritePipelineActive);
         };
-        let (sink_tx, mut sink_rx) =
-            tokio::sync::mpsc::unbounded_channel::<tungstenite::Message>();
+        let (sink_tx, mut sink_rx) = tokio::sync::mpsc::unbounded_channel::<tungstenite::Message>();
         tokio::spawn(async move {
             let mut ws_tx = ws_tx_sink;
             while let Some(msg) = sink_rx.recv().await {
@@ -245,7 +244,9 @@ impl Connection {
             self.inner.local_id,
             &self.inner.local,
             &self.inner.auth_token,
-            self.inner.next_handshake_nonce.fetch_add(1, Ordering::Relaxed),
+            self.inner
+                .next_handshake_nonce
+                .fetch_add(1, Ordering::Relaxed),
         );
         match rmp_serde::to_vec(&req) {
             Ok(bytes) => {
@@ -284,10 +285,7 @@ impl Connection {
         }
 
         let mut deadline = deadline.unwrap_or(DEFAULT_TIMEOUT);
-        let extra_ms = self
-            .inner
-            .debug_add_deadline_ms
-            .load(Ordering::SeqCst);
+        let extra_ms = self.inner.debug_add_deadline_ms.load(Ordering::SeqCst);
         if extra_ms > 0 {
             deadline += Duration::from_millis(extra_ms);
         }
@@ -347,18 +345,12 @@ impl Connection {
         }
 
         let mut deadline = deadline.unwrap_or(DEFAULT_TIMEOUT);
-        let extra_ms = self
-            .inner
-            .debug_add_deadline_ms
-            .load(Ordering::SeqCst);
+        let extra_ms = self.inner.debug_add_deadline_ms.load(Ordering::SeqCst);
         if extra_ms > 0 {
             deadline += Duration::from_millis(extra_ms);
         }
 
-        let mux_id = self
-            .inner
-            .next_mux_id
-            .fetch_add(1, Ordering::Relaxed);
+        let mux_id = self.inner.next_mux_id.fetch_add(1, Ordering::Relaxed);
 
         let (tx, rx) = oneshot::channel();
         {
@@ -541,7 +533,8 @@ impl Connection {
         let mux_id = msg.mux_id;
 
         let Some(raw) = msg.payload.as_ref() else {
-            self.fail_connect_handshake(mux_id, "missing connect payload").await;
+            self.fail_connect_handshake(mux_id, "missing connect payload")
+                .await;
             return;
         };
 
@@ -549,7 +542,8 @@ impl Connection {
             Ok(r) => r,
             Err(e) => {
                 tracing::warn!(%e, remote = %self.inner.remote, "invalid grid ConnectReq");
-                self.fail_connect_handshake(mux_id, "invalid connect payload").await;
+                self.fail_connect_handshake(mux_id, "invalid connect payload")
+                    .await;
                 return;
             }
         };
@@ -704,9 +698,9 @@ impl Connection {
                 Err(e) => {
                     let mut m = Message::new(Op::MuxConnectError, HANDLER_INVALID);
                     m.mux_id = mux_id;
-                    if let Ok(b) = rmp_serde::to_vec(&crate::grid::msg_types::MuxConnectError {
-                        error: e.msg,
-                    }) {
+                    if let Ok(b) =
+                        rmp_serde::to_vec(&crate::grid::msg_types::MuxConnectError { error: e.msg })
+                    {
                         m.payload = Some(b);
                     }
                     let _ = out_q.send(m);
@@ -827,14 +821,20 @@ impl Connection {
                 self.inner.debug_kill_outbound.store(true, Ordering::SeqCst);
             }
             DebugMsg::BlockInboundMessages(block) => {
-                self.inner.debug_block_inbound.store(block, Ordering::SeqCst);
+                self.inner
+                    .debug_block_inbound
+                    .store(block, Ordering::SeqCst);
             }
             DebugMsg::WaitForExit => {}
             DebugMsg::SetClientPingDuration(ms) => {
-                self.inner.debug_ping_interval_ms.store(ms, Ordering::SeqCst);
+                self.inner
+                    .debug_ping_interval_ms
+                    .store(ms, Ordering::SeqCst);
             }
             DebugMsg::SetConnPingDuration(ms) => {
-                self.inner.debug_ping_interval_ms.store(ms, Ordering::SeqCst);
+                self.inner
+                    .debug_ping_interval_ms
+                    .store(ms, Ordering::SeqCst);
             }
             DebugMsg::AddToDeadline(ms) => {
                 self.inner
@@ -1065,7 +1065,7 @@ async fn decode_and_dispatch_grid_payload(
 /// Read task: reads from the WebSocket stream and dispatches messages.
 pub async fn read_task(
     mut ws_rx: impl futures_util::Stream<Item = Result<tungstenite::Message, tungstenite::Error>>
-        + Unpin,
+    + Unpin,
     conn: Connection,
 ) {
     use futures_util::StreamExt;
@@ -1121,7 +1121,8 @@ pub async fn read_task(
 async fn dispatch_merged(data: &[u8], conn: &Connection) -> Result<(), GridError> {
     let mut remaining = data;
     while remaining.len() >= 4 {
-        let len = u32::from_be_bytes([remaining[0], remaining[1], remaining[2], remaining[3]]) as usize;
+        let len =
+            u32::from_be_bytes([remaining[0], remaining[1], remaining[2], remaining[3]]) as usize;
         if len > MAX_GRID_WIRE_BYTES {
             return Err(GridError::PayloadTooLarge {
                 max: MAX_GRID_WIRE_BYTES,
@@ -1151,10 +1152,7 @@ async fn dispatch_merged(data: &[u8], conn: &Connection) -> Result<(), GridError
 
 /// Ping task: periodically sends pings and checks for pong timeouts.
 pub async fn ping_task(conn: Connection) {
-    let interval_ms = conn
-        .inner
-        .debug_ping_interval_ms
-        .load(Ordering::SeqCst);
+    let interval_ms = conn.inner.debug_ping_interval_ms.load(Ordering::SeqCst);
     let ping_dur = if interval_ms > 0 {
         Duration::from_millis(interval_ms)
     } else {

@@ -1,8 +1,8 @@
 //! XML response structs and S3 response helpers
 
 use axum::http::{
-    header::{self, HeaderValue},
     HeaderMap, StatusCode,
+    header::{self, HeaderValue},
 };
 use serde::Serialize;
 
@@ -62,7 +62,10 @@ pub struct ListBucketResult {
     pub max_keys: usize,
     #[serde(rename = "IsTruncated")]
     pub is_truncated: bool,
-    #[serde(rename = "NextContinuationToken", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "NextContinuationToken",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub next_continuation_token: Option<String>,
     #[serde(rename = "ContinuationToken", skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,

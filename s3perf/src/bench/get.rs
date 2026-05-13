@@ -16,7 +16,12 @@ pub struct GetBenchmark {
 
 impl GetBenchmark {
     pub fn new(common: Common, range: Option<(i64, i64)>, list_existing: bool) -> Self {
-        Self { common, objects: Mutex::new(Vec::new()), range, list_existing }
+        Self {
+            common,
+            objects: Mutex::new(Vec::new()),
+            range,
+            list_existing,
+        }
     }
 }
 
@@ -56,9 +61,7 @@ impl Benchmark for GetBenchmark {
                         if !resp.is_truncated().unwrap_or(false) {
                             break;
                         }
-                        token = resp
-                            .next_continuation_token()
-                            .map(|s| s.to_string());
+                        token = resp.next_continuation_token().map(|s| s.to_string());
                     }
                     Err(_) => break,
                 }
@@ -72,7 +75,9 @@ impl Benchmark for GetBenchmark {
         let keys = Arc::new(Mutex::new(Vec::new()));
 
         for _i in 0..self.common.objects {
-            if ctx.is_cancelled() { break; }
+            if ctx.is_cancelled() {
+                break;
+            }
             let client = client.clone();
             let bucket = self.common.bucket.clone();
             let sem = sem.clone();
@@ -81,8 +86,12 @@ impl Benchmark for GetBenchmark {
             let mut source = (self.common.source)();
 
             handles.push(tokio::spawn(async move {
-                let Ok(_permit) = sem.acquire().await else { return; };
-                if ctx.is_cancelled() { return; }
+                let Ok(_permit) = sem.acquire().await else {
+                    return;
+                };
+                if ctx.is_cancelled() {
+                    return;
+                }
                 let obj = source.object();
                 let key = obj.name.clone();
                 match crate::bench::body::byte_stream_from_object(obj).await {
@@ -101,7 +110,9 @@ impl Benchmark for GetBenchmark {
             }));
         }
 
-        for h in handles { let _ = h.await; }
+        for h in handles {
+            let _ = h.await;
+        }
         *self.objects.lock().unwrap() = super::take_from_arc_mutex(keys)
             .map_err(|e| crate::generator::Error::Bench(e.to_string()))?;
         Ok(())
@@ -145,7 +156,9 @@ impl Benchmark for GetBenchmark {
                         break;
                     }
 
-                    let Ok(_permit) = sem.acquire().await else { return; };
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
@@ -213,32 +226,47 @@ impl Benchmark for GetBenchmark {
             _ = ctx.cancelled() => {}
             _ = tokio::time::sleep(dur) => {}
         }
-        for h in handles { h.abort(); }
+        for h in handles {
+            h.abort();
+        }
         Ok(())
     }
 
     async fn cleanup(&self, ctx: &CancellationToken) {
-        if !self.common.clear { return; }
+        if !self.common.clear {
+            return;
+        }
         let client = (self.common.client_factory)(0);
         let objects = self.objects.lock().unwrap().clone();
         let sem = Arc::new(tokio::sync::Semaphore::new(self.common.concurrency));
         let mut handles = Vec::new();
 
         for key in objects {
-            if ctx.is_cancelled() { break; }
+            if ctx.is_cancelled() {
+                break;
+            }
             let client = client.clone();
             let bucket = self.common.bucket.clone();
             let sem = sem.clone();
             let ctx = ctx.clone();
 
             handles.push(tokio::spawn(async move {
-                let Ok(_permit) = sem.acquire().await else { return; };
+                let Ok(_permit) = sem.acquire().await else {
+                    return;
+                };
                 if !ctx.is_cancelled() {
-                    let _ = client.delete_object().bucket(&bucket).key(&key).send().await;
+                    let _ = client
+                        .delete_object()
+                        .bucket(&bucket)
+                        .key(&key)
+                        .send()
+                        .await;
                 }
             }));
         }
-        for h in handles { let _ = h.await; }
+        for h in handles {
+            let _ = h.await;
+        }
     }
 
     fn common(&self) -> &Common {

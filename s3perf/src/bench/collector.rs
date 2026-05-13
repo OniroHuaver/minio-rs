@@ -109,7 +109,8 @@ impl Collector for OpsCollector {
                     continue;
                 }
 
-                let filtered: Vec<&Operation> = ops.iter().filter(|o| o.op_type == op_name).collect();
+                let filtered: Vec<&Operation> =
+                    ops.iter().filter(|o| o.op_type == op_name).collect();
                 if filtered.len() < want_samples {
                     drop(ops);
                     continue;
@@ -193,4 +194,3 @@ impl Collector for OpsCollector {
         merged
     }
 }
-

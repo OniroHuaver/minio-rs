@@ -9,9 +9,20 @@ use std::fs;
 // --- Constants ---
 /// Supported benchmark names.
 pub const VALID_BENCHMARKS: &[&str] = &[
-    "mixed", "get", "put", "delete", "list", "stat",
-    "versioned", "retention", "multipart", "multipart-put",
-    "snowball", "fanout", "append", "zip",
+    "mixed",
+    "get",
+    "put",
+    "delete",
+    "list",
+    "stat",
+    "versioned",
+    "retention",
+    "multipart",
+    "multipart-put",
+    "snowball",
+    "fanout",
+    "append",
+    "zip",
 ];
 
 /// Default benchmark bucket name (aligned with CLI defaults).
@@ -229,17 +240,39 @@ impl Default for AutotermParams {
 
 // --- Defaults ---
 
-fn default_host() -> String { "localhost:9000".into() }
-fn default_access_key() -> String { "minioadmin".into() }
-fn default_secret_key() -> String { "minioadmin".into() }
-fn default_region() -> String { "us-east-1".into() }
-fn default_bucket() -> String { DEFAULT_S3PERF_BUCKET.into() }
-fn default_duration_str() -> String { "5m".into() }
-fn default_concurrent() -> usize { 20 }
-fn default_objects() -> usize { 10000 }
-fn default_obj_size() -> String { "1MiB".into() }
-fn default_autoterm_dur() -> String { "15s".into() }
-fn default_autoterm_pct() -> f64 { 7.5 }
+fn default_host() -> String {
+    "localhost:9000".into()
+}
+fn default_access_key() -> String {
+    "minioadmin".into()
+}
+fn default_secret_key() -> String {
+    "minioadmin".into()
+}
+fn default_region() -> String {
+    "us-east-1".into()
+}
+fn default_bucket() -> String {
+    DEFAULT_S3PERF_BUCKET.into()
+}
+fn default_duration_str() -> String {
+    "5m".into()
+}
+fn default_concurrent() -> usize {
+    20
+}
+fn default_objects() -> usize {
+    10000
+}
+fn default_obj_size() -> String {
+    "1MiB".into()
+}
+fn default_autoterm_dur() -> String {
+    "15s".into()
+}
+fn default_autoterm_pct() -> f64 {
+    7.5
+}
 
 // --- Errors ---
 
@@ -289,11 +322,10 @@ impl RunFileConfig {
             source: e,
         })?;
 
-        let config: Self =
-            serde_yaml::from_str(&content).map_err(|e| RunConfigError::Parse {
-                path: path.to_string(),
-                source: e,
-            })?;
+        let config: Self = serde_yaml::from_str(&content).map_err(|e| RunConfigError::Parse {
+            path: path.to_string(),
+            source: e,
+        })?;
 
         Ok(config)
     }
@@ -318,7 +350,9 @@ impl RunFileConfig {
 
         let r = &self.s3perf.remote;
         if r.host.is_empty() {
-            return Err(RunConfigError::Validation("remote.host cannot be empty".into()));
+            return Err(RunConfigError::Validation(
+                "remote.host cannot be empty".into(),
+            ));
         }
         if r.access_key.is_empty() {
             return Err(RunConfigError::Validation(
@@ -331,7 +365,9 @@ impl RunFileConfig {
             ));
         }
         if r.bucket.is_empty() {
-            return Err(RunConfigError::Validation("remote.bucket cannot be empty".into()));
+            return Err(RunConfigError::Validation(
+                "remote.bucket cannot be empty".into(),
+            ));
         }
 
         Ok(())
@@ -681,7 +717,11 @@ s3perf:
 "#;
         let config: RunFileConfig = serde_yaml::from_str(yaml).unwrap();
         let args = config.to_cli_args();
-        assert_eq!(args, vec!["get"], "expected only subcommand for defaults: {args:?}");
+        assert_eq!(
+            args,
+            vec!["get"],
+            "expected only subcommand for defaults: {args:?}"
+        );
     }
 
     #[test]
@@ -813,9 +853,20 @@ s3perf:
     #[test]
     fn test_valid_benchmarks_list() {
         let expected: &[&str] = &[
-            "mixed", "get", "put", "delete", "list", "stat",
-            "versioned", "retention", "multipart", "multipart-put",
-            "snowball", "fanout", "append", "zip",
+            "mixed",
+            "get",
+            "put",
+            "delete",
+            "list",
+            "stat",
+            "versioned",
+            "retention",
+            "multipart",
+            "multipart-put",
+            "snowball",
+            "fanout",
+            "append",
+            "zip",
         ];
         for name in expected {
             assert!(
@@ -923,7 +974,10 @@ s3perf:
             source: std::io::Error::new(std::io::ErrorKind::NotFound, "not found"),
         };
         let msg = io_err.to_string();
-        assert!(msg.contains("cfg.yml"), "display should contain path: {msg}");
+        assert!(
+            msg.contains("cfg.yml"),
+            "display should contain path: {msg}"
+        );
         assert!(io_err.source().is_some());
 
         let parse_err = RunConfigError::Parse {
@@ -933,10 +987,7 @@ s3perf:
         assert!(parse_err.source().is_some());
 
         let val_err = RunConfigError::Validation("bad config".into());
-        assert_eq!(
-            val_err.to_string(),
-            "config validation failed: bad config"
-        );
+        assert_eq!(val_err.to_string(), "config validation failed: bad config");
         assert!(val_err.source().is_none());
     }
 }

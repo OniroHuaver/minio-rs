@@ -58,8 +58,8 @@ impl Benchmark for IcebergReadBenchmark {
             return Ok(());
         }
 
-        let cat = RestCatalog::new(&self.catalog_config)
-            .map_err(|e| crate::generator::Error::S3(e))?;
+        let cat =
+            RestCatalog::new(&self.catalog_config).map_err(|e| crate::generator::Error::S3(e))?;
         let tree = Tree::new(self.tree_config.clone());
         let creator = DatasetCreator {
             catalog: Some(Arc::new(cat)),
@@ -85,11 +85,10 @@ impl Benchmark for IcebergReadBenchmark {
         ctx: &CancellationToken,
         wait: tokio::sync::broadcast::Receiver<()>,
     ) -> crate::generator::Result<()> {
-        let dist: IcebergMixedDistribution = self
-            .dist
-            .as_ref()
-            .cloned()
-            .unwrap_or_else(|| IcebergMixedDistribution::new(self.distribute_weights()).unwrap());
+        let dist: IcebergMixedDistribution =
+            self.dist.as_ref().cloned().unwrap_or_else(|| {
+                IcebergMixedDistribution::new(self.distribute_weights()).unwrap()
+            });
 
         let collector = self.common.collector.clone();
         let concurrency = self.common.concurrency;
@@ -129,11 +128,19 @@ impl Benchmark for IcebergReadBenchmark {
                             let ns = &namespaces[ns_idx % namespaces.len()];
                             ns_idx += 1;
                             let mut op = Operation {
-                                start: now, end: now, first_byte: None, last_byte: None,
-                                op_type: "NS_LIST".into(), err: String::new(),
+                                start: now,
+                                end: now,
+                                first_byte: None,
+                                last_byte: None,
+                                op_type: "NS_LIST".into(),
+                                err: String::new(),
                                 file: format!("{}/{}/", catalog_name, ns.path.join(".")),
-                                client_id: format!("c{}", thread), endpoint: endpoint.clone(),
-                                obj_per_op: 1, size: 0, thread: thread as u32, categories: 0,
+                                client_id: format!("c{}", thread),
+                                endpoint: endpoint.clone(),
+                                obj_per_op: 1,
+                                size: 0,
+                                thread: thread as u32,
+                                categories: 0,
                             };
                             // Simulate catalog API call
                             op.end = Utc::now();
@@ -143,11 +150,19 @@ impl Benchmark for IcebergReadBenchmark {
                             let ns = &namespaces[ns_idx % namespaces.len()];
                             ns_idx += 1;
                             let mut op = Operation {
-                                start: now, end: now, first_byte: None, last_byte: None,
-                                op_type: "NS_HEAD".into(), err: String::new(),
+                                start: now,
+                                end: now,
+                                first_byte: None,
+                                last_byte: None,
+                                op_type: "NS_HEAD".into(),
+                                err: String::new(),
                                 file: format!("{}/{}/", catalog_name, ns.path.join(".")),
-                                client_id: format!("c{}", thread), endpoint: endpoint.clone(),
-                                obj_per_op: 1, size: 0, thread: thread as u32, categories: 0,
+                                client_id: format!("c{}", thread),
+                                endpoint: endpoint.clone(),
+                                obj_per_op: 1,
+                                size: 0,
+                                thread: thread as u32,
+                                categories: 0,
                             };
                             op.end = Utc::now();
                             (op, true)
@@ -156,11 +171,19 @@ impl Benchmark for IcebergReadBenchmark {
                             let ns = &namespaces[ns_idx % namespaces.len()];
                             ns_idx += 1;
                             let mut op = Operation {
-                                start: now, end: now, first_byte: None, last_byte: None,
-                                op_type: "NS_GET".into(), err: String::new(),
+                                start: now,
+                                end: now,
+                                first_byte: None,
+                                last_byte: None,
+                                op_type: "NS_GET".into(),
+                                err: String::new(),
                                 file: format!("{}/{}/", catalog_name, ns.path.join(".")),
-                                client_id: format!("c{}", thread), endpoint: endpoint.clone(),
-                                obj_per_op: 1, size: 0, thread: thread as u32, categories: 0,
+                                client_id: format!("c{}", thread),
+                                endpoint: endpoint.clone(),
+                                obj_per_op: 1,
+                                size: 0,
+                                thread: thread as u32,
+                                categories: 0,
                             };
                             op.end = Utc::now();
                             (op, true)
@@ -169,11 +192,19 @@ impl Benchmark for IcebergReadBenchmark {
                             let tbl = &tables[tbl_idx % tables.len()];
                             tbl_idx += 1;
                             let mut op = Operation {
-                                start: now, end: now, first_byte: None, last_byte: None,
-                                op_type: "TABLE_LIST".into(), err: String::new(),
+                                start: now,
+                                end: now,
+                                first_byte: None,
+                                last_byte: None,
+                                op_type: "TABLE_LIST".into(),
+                                err: String::new(),
                                 file: format!("{}/{}/", catalog_name, tbl.namespace.join(".")),
-                                client_id: format!("c{}", thread), endpoint: endpoint.clone(),
-                                obj_per_op: 1, size: 0, thread: thread as u32, categories: 0,
+                                client_id: format!("c{}", thread),
+                                endpoint: endpoint.clone(),
+                                obj_per_op: 1,
+                                size: 0,
+                                thread: thread as u32,
+                                categories: 0,
                             };
                             op.end = Utc::now();
                             (op, true)
@@ -182,11 +213,24 @@ impl Benchmark for IcebergReadBenchmark {
                             let tbl = &tables[tbl_idx % tables.len()];
                             tbl_idx += 1;
                             let mut op = Operation {
-                                start: now, end: now, first_byte: None, last_byte: None,
-                                op_type: "TABLE_HEAD".into(), err: String::new(),
-                                file: format!("{}/{}/{}", catalog_name, tbl.namespace.join("."), tbl.name),
-                                client_id: format!("c{}", thread), endpoint: endpoint.clone(),
-                                obj_per_op: 1, size: 0, thread: thread as u32, categories: 0,
+                                start: now,
+                                end: now,
+                                first_byte: None,
+                                last_byte: None,
+                                op_type: "TABLE_HEAD".into(),
+                                err: String::new(),
+                                file: format!(
+                                    "{}/{}/{}",
+                                    catalog_name,
+                                    tbl.namespace.join("."),
+                                    tbl.name
+                                ),
+                                client_id: format!("c{}", thread),
+                                endpoint: endpoint.clone(),
+                                obj_per_op: 1,
+                                size: 0,
+                                thread: thread as u32,
+                                categories: 0,
                             };
                             op.end = Utc::now();
                             (op, true)
@@ -195,11 +239,24 @@ impl Benchmark for IcebergReadBenchmark {
                             let tbl = &tables[tbl_idx % tables.len()];
                             tbl_idx += 1;
                             let mut op = Operation {
-                                start: now, end: now, first_byte: None, last_byte: None,
-                                op_type: "TABLE_GET".into(), err: String::new(),
-                                file: format!("{}/{}/{}", catalog_name, tbl.namespace.join("."), tbl.name),
-                                client_id: format!("c{}", thread), endpoint: endpoint.clone(),
-                                obj_per_op: 1, size: 0, thread: thread as u32, categories: 0,
+                                start: now,
+                                end: now,
+                                first_byte: None,
+                                last_byte: None,
+                                op_type: "TABLE_GET".into(),
+                                err: String::new(),
+                                file: format!(
+                                    "{}/{}/{}",
+                                    catalog_name,
+                                    tbl.namespace.join("."),
+                                    tbl.name
+                                ),
+                                client_id: format!("c{}", thread),
+                                endpoint: endpoint.clone(),
+                                obj_per_op: 1,
+                                size: 0,
+                                thread: thread as u32,
+                                categories: 0,
                             };
                             op.end = Utc::now();
                             (op, true)
@@ -208,11 +265,19 @@ impl Benchmark for IcebergReadBenchmark {
                             let vw = &views[vw_idx % views.len()];
                             vw_idx += 1;
                             let mut op = Operation {
-                                start: now, end: now, first_byte: None, last_byte: None,
-                                op_type: "VIEW_LIST".into(), err: String::new(),
+                                start: now,
+                                end: now,
+                                first_byte: None,
+                                last_byte: None,
+                                op_type: "VIEW_LIST".into(),
+                                err: String::new(),
                                 file: format!("{}/{}/", catalog_name, vw.namespace.join(".")),
-                                client_id: format!("c{}", thread), endpoint: endpoint.clone(),
-                                obj_per_op: 1, size: 0, thread: thread as u32, categories: 0,
+                                client_id: format!("c{}", thread),
+                                endpoint: endpoint.clone(),
+                                obj_per_op: 1,
+                                size: 0,
+                                thread: thread as u32,
+                                categories: 0,
                             };
                             op.end = Utc::now();
                             (op, true)
@@ -221,11 +286,24 @@ impl Benchmark for IcebergReadBenchmark {
                             let vw = &views[vw_idx % views.len()];
                             vw_idx += 1;
                             let mut op = Operation {
-                                start: now, end: now, first_byte: None, last_byte: None,
-                                op_type: "VIEW_HEAD".into(), err: String::new(),
-                                file: format!("{}/{}/{}", catalog_name, vw.namespace.join("."), vw.name),
-                                client_id: format!("c{}", thread), endpoint: endpoint.clone(),
-                                obj_per_op: 1, size: 0, thread: thread as u32, categories: 0,
+                                start: now,
+                                end: now,
+                                first_byte: None,
+                                last_byte: None,
+                                op_type: "VIEW_HEAD".into(),
+                                err: String::new(),
+                                file: format!(
+                                    "{}/{}/{}",
+                                    catalog_name,
+                                    vw.namespace.join("."),
+                                    vw.name
+                                ),
+                                client_id: format!("c{}", thread),
+                                endpoint: endpoint.clone(),
+                                obj_per_op: 1,
+                                size: 0,
+                                thread: thread as u32,
+                                categories: 0,
                             };
                             op.end = Utc::now();
                             (op, true)
@@ -234,11 +312,24 @@ impl Benchmark for IcebergReadBenchmark {
                             let vw = &views[vw_idx % views.len()];
                             vw_idx += 1;
                             let mut op = Operation {
-                                start: now, end: now, first_byte: None, last_byte: None,
-                                op_type: "VIEW_GET".into(), err: String::new(),
-                                file: format!("{}/{}/{}", catalog_name, vw.namespace.join("."), vw.name),
-                                client_id: format!("c{}", thread), endpoint: endpoint.clone(),
-                                obj_per_op: 1, size: 0, thread: thread as u32, categories: 0,
+                                start: now,
+                                end: now,
+                                first_byte: None,
+                                last_byte: None,
+                                op_type: "VIEW_GET".into(),
+                                err: String::new(),
+                                file: format!(
+                                    "{}/{}/{}",
+                                    catalog_name,
+                                    vw.namespace.join("."),
+                                    vw.name
+                                ),
+                                client_id: format!("c{}", thread),
+                                endpoint: endpoint.clone(),
+                                obj_per_op: 1,
+                                size: 0,
+                                thread: thread as u32,
+                                categories: 0,
                             };
                             op.end = Utc::now();
                             (op, true)
@@ -279,8 +370,15 @@ impl Benchmark for IcebergReadBenchmark {
         if self.common.client_idx > 0 {
             return;
         }
-        let Ok(cat) = RestCatalog::new(&self.catalog_config) else { return };
-        let tree = self.tree.lock().unwrap().take().unwrap_or_else(|| Tree::new(self.tree_config.clone()));
+        let Ok(cat) = RestCatalog::new(&self.catalog_config) else {
+            return;
+        };
+        let tree = self
+            .tree
+            .lock()
+            .unwrap()
+            .take()
+            .unwrap_or_else(|| Tree::new(self.tree_config.clone()));
         let creator = DatasetCreator {
             catalog: Some(Arc::new(cat)),
             catalog_pool: None,
@@ -296,6 +394,10 @@ impl Benchmark for IcebergReadBenchmark {
         creator.delete_all(ctx).await;
     }
 
-    fn common(&self) -> &Common { &self.common }
-    fn ops(&self) -> Vec<Operation> { self.ops.lock().unwrap().to_vec() }
+    fn common(&self) -> &Common {
+        &self.common
+    }
+    fn ops(&self) -> Vec<Operation> {
+        self.ops.lock().unwrap().to_vec()
+    }
 }

@@ -22,10 +22,7 @@ pub struct ServerConfig {
 }
 
 /// Start the object storage server.
-pub async fn run(
-    config: ServerConfig,
-    shutdown: Option<CancellationToken>,
-) -> MinioResult<()> {
+pub async fn run(config: ServerConfig, shutdown: Option<CancellationToken>) -> MinioResult<()> {
     // 0. Acquire instance lock — prevents duplicate server processes
     let _instance_lock = crate::server::lock::acquire()?;
 
@@ -100,11 +97,9 @@ pub async fn run(
         object_api: objects.clone() as Arc<dyn ObjectAPI>,
         instance_id: Uuid::now_v7().to_string(),
         region: "us-east-1".to_string(),
-        credentials: std::env::var("MINIO_ROOT_USER").ok().and_then(|ak| {
-            std::env::var("MINIO_ROOT_PASSWORD")
-                .ok()
-                .map(|sk| (ak, sk))
-        }),
+        credentials: std::env::var("MINIO_ROOT_USER")
+            .ok()
+            .and_then(|ak| std::env::var("MINIO_ROOT_PASSWORD").ok().map(|sk| (ak, sk))),
         metrics: Arc::new(bundle.registry),
         http_stats: bundle.http_stats,
         prometheus_auth_public,
@@ -117,7 +112,11 @@ pub async fn run(
     let listener = bind_tcp_listener(&config.address)?;
 
     // 8. Print startup banner
-    print_banner(&config.address, config.console_address.as_deref(), &disk_infos);
+    print_banner(
+        &config.address,
+        config.console_address.as_deref(),
+        &disk_infos,
+    );
 
     // 9. Start HTTP server with graceful shutdown (OS signal or programmatic token)
     let graceful_shutdown = async {
@@ -163,14 +162,10 @@ fn bind_tcp_listener(addr: &str) -> MinioResult<tokio::net::TcpListener> {
     }
     .map_err(MinioError::DiskIO)?;
 
-    socket
-        .set_reuseaddr(true)
-        .map_err(MinioError::DiskIO)?;
+    socket.set_reuseaddr(true).map_err(MinioError::DiskIO)?;
 
     #[cfg(unix)]
-    socket
-        .set_reuseport(true)
-        .map_err(MinioError::DiskIO)?;
+    socket.set_reuseport(true).map_err(MinioError::DiskIO)?;
 
     socket.bind(socket_addr).map_err(|e| {
         if e.kind() == std::io::ErrorKind::AddrInUse {
@@ -184,7 +179,5 @@ fn bind_tcp_listener(addr: &str) -> MinioResult<tokio::net::TcpListener> {
     })?;
 
     // backlog 1024 matches tokio's internal default
-    socket
-        .listen(1024)
-        .map_err(MinioError::DiskIO)
+    socket.listen(1024).map_err(MinioError::DiskIO)
 }

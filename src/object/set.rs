@@ -9,13 +9,13 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::base::error::{MinioError, MinioResult};
 use crate::base::erasure::ErasureParams;
+use crate::base::error::{MinioError, MinioResult};
 use crate::base::format::{ObjectPart, XlMeta, XlMetaEntry, XlMetaVersionHeader};
-use crate::erasure::bitrot::BitrotDetector;
 use crate::erasure::Erasure;
-use futures::future::join_all;
+use crate::erasure::bitrot::BitrotDetector;
 use crate::storage::StorageAPI;
+use futures::future::join_all;
 use tracing::{debug, warn};
 use uuid::Uuid;
 
@@ -49,7 +49,11 @@ impl ErasureSet {
     ///
     /// # Errors
     /// Returns `MinioError::Internal` if fewer than 3 disks are provided or `data_blocks < 1`.
-    pub fn with_params(disks: Vec<Arc<dyn StorageAPI>>, data_blocks: usize, parity_blocks: usize) -> MinioResult<Self> {
+    pub fn with_params(
+        disks: Vec<Arc<dyn StorageAPI>>,
+        data_blocks: usize,
+        parity_blocks: usize,
+    ) -> MinioResult<Self> {
         if disks.len() < 3 {
             return Err(MinioError::Internal(format!(
                 "at least 3 disks are required, got {}",
@@ -57,9 +61,7 @@ impl ErasureSet {
             )));
         }
         if data_blocks < 1 {
-            return Err(MinioError::Internal(
-                "data_blocks must be >= 1".into(),
-            ));
+            return Err(MinioError::Internal("data_blocks must be >= 1".into()));
         }
         let erasure = Erasure::new(data_blocks, parity_blocks)?;
         Ok(Self { disks, erasure })
@@ -167,7 +169,12 @@ impl ErasureSet {
     ) -> MinioResult<Vec<bool>> {
         let meta_bytes = Arc::from(meta.to_bytes()?.into_boxed_slice());
         // Short unique tag per call to prevent concurrent-writer collisions
-        let tmp_tag = Uuid::now_v7().to_string().split('-').next().unwrap_or("tmp").to_string();
+        let tmp_tag = Uuid::now_v7()
+            .to_string()
+            .split('-')
+            .next()
+            .unwrap_or("tmp")
+            .to_string();
 
         let futures: Vec<_> = self
             .disks
@@ -275,11 +282,7 @@ impl ErasureSet {
     /// 2. Compute signature for each meta
     /// 3. Select the majority group with consistent signatures (>= read_quorum)
     /// 4. Return the XlMeta from that group
-    pub async fn read_xl_meta_quorum(
-        &self,
-        volume: &str,
-        path: &str,
-    ) -> MinioResult<XlMeta> {
+    pub async fn read_xl_meta_quorum(&self, volume: &str, path: &str) -> MinioResult<XlMeta> {
         let meta_path = format!("{path}/xl.meta");
         let futures: Vec<_> = self
             .disks
@@ -509,13 +512,7 @@ mod tests {
         async fn delete(&self, _: &str, _: &str) -> MinioResult<()> {
             unimplemented!()
         }
-        async fn rename(
-            &self,
-            _: &str,
-            _: &str,
-            _: &str,
-            _: &str,
-        ) -> MinioResult<()> {
+        async fn rename(&self, _: &str, _: &str, _: &str, _: &str) -> MinioResult<()> {
             unimplemented!()
         }
         async fn list_dir(&self, _: &str, _: &str, _: usize) -> MinioResult<Vec<String>> {

@@ -68,9 +68,7 @@ pub fn calculate_part_size_from_idx(
         return Err(MinioError::Internal("part size is zero".into()));
     }
     if part_index < 1 {
-        return Err(MinioError::Internal(
-            "part size index is invalid".into(),
-        ));
+        return Err(MinioError::Internal("part size index is invalid".into()));
     }
 
     let total_parts = (total_size + part_size - 1) / part_size;

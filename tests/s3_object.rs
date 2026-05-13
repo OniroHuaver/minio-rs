@@ -153,7 +153,11 @@ async fn head_object_not_found_404() {
 async fn head_object_in_nonexistent_bucket() {
     let (_server, client) = setup().await;
     let resp = client.head_object("no-bucket", "any-key").await;
-    assert_eq!(resp.status(), 404, "HeadObject in non-existent bucket → 404");
+    assert_eq!(
+        resp.status(),
+        404,
+        "HeadObject in non-existent bucket → 404"
+    );
 }
 
 // ============================================================================
@@ -167,7 +171,10 @@ async fn get_object_not_found_404() {
     let resp = client.get_object("get-404", "ghost.txt").await;
     assert_eq!(resp.status(), 404, "GetObject non-existent → 404");
     let body = resp.text().await.unwrap();
-    assert!(body.contains("NoSuchKey"), "error body should contain NoSuchKey, got: {body}");
+    assert!(
+        body.contains("NoSuchKey"),
+        "error body should contain NoSuchKey, got: {body}"
+    );
 }
 
 #[tokio::test]
@@ -216,7 +223,11 @@ async fn delete_object_not_found_204() {
     create_bucket(&client, "del-nf").await;
     // S3 spec: deleting non-existent object is idempotent 204
     let resp = client.delete_object("del-nf", "phantom.txt").await;
-    assert_eq!(resp.status(), 204, "DeleteObject non-existent → 204 (idempotent)");
+    assert_eq!(
+        resp.status(),
+        204,
+        "DeleteObject non-existent → 204 (idempotent)"
+    );
 }
 
 // ============================================================================
@@ -269,7 +280,9 @@ async fn key_with_spaces() {
     let (_server, client) = setup().await;
     create_bucket(&client, "keys").await;
     let data = b"spaces in key";
-    let resp = client.put_object("keys", "my file with spaces.txt", data).await;
+    let resp = client
+        .put_object("keys", "my file with spaces.txt", data)
+        .await;
     assert_eq!(resp.status(), 200);
     let resp = client.get_object("keys", "my file with spaces.txt").await;
     assert_eq!(resp.status(), 200);
@@ -375,6 +388,13 @@ async fn etag_format_is_quoted() {
     let (_server, client) = setup().await;
     create_bucket(&client, "etag-test").await;
     let resp = client.put_object("etag-test", "x", b"data").await;
-    let etag = resp.headers().get("etag").and_then(|v| v.to_str().ok()).unwrap();
-    assert!(etag.starts_with('"') && etag.ends_with('"'), "ETag should be quoted: {etag}");
+    let etag = resp
+        .headers()
+        .get("etag")
+        .and_then(|v| v.to_str().ok())
+        .unwrap();
+    assert!(
+        etag.starts_with('"') && etag.ends_with('"'),
+        "ETag should be quoted: {etag}"
+    );
 }

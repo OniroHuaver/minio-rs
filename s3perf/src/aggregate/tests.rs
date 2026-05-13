@@ -73,22 +73,34 @@ mod tests {
             .map(|i| Operation {
                 start: now + Duration::milliseconds(i * 10),
                 end: now + Duration::milliseconds(i * 10 + 5),
-                first_byte: None, last_byte: None,
-                op_type: "GET".into(), err: String::new(),
-                file: format!("a-{i}"), client_id: "c1".into(),
+                first_byte: None,
+                last_byte: None,
+                op_type: "GET".into(),
+                err: String::new(),
+                file: format!("a-{i}"),
+                client_id: "c1".into(),
                 endpoint: "localhost:9000".into(),
-                obj_per_op: 1, size: 1024, thread: 0, categories: 0,
+                obj_per_op: 1,
+                size: 1024,
+                thread: 0,
+                categories: 0,
             })
             .collect();
         let b: Vec<Operation> = (0..3)
             .map(|i| Operation {
                 start: now + Duration::milliseconds(i * 10),
                 end: now + Duration::milliseconds(i * 10 + 5),
-                first_byte: None, last_byte: None,
-                op_type: "GET".into(), err: String::new(),
-                file: format!("b-{i}"), client_id: "c2".into(),
+                first_byte: None,
+                last_byte: None,
+                op_type: "GET".into(),
+                err: String::new(),
+                file: format!("b-{i}"),
+                client_id: "c2".into(),
                 endpoint: "localhost:9000".into(),
-                obj_per_op: 1, size: 1024, thread: 0, categories: 0,
+                obj_per_op: 1,
+                size: 1024,
+                thread: 0,
+                categories: 0,
             })
             .collect();
         let merged = merge(&[a, b]);

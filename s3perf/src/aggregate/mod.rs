@@ -144,7 +144,10 @@ pub fn analyze(
     let all_ok: Vec<&Operation> = ops.iter().filter(|o| o.successful()).collect();
     let total_bytes: i64 = all_ok.iter().map(|o| o.size).sum();
     let total_ops_num = all_ok.len();
-    let time_rng = ops.to_vec().time_range().unwrap_or((Utc::now(), Utc::now()));
+    let time_rng = ops
+        .to_vec()
+        .time_range()
+        .unwrap_or((Utc::now(), Utc::now()));
     let delta = time_rng.1 - time_rng.0;
     let d = delta.num_milliseconds() as f64 / 1000.0;
     let avg_mbps = if d > 0.0 {
@@ -152,7 +155,11 @@ pub fn analyze(
     } else {
         0.0
     };
-    let avg_ops = if d > 0.0 { total_ops_num as f64 / d } else { 0.0 };
+    let avg_ops = if d > 0.0 {
+        total_ops_num as f64 / d
+    } else {
+        0.0
+    };
     let errors = ops.iter().filter(|o| !o.successful()).count();
 
     let mixed_server_stats = Some(Throughput {
@@ -185,7 +192,10 @@ fn analyze_single_op(
     let n = ops.len();
 
     let total_bytes: i64 = ok.iter().map(|o| o.size).sum();
-    let time_rng = ops.to_vec().time_range().unwrap_or((Utc::now(), Utc::now()));
+    let time_rng = ops
+        .to_vec()
+        .time_range()
+        .unwrap_or((Utc::now(), Utc::now()));
     let delta = time_rng.1 - time_rng.0;
     let d = delta.num_milliseconds() as f64 / 1000.0;
 
@@ -257,7 +267,9 @@ fn compute_segmented(ops: &[Operation], segment_dur: TimeDelta) -> Option<Throug
     if ops.is_empty() {
         return None;
     }
-    let segments = ops.to_vec().aggregate(segment_dur.to_std().unwrap_or_default());
+    let segments = ops
+        .to_vec()
+        .aggregate(segment_dur.to_std().unwrap_or_default());
     if segments.is_empty() {
         return None;
     }
@@ -280,9 +292,18 @@ fn compute_segmented(ops: &[Operation], segment_dur: TimeDelta) -> Option<Throug
 
     let len = mbps_list.len();
     let default_seg = &segments[0];
-    let fastest = mbps_list.last().map(|(v, s)| (*v, *s)).unwrap_or((0.0, default_seg));
-    let median = mbps_list.get(len / 2).map(|(v, s)| (*v, *s)).unwrap_or((0.0, default_seg));
-    let slowest = mbps_list.first().map(|(v, s)| (*v, *s)).unwrap_or((0.0, default_seg));
+    let fastest = mbps_list
+        .last()
+        .map(|(v, s)| (*v, *s))
+        .unwrap_or((0.0, default_seg));
+    let median = mbps_list
+        .get(len / 2)
+        .map(|(v, s)| (*v, *s))
+        .unwrap_or((0.0, default_seg));
+    let slowest = mbps_list
+        .first()
+        .map(|(v, s)| (*v, *s))
+        .unwrap_or((0.0, default_seg));
 
     let stats: Vec<SegmentStats> = segments
         .iter()
@@ -297,7 +318,13 @@ fn compute_segmented(ops: &[Operation], segment_dur: TimeDelta) -> Option<Throug
             } else {
                 0.0
             };
-            SegmentStats { start: s.start, mbps, ops: ops_rate, bytes: s.total_bytes, errors: s.errors }
+            SegmentStats {
+                start: s.start,
+                mbps,
+                ops: ops_rate,
+                bytes: s.total_bytes,
+                errors: s.errors,
+            }
         })
         .collect();
 
@@ -320,7 +347,10 @@ fn compute_single_sized(ops: &[&Operation]) -> SingleSizedRequests {
     let size = ops.first().map(|o| o.size).unwrap_or(0);
     let requests = ops.len();
 
-    let mut durs: Vec<f64> = ops.iter().map(|o| o.duration().as_secs_f64() * 1000.0).collect();
+    let mut durs: Vec<f64> = ops
+        .iter()
+        .map(|o| o.duration().as_secs_f64() * 1000.0)
+        .collect();
     durs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
     let avg = durs.iter().sum::<f64>() / durs.len() as f64;
@@ -486,7 +516,9 @@ pub fn write_csv_zst(ops: &[Operation], writer: &mut impl Write) -> crate::gener
         .map_err(|e| crate::generator::Error::Csv(e.to_string()))?;
     }
 
-    let csv_data = wtr.into_inner().map_err(|e| crate::generator::Error::Csv(e.to_string()))?;
+    let csv_data = wtr
+        .into_inner()
+        .map_err(|e| crate::generator::Error::Csv(e.to_string()))?;
     let compressed = zstd::encode_all(csv_data.as_slice(), 3)
         .map_err(|e| crate::generator::Error::Zstd(e.to_string()))?;
     writer.write_all(&compressed)?;
@@ -496,8 +528,8 @@ pub fn write_csv_zst(ops: &[Operation], writer: &mut impl Write) -> crate::gener
 pub fn read_csv_zst(reader: &mut impl Read) -> crate::generator::Result<Vec<Operation>> {
     let mut compressed = Vec::new();
     reader.read_to_end(&mut compressed)?;
-    let data =
-        zstd::decode_all(compressed.as_slice()).map_err(|e| crate::generator::Error::Zstd(e.to_string()))?;
+    let data = zstd::decode_all(compressed.as_slice())
+        .map_err(|e| crate::generator::Error::Zstd(e.to_string()))?;
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'\t')
@@ -562,8 +594,8 @@ pub fn write_json_zst(agg: &Aggregated, writer: &mut impl Write) -> crate::gener
 pub fn read_json_zst(reader: &mut impl Read) -> crate::generator::Result<Aggregated> {
     let mut compressed = Vec::new();
     reader.read_to_end(&mut compressed)?;
-    let data =
-        zstd::decode_all(compressed.as_slice()).map_err(|e| crate::generator::Error::Zstd(e.to_string()))?;
+    let data = zstd::decode_all(compressed.as_slice())
+        .map_err(|e| crate::generator::Error::Zstd(e.to_string()))?;
     let agg: Aggregated = serde_json::from_slice(&data)?;
     Ok(agg)
 }

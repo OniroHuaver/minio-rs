@@ -29,15 +29,13 @@ impl TestServer {
         let disk_paths: Vec<String> = (0..disk_count)
             .map(|i| {
                 let p = data_dir.path().join(format!("disk{}", i));
-                std::fs::create_dir_all(&p)
-                    .expect("create disk sub-directory");
+                std::fs::create_dir_all(&p).expect("create disk sub-directory");
                 p.to_string_lossy().to_string()
             })
             .collect();
 
         // 3. Probe a free port (probe-bind-drop — safe on macOS/Linux)
-        let probe = TcpListener::bind("127.0.0.1:0")
-            .expect("failed to probe free port");
+        let probe = TcpListener::bind("127.0.0.1:0").expect("failed to probe free port");
         let port = probe.local_addr().expect("get probed port").port();
         drop(probe);
         // Brief yield so the OS fully releases the port

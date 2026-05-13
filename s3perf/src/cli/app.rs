@@ -291,104 +291,189 @@ pub enum Commands {
 pub enum IcebergCommand {
     /// Catalog read mix (LIST / HEAD / GET).
     CatalogRead {
-        #[arg(long, default_value = "10")] ns_list_distrib: u32,
-        #[arg(long, default_value = "10")] ns_head_distrib: u32,
-        #[arg(long, default_value = "10")] ns_get_distrib: u32,
-        #[arg(long, default_value = "10")] table_list_distrib: u32,
-        #[arg(long, default_value = "10")] table_head_distrib: u32,
-        #[arg(long, default_value = "10")] table_get_distrib: u32,
-        #[arg(long, default_value = "10")] view_list_distrib: u32,
-        #[arg(long, default_value = "10")] view_head_distrib: u32,
-        #[arg(long, default_value = "10")] view_get_distrib: u32,
-        #[arg(long, default_value = "10")] page_size: usize,
-        #[arg(long, default_value = "2")] namespace_width: usize,
-        #[arg(long, default_value = "3")] namespace_depth: usize,
-        #[arg(long, default_value = "5")] tables_per_ns: usize,
-        #[arg(long, default_value = "5")] views_per_ns: usize,
-        #[arg(long, default_value = "10")] columns: usize,
-        #[arg(long, default_value = "5")] properties: usize,
-        #[arg(long, default_value = "s3://benchmark")] base_location: String,
-        #[arg(long)] external_catalog: Option<String>,
-        #[arg(long, default_value = "benchmarkcatalog")] catalog_name: String,
+        #[arg(long, default_value = "10")]
+        ns_list_distrib: u32,
+        #[arg(long, default_value = "10")]
+        ns_head_distrib: u32,
+        #[arg(long, default_value = "10")]
+        ns_get_distrib: u32,
+        #[arg(long, default_value = "10")]
+        table_list_distrib: u32,
+        #[arg(long, default_value = "10")]
+        table_head_distrib: u32,
+        #[arg(long, default_value = "10")]
+        table_get_distrib: u32,
+        #[arg(long, default_value = "10")]
+        view_list_distrib: u32,
+        #[arg(long, default_value = "10")]
+        view_head_distrib: u32,
+        #[arg(long, default_value = "10")]
+        view_get_distrib: u32,
+        #[arg(long, default_value = "10")]
+        page_size: usize,
+        #[arg(long, default_value = "2")]
+        namespace_width: usize,
+        #[arg(long, default_value = "3")]
+        namespace_depth: usize,
+        #[arg(long, default_value = "5")]
+        tables_per_ns: usize,
+        #[arg(long, default_value = "5")]
+        views_per_ns: usize,
+        #[arg(long, default_value = "10")]
+        columns: usize,
+        #[arg(long, default_value = "5")]
+        properties: usize,
+        #[arg(long, default_value = "s3://benchmark")]
+        base_location: String,
+        #[arg(long)]
+        external_catalog: Option<String>,
+        #[arg(long, default_value = "benchmarkcatalog")]
+        catalog_name: String,
     },
     /// Catalog metadata commits (table / view).
     CatalogCommits {
-        #[arg(long, default_value = "0")] table_commits_throughput: usize,
-        #[arg(long, default_value = "0")] view_commits_throughput: usize,
-        #[arg(long, default_value = "4")] max_retries: usize,
-        #[arg(long, default_value = "100")] retry_backoff_ms: u64,
-        #[arg(long, default_value = "60000")] backoff_max_ms: u64,
-        #[arg(long, default_value = "2")] namespace_width: usize,
-        #[arg(long, default_value = "3")] namespace_depth: usize,
-        #[arg(long, default_value = "5")] tables_per_ns: usize,
-        #[arg(long, default_value = "5")] views_per_ns: usize,
-        #[arg(long, default_value = "10")] columns: usize,
-        #[arg(long, default_value = "5")] properties: usize,
-        #[arg(long, default_value = "s3://benchmark")] base_location: String,
-        #[arg(long)] external_catalog: Option<String>,
-        #[arg(long, default_value = "benchmarkcatalog")] catalog_name: String,
+        #[arg(long, default_value = "0")]
+        table_commits_throughput: usize,
+        #[arg(long, default_value = "0")]
+        view_commits_throughput: usize,
+        #[arg(long, default_value = "4")]
+        max_retries: usize,
+        #[arg(long, default_value = "100")]
+        retry_backoff_ms: u64,
+        #[arg(long, default_value = "60000")]
+        backoff_max_ms: u64,
+        #[arg(long, default_value = "2")]
+        namespace_width: usize,
+        #[arg(long, default_value = "3")]
+        namespace_depth: usize,
+        #[arg(long, default_value = "5")]
+        tables_per_ns: usize,
+        #[arg(long, default_value = "5")]
+        views_per_ns: usize,
+        #[arg(long, default_value = "10")]
+        columns: usize,
+        #[arg(long, default_value = "5")]
+        properties: usize,
+        #[arg(long, default_value = "s3://benchmark")]
+        base_location: String,
+        #[arg(long)]
+        external_catalog: Option<String>,
+        #[arg(long, default_value = "benchmarkcatalog")]
+        catalog_name: String,
     },
     /// Mixed catalog read/write workload.
     CatalogMixed {
-        #[arg(long, default_value = "10")] ns_list_distrib: u32,
-        #[arg(long, default_value = "10")] ns_head_distrib: u32,
-        #[arg(long, default_value = "10")] ns_get_distrib: u32,
-        #[arg(long, default_value = "10")] table_list_distrib: u32,
-        #[arg(long, default_value = "10")] table_head_distrib: u32,
-        #[arg(long, default_value = "10")] table_get_distrib: u32,
-        #[arg(long, default_value = "10")] view_list_distrib: u32,
-        #[arg(long, default_value = "10")] view_head_distrib: u32,
-        #[arg(long, default_value = "10")] view_get_distrib: u32,
-        #[arg(long, default_value = "5")] ns_update_distrib: u32,
-        #[arg(long, default_value = "5")] table_update_distrib: u32,
-        #[arg(long, default_value = "5")] view_update_distrib: u32,
-        #[arg(long, default_value = "5")] max_retries: usize,
-        #[arg(long, default_value = "100")] retry_backoff_ms: u64,
-        #[arg(long, default_value = "2000")] backoff_max_ms: u64,
-        #[arg(long, default_value = "10")] page_size: usize,
-        #[arg(long, default_value = "2")] namespace_width: usize,
-        #[arg(long, default_value = "3")] namespace_depth: usize,
-        #[arg(long, default_value = "5")] tables_per_ns: usize,
-        #[arg(long, default_value = "5")] views_per_ns: usize,
-        #[arg(long, default_value = "10")] columns: usize,
-        #[arg(long, default_value = "5")] properties: usize,
-        #[arg(long, default_value = "s3://benchmark")] base_location: String,
-        #[arg(long)] external_catalog: Option<String>,
-        #[arg(long, default_value = "benchmarkcatalog")] catalog_name: String,
+        #[arg(long, default_value = "10")]
+        ns_list_distrib: u32,
+        #[arg(long, default_value = "10")]
+        ns_head_distrib: u32,
+        #[arg(long, default_value = "10")]
+        ns_get_distrib: u32,
+        #[arg(long, default_value = "10")]
+        table_list_distrib: u32,
+        #[arg(long, default_value = "10")]
+        table_head_distrib: u32,
+        #[arg(long, default_value = "10")]
+        table_get_distrib: u32,
+        #[arg(long, default_value = "10")]
+        view_list_distrib: u32,
+        #[arg(long, default_value = "10")]
+        view_head_distrib: u32,
+        #[arg(long, default_value = "10")]
+        view_get_distrib: u32,
+        #[arg(long, default_value = "5")]
+        ns_update_distrib: u32,
+        #[arg(long, default_value = "5")]
+        table_update_distrib: u32,
+        #[arg(long, default_value = "5")]
+        view_update_distrib: u32,
+        #[arg(long, default_value = "5")]
+        max_retries: usize,
+        #[arg(long, default_value = "100")]
+        retry_backoff_ms: u64,
+        #[arg(long, default_value = "2000")]
+        backoff_max_ms: u64,
+        #[arg(long, default_value = "10")]
+        page_size: usize,
+        #[arg(long, default_value = "2")]
+        namespace_width: usize,
+        #[arg(long, default_value = "3")]
+        namespace_depth: usize,
+        #[arg(long, default_value = "5")]
+        tables_per_ns: usize,
+        #[arg(long, default_value = "5")]
+        views_per_ns: usize,
+        #[arg(long, default_value = "10")]
+        columns: usize,
+        #[arg(long, default_value = "5")]
+        properties: usize,
+        #[arg(long, default_value = "s3://benchmark")]
+        base_location: String,
+        #[arg(long)]
+        external_catalog: Option<String>,
+        #[arg(long, default_value = "benchmarkcatalog")]
+        catalog_name: String,
     },
     /// Catalog write stub (use `catalog-commits` or `sustained` for data paths).
     CatalogWrite {
-        #[arg(long, default_value = "10")] page_size: usize,
+        #[arg(long, default_value = "10")]
+        page_size: usize,
     },
 
     /// Sustained write / read simulation workload.
     Sustained {
-        #[arg(long, default_value = "10")] num_files: usize,
-        #[arg(long, default_value = "10000")] rows_per_file: usize,
-        #[arg(long, default_value = "1")] files_per_commit: usize,
-        #[arg(long, default_value_t = false)] tpcds: bool,
-        #[arg(long, default_value = "0.01")] scale_factor: f64,
-        #[arg(long)] tpcds_table: Option<String>,
-        #[arg(long, default_value = "/tmp/s3perf-iceberg-cache")] cache_dir: String,
-        #[arg(long, default_value_t = true)] skip_upload: bool,
-        #[arg(long, default_value_t = false)] simulate_read: bool,
-        #[arg(long, default_value = "20")] read_concurrent: usize,
-        #[arg(long, default_value = "400")] read_rps_limit: f64,
-        #[arg(long, default_value = "4")] max_retries: usize,
-        #[arg(long, default_value = "100")] retry_backoff_ms: u64,
-        #[arg(long, default_value = "60000")] backoff_max_ms: u64,
-        #[arg(long)] s3_host: Option<String>,
-        #[arg(long)] s3_access_key: Option<String>,
-        #[arg(long)] s3_secret_key: Option<String>,
-        #[arg(long, default_value_t = false)] s3_tls: bool,
-        #[arg(long, default_value = "1")] namespace_width: usize,
-        #[arg(long, default_value = "1")] namespace_depth: usize,
-        #[arg(long, default_value = "1")] tables_per_ns: usize,
-        #[arg(long, default_value = "10")] columns: usize,
-        #[arg(long, default_value = "5")] properties: usize,
-        #[arg(long, default_value = "s3://benchmark")] base_location: String,
-        #[arg(long)] external_catalog: Option<String>,
-        #[arg(long, default_value = "benchmarkcatalog")] catalog_name: String,
+        #[arg(long, default_value = "10")]
+        num_files: usize,
+        #[arg(long, default_value = "10000")]
+        rows_per_file: usize,
+        #[arg(long, default_value = "1")]
+        files_per_commit: usize,
+        #[arg(long, default_value_t = false)]
+        tpcds: bool,
+        #[arg(long, default_value = "0.01")]
+        scale_factor: f64,
+        #[arg(long)]
+        tpcds_table: Option<String>,
+        #[arg(long, default_value = "/tmp/s3perf-iceberg-cache")]
+        cache_dir: String,
+        #[arg(long, default_value_t = true)]
+        skip_upload: bool,
+        #[arg(long, default_value_t = false)]
+        simulate_read: bool,
+        #[arg(long, default_value = "20")]
+        read_concurrent: usize,
+        #[arg(long, default_value = "400")]
+        read_rps_limit: f64,
+        #[arg(long, default_value = "4")]
+        max_retries: usize,
+        #[arg(long, default_value = "100")]
+        retry_backoff_ms: u64,
+        #[arg(long, default_value = "60000")]
+        backoff_max_ms: u64,
+        #[arg(long)]
+        s3_host: Option<String>,
+        #[arg(long)]
+        s3_access_key: Option<String>,
+        #[arg(long)]
+        s3_secret_key: Option<String>,
+        #[arg(long, default_value_t = false)]
+        s3_tls: bool,
+        #[arg(long, default_value = "1")]
+        namespace_width: usize,
+        #[arg(long, default_value = "1")]
+        namespace_depth: usize,
+        #[arg(long, default_value = "1")]
+        tables_per_ns: usize,
+        #[arg(long, default_value = "10")]
+        columns: usize,
+        #[arg(long, default_value = "5")]
+        properties: usize,
+        #[arg(long, default_value = "s3://benchmark")]
+        base_location: String,
+        #[arg(long)]
+        external_catalog: Option<String>,
+        #[arg(long, default_value = "benchmarkcatalog")]
+        catalog_name: String,
     },
 }
 

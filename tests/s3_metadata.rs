@@ -56,15 +56,21 @@ async fn multiple_metadata_keys() {
     let resp = client.get_object("meta2", "multi.txt").await;
     assert_eq!(resp.status(), 200);
     assert_eq!(
-        resp.headers().get("x-amz-meta-color").and_then(|v| v.to_str().ok()),
+        resp.headers()
+            .get("x-amz-meta-color")
+            .and_then(|v| v.to_str().ok()),
         Some("red")
     );
     assert_eq!(
-        resp.headers().get("x-amz-meta-author").and_then(|v| v.to_str().ok()),
+        resp.headers()
+            .get("x-amz-meta-author")
+            .and_then(|v| v.to_str().ok()),
         Some("alice")
     );
     assert_eq!(
-        resp.headers().get("x-amz-meta-version").and_then(|v| v.to_str().ok()),
+        resp.headers()
+            .get("x-amz-meta-version")
+            .and_then(|v| v.to_str().ok()),
         Some("1")
     );
 }
@@ -190,11 +196,15 @@ async fn metadata_many_keys() {
     let resp = client.head_object("meta-many", "many.txt").await;
     assert_eq!(resp.status(), 200);
     assert_eq!(
-        resp.headers().get("x-amz-meta-key-00").and_then(|v| v.to_str().ok()),
+        resp.headers()
+            .get("x-amz-meta-key-00")
+            .and_then(|v| v.to_str().ok()),
         Some("value-00")
     );
     assert_eq!(
-        resp.headers().get("x-amz-meta-key-19").and_then(|v| v.to_str().ok()),
+        resp.headers()
+            .get("x-amz-meta-key-19")
+            .and_then(|v| v.to_str().ok()),
         Some("value-19")
     );
 }
@@ -216,7 +226,10 @@ async fn metadata_not_returned_on_unrelated_objects() {
         .headers()
         .keys()
         .any(|k| k.as_str().to_lowercase().starts_with("x-amz-meta-"));
-    assert!(!has_meta, "object without metadata should not have x-amz-meta-* headers");
+    assert!(
+        !has_meta,
+        "object without metadata should not have x-amz-meta-* headers"
+    );
 }
 
 #[tokio::test]

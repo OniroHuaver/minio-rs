@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, Query, State},
-    http::{header, HeaderMap, HeaderValue, StatusCode},
+    http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{IntoResponse, Response},
 };
 use bytes::Bytes;
@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::s3::error::to_s3_error_code;
 use crate::s3::handlers::list::list_objects_v2_handler;
-use crate::s3::response::{s3_error_response, s3_xml_response, LocationConstraintResult, S3_XMLNS};
+use crate::s3::response::{LocationConstraintResult, S3_XMLNS, s3_error_response, s3_xml_response};
 use crate::s3::state::AppState;
 
 /// Dispatcher for `PUT /:bucket` — dispatches ?versioning or CreateBucket.
@@ -111,7 +111,11 @@ pub async fn bucket_get_handler(
         return get_bucket_location_handler(State(state), Path(bucket)).await;
     }
     if params.contains_key("versioning") {
-        return crate::s3::handlers::versioning::get_bucket_versioning_handler(State(state), Path(bucket)).await;
+        return crate::s3::handlers::versioning::get_bucket_versioning_handler(
+            State(state),
+            Path(bucket),
+        )
+        .await;
     }
     // Fallback: ListObjectsV2
     list_objects_v2_handler(State(state), Path(bucket), Query(params)).await

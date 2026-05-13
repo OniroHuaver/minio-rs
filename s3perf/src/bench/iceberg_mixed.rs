@@ -61,13 +61,16 @@ impl Benchmark for IcebergMixedBenchmark {
         *self.views.lock().unwrap() = tree.all_views();
         *self.tree.lock().unwrap() = Some(tree);
 
-        if self.common.client_idx > 0 { return Ok(()); }
-        let cat = RestCatalog::new(&self.catalog_config)
-            .map_err(|e| crate::generator::Error::S3(e))?;
+        if self.common.client_idx > 0 {
+            return Ok(());
+        }
+        let cat =
+            RestCatalog::new(&self.catalog_config).map_err(|e| crate::generator::Error::S3(e))?;
         let tree = Tree::new(self.tree_config.clone());
         let creator = DatasetCreator {
             catalog: Some(Arc::new(cat)),
-            catalog_pool: None, tree,
+            catalog_pool: None,
+            tree,
             catalog_uri: self.catalog_config.catalog_uri.clone(),
             access_key: self.catalog_config.access_key.clone(),
             secret_key: self.catalog_config.secret_key.clone(),
@@ -76,7 +79,9 @@ impl Benchmark for IcebergMixedBenchmark {
             external_catalog: self.external_catalog.clone(),
             on_progress: None,
         };
-        creator.create_all(ctx).await
+        creator
+            .create_all(ctx)
+            .await
             .map_err(|e| crate::generator::Error::S3(e))?;
         Ok(())
     }
@@ -125,18 +130,27 @@ impl Benchmark for IcebergMixedBenchmark {
                 let view_update_id = AtomicU64::new(0);
 
                 loop {
-                    if ctx.is_cancelled() { break; }
+                    if ctx.is_cancelled() {
+                        break;
+                    }
 
                     let op_type = dist.get_op();
                     let now = Utc::now();
 
                     let mut op = Operation {
-                        start: now, end: now, first_byte: None, last_byte: None,
-                        op_type: op_type.clone(), err: String::new(),
+                        start: now,
+                        end: now,
+                        first_byte: None,
+                        last_byte: None,
+                        op_type: op_type.clone(),
+                        err: String::new(),
                         file: String::new(),
                         client_id: format!("c{}", thread),
                         endpoint: endpoint.clone(),
-                        obj_per_op: 1, size: 0, thread: thread as u32, categories: 0,
+                        obj_per_op: 1,
+                        size: 0,
+                        thread: thread as u32,
+                        categories: 0,
                     };
 
                     match op_type.as_str() {
@@ -163,12 +177,14 @@ impl Benchmark for IcebergMixedBenchmark {
                         "TABLE_HEAD" if !tables.is_empty() => {
                             let t = &tables[tbl_idx % tables.len()];
                             tbl_idx += 1;
-                            op.file = format!("{}/{}/{}", catalog_name, t.namespace.join("."), t.name);
+                            op.file =
+                                format!("{}/{}/{}", catalog_name, t.namespace.join("."), t.name);
                         }
                         "TABLE_GET" if !tables.is_empty() => {
                             let t = &tables[tbl_idx % tables.len()];
                             tbl_idx += 1;
-                            op.file = format!("{}/{}/{}", catalog_name, t.namespace.join("."), t.name);
+                            op.file =
+                                format!("{}/{}/{}", catalog_name, t.namespace.join("."), t.name);
                         }
                         "VIEW_LIST" if !views.is_empty() => {
                             let v = &views[vw_idx % views.len()];
@@ -178,12 +194,14 @@ impl Benchmark for IcebergMixedBenchmark {
                         "VIEW_HEAD" if !views.is_empty() => {
                             let v = &views[vw_idx % views.len()];
                             vw_idx += 1;
-                            op.file = format!("{}/{}/{}", catalog_name, v.namespace.join("."), v.name);
+                            op.file =
+                                format!("{}/{}/{}", catalog_name, v.namespace.join("."), v.name);
                         }
                         "VIEW_GET" if !views.is_empty() => {
                             let v = &views[vw_idx % views.len()];
                             vw_idx += 1;
-                            op.file = format!("{}/{}/{}", catalog_name, v.namespace.join("."), v.name);
+                            op.file =
+                                format!("{}/{}/{}", catalog_name, v.namespace.join("."), v.name);
                         }
                         "NS_UPDATE" if !namespaces.is_empty() => {
                             let id = ns_update_id.fetch_add(1, Ordering::Relaxed);
@@ -193,12 +211,14 @@ impl Benchmark for IcebergMixedBenchmark {
                         "TABLE_UPDATE" if !tables.is_empty() => {
                             let id = table_update_id.fetch_add(1, Ordering::Relaxed);
                             let t = &tables[id as usize % tables.len()];
-                            op.file = format!("{}/{}/{}", catalog_name, t.namespace.join("."), t.name);
+                            op.file =
+                                format!("{}/{}/{}", catalog_name, t.namespace.join("."), t.name);
                         }
                         "VIEW_UPDATE" if !views.is_empty() => {
                             let id = view_update_id.fetch_add(1, Ordering::Relaxed);
                             let v = &views[id as usize % views.len()];
-                            op.file = format!("{}/{}/{}", catalog_name, v.namespace.join("."), v.name);
+                            op.file =
+                                format!("{}/{}/{}", catalog_name, v.namespace.join("."), v.name);
                         }
                         _ => continue,
                     }
@@ -212,18 +232,29 @@ impl Benchmark for IcebergMixedBenchmark {
 
         tokio::time::sleep(self.common.duration).await;
         ctx.cancel();
-        for h in handles { let _ = h.await; }
+        for h in handles {
+            let _ = h.await;
+        }
         Ok(())
     }
 
     async fn cleanup(&self, ctx: &CancellationToken) {
-        if self.common.client_idx > 0 { return; }
-        let Ok(cat) = RestCatalog::new(&self.catalog_config) else { return };
-        let tree = self.tree.lock().unwrap().take()
+        if self.common.client_idx > 0 {
+            return;
+        }
+        let Ok(cat) = RestCatalog::new(&self.catalog_config) else {
+            return;
+        };
+        let tree = self
+            .tree
+            .lock()
+            .unwrap()
+            .take()
             .unwrap_or_else(|| Tree::new(self.tree_config.clone()));
         let creator = DatasetCreator {
             catalog: Some(Arc::new(cat)),
-            catalog_pool: None, tree,
+            catalog_pool: None,
+            tree,
             catalog_uri: self.catalog_config.catalog_uri.clone(),
             access_key: self.catalog_config.access_key.clone(),
             secret_key: self.catalog_config.secret_key.clone(),
@@ -235,6 +266,10 @@ impl Benchmark for IcebergMixedBenchmark {
         creator.delete_all(ctx).await;
     }
 
-    fn common(&self) -> &Common { &self.common }
-    fn ops(&self) -> Vec<Operation> { self.ops.lock().unwrap().to_vec() }
+    fn common(&self) -> &Common {
+        &self.common
+    }
+    fn ops(&self) -> Vec<Operation> {
+        self.ops.lock().unwrap().to_vec()
+    }
 }

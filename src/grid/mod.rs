@@ -39,11 +39,11 @@ pub mod msg_types;
 pub use connection::Connection;
 pub use connection_state::ConnectionState;
 pub use error::{GridError, GridResult, RemoteErr};
-pub use handler::{single_handler_fn, SingleHandler, SingleHandlerFn};
+pub use handler::{SingleHandler, SingleHandlerFn, single_handler_fn};
 pub use manager::{Manager, ManagerOptions};
 /// Backwards-compatible alias for [`AuthValidateFn`].
 pub type AuthFn = AuthValidateFn;
-pub use message::{Flags, HandlerId, Message, Op, HANDLER_INVALID};
+pub use message::{Flags, HANDLER_INVALID, HandlerId, Message, Op};
 pub use msg_types::{
     Bytes, ConnectReq, ConnectResp, MSS, MuxConnectError, PongMsg, TestRequest, TestResponse,
 };

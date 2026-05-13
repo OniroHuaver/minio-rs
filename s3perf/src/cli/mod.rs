@@ -1,7 +1,7 @@
 //! CLI wiring: parsing, benchmarks, orchestration.
 
-pub mod app;
 pub mod analysis;
+pub mod app;
 pub mod iceberg;
 pub mod runner;
 
@@ -64,12 +64,9 @@ pub struct BenchConfig {
 impl BenchConfig {
     /// Build a `Common` with the shared fields filled in.
     /// Callers override the few fields that differ per command.
-    pub fn build_common(
-        &self,
-        collector: Arc<OpsCollector>,
-        source_prefix: &str,
-    ) -> Common {
-        let cf = crate::bench::s3_client::client_factory(self.s3_config.clone(), self.hosts.clone());
+    pub fn build_common(&self, collector: Arc<OpsCollector>, source_prefix: &str) -> Common {
+        let cf =
+            crate::bench::s3_client::client_factory(self.s3_config.clone(), self.hosts.clone());
         let host_inflight = new_host_inflight(&self.hosts);
         Common {
             concurrency: self.concurrency,
@@ -79,7 +76,10 @@ impl BenchConfig {
             source: Arc::new({
                 let p = self.prefix.clone().unwrap_or_else(|| source_prefix.into());
                 let os = self.obj_size.clone();
-                move || Box::new(DefaultSource::new(p.clone(), os.clone(), rand::random())) as Box<dyn Source>
+                move || {
+                    Box::new(DefaultSource::new(p.clone(), os.clone(), rand::random()))
+                        as Box<dyn Source>
+                }
             }),
             client_factory: cf,
             collector,
@@ -90,7 +90,11 @@ impl BenchConfig {
             discard_output: self.output.is_none(),
             versioned: false,
             locking: false,
-            auto_term_dur: if self.autoterm { Some(self.autoterm_dur) } else { None },
+            auto_term_dur: if self.autoterm {
+                Some(self.autoterm_dur)
+            } else {
+                None
+            },
             auto_term_scale: self.autoterm_pct,
             rps_limit: self.rps_limit,
             host_select: self.host_select,
@@ -125,8 +129,8 @@ fn collector_with_optional_influx() -> anyhow::Result<Arc<OpsCollector>> {
     let Some(raw) = influx_url_static() else {
         return Ok(Arc::new(OpsCollector::new()));
     };
-    let cfg = crate::influxdb::parse_influx_url(raw)
-        .map_err(|e| anyhow::anyhow!("InfluxDB URL: {e}"))?;
+    let cfg =
+        crate::influxdb::parse_influx_url(raw).map_err(|e| anyhow::anyhow!("InfluxDB URL: {e}"))?;
     let (tx, rx) = mpsc::unbounded_channel();
     let coll = Arc::new(OpsCollector::with_influx_fanout(Some(tx)));
     let writer = crate::influxdb::InfluxWriter::new(cfg, rx);

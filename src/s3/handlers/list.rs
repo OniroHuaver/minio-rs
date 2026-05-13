@@ -11,8 +11,8 @@ use uuid::Uuid;
 
 use crate::s3::error::to_s3_error_code;
 use crate::s3::response::{
-    s3_error_response, s3_xml_response, CommonPrefixesEntry, ContentEntry, ListBucketResult,
-    S3_XMLNS,
+    CommonPrefixesEntry, ContentEntry, ListBucketResult, S3_XMLNS, s3_error_response,
+    s3_xml_response,
 };
 use crate::s3::state::AppState;
 
@@ -36,7 +36,14 @@ pub async fn list_objects_v2_handler(
 
     match state
         .object_api
-        .list_objects(&bucket, &prefix, &delimiter, max_keys, start_after, continuation_token)
+        .list_objects(
+            &bucket,
+            &prefix,
+            &delimiter,
+            max_keys,
+            start_after,
+            continuation_token,
+        )
         .await
     {
         Ok(result) => {
@@ -55,9 +62,7 @@ pub async fn list_objects_v2_handler(
             let common_prefixes: Vec<CommonPrefixesEntry> = result
                 .common_prefixes
                 .iter()
-                .map(|p| CommonPrefixesEntry {
-                    prefix: p.clone(),
-                })
+                .map(|p| CommonPrefixesEntry { prefix: p.clone() })
                 .collect();
 
             let list_result = ListBucketResult {

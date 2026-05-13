@@ -63,11 +63,7 @@ pub fn parse_influx_url(raw: &str) -> Result<InfluxConfig, String> {
     // Unique run correlation id
     global_tags.insert(
         "run_id".to_string(),
-        uuid::Uuid::new_v4()
-            .to_string()
-            .chars()
-            .take(8)
-            .collect(),
+        uuid::Uuid::new_v4().to_string().chars().take(8).collect(),
     );
 
     let url = format!("{scheme}://{host_port}");
@@ -298,10 +294,7 @@ impl InfluxWriter {
 }
 
 fn format_tags(tags: &[(&str, &str)], global: &HashMap<String, String>) -> String {
-    let mut parts: Vec<String> = tags
-        .iter()
-        .map(|(k, v)| format!("{k}={v}"))
-        .collect();
+    let mut parts: Vec<String> = tags.iter().map(|(k, v)| format!("{k}={v}")).collect();
     for (k, v) in global {
         parts.push(format!("{k}={v}"));
     }
@@ -354,10 +347,8 @@ mod tests {
 
     #[test]
     fn test_parse_influx_url() {
-        let cfg = parse_influx_url(
-            "http://mytoken@localhost:8086/mybucket/myorg?host=dev&dc=us1",
-        )
-        .unwrap();
+        let cfg = parse_influx_url("http://mytoken@localhost:8086/mybucket/myorg?host=dev&dc=us1")
+            .unwrap();
         assert_eq!(cfg.url, "http://localhost:8086");
         assert_eq!(cfg.token, "mytoken");
         assert_eq!(cfg.bucket, "mybucket");

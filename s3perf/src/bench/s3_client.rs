@@ -45,8 +45,10 @@ impl S3Config {
 
         if need_custom_https {
             let insecure = self.insecure || self.no_verify_ssl;
-            match crate::bench::http_transport::shared_https_client(insecure, self.ca_pem.as_deref())
-            {
+            match crate::bench::http_transport::shared_https_client(
+                insecure,
+                self.ca_pem.as_deref(),
+            ) {
                 Ok(http) => {
                     config_builder = config_builder.http_client(http);
                 }

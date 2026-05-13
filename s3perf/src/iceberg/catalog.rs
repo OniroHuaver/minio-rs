@@ -11,7 +11,6 @@ use serde_json::Value;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 
-
 // ---------------------------------------------------------------------------
 // Catalog 类型枚举
 // ---------------------------------------------------------------------------
@@ -79,9 +78,7 @@ pub struct RestCatalog {
 
 impl RestCatalog {
     /// AIStor Tables catalog（SigV4 签名）
-    pub fn new_ai_stor(
-        cfg: &CatalogConfig,
-    ) -> Result<Self, String> {
+    pub fn new_ai_stor(cfg: &CatalogConfig) -> Result<Self, String> {
         let base_url = format!(
             "{}://{}/_iceberg/v1",
             if cfg.tls { "https" } else { "http" },
@@ -103,10 +100,10 @@ impl RestCatalog {
     /// Polaris catalog（OAuth2）
     pub fn new_polaris(cfg: &CatalogConfig) -> Result<Self, String> {
         let token = format!("{}:{}", cfg.access_key, cfg.secret_key);
-        let auth = format!("Bearer {}", base64::Engine::encode(
-            &base64::engine::general_purpose::STANDARD,
-            token.as_bytes(),
-        ));
+        let auth = format!(
+            "Bearer {}",
+            base64::Engine::encode(&base64::engine::general_purpose::STANDARD, token.as_bytes(),)
+        );
         let base_url = format!(
             "{}://{}/api/catalog/v1",
             if cfg.tls { "https" } else { "http" },
@@ -135,7 +132,12 @@ impl RestCatalog {
 
     /// 构建 REST API URL
     fn api_url(&self, path: &str) -> String {
-        format!("{}/{}/{}", self.base_url, self.warehouse, path.trim_start_matches('/'))
+        format!(
+            "{}/{}/{}",
+            self.base_url,
+            self.warehouse,
+            path.trim_start_matches('/')
+        )
     }
 
     async fn get(&self, path: &str) -> Result<serde_json::Value, String> {
@@ -181,15 +183,10 @@ impl RestCatalog {
         if resp_body.is_empty() {
             return Ok(serde_json::Value::Null);
         }
-        serde_json::from_str(&resp_body)
-            .map_err(|e| format!("POST {path} JSON: {e}"))
+        serde_json::from_str(&resp_body).map_err(|e| format!("POST {path} JSON: {e}"))
     }
 
-    async fn post_body(
-        &self,
-        path: &str,
-        body: Value,
-    ) -> Result<serde_json::Value, String> {
+    async fn post_body(&self, path: &str, body: Value) -> Result<serde_json::Value, String> {
         self.post(path, &body).await
     }
 
@@ -262,19 +259,12 @@ impl RestCatalog {
         self.head(&path).await
     }
 
-    pub async fn load_namespace(
-        &self,
-        ns: &[String],
-    ) -> Result<serde_json::Value, String> {
+    pub async fn load_namespace(&self, ns: &[String]) -> Result<serde_json::Value, String> {
         let path = format!("namespaces/{}", ns.join("."));
         self.get(&path).await
     }
 
-    pub async fn create_namespace(
-        &self,
-        ns: &[String],
-        props: &Properties,
-    ) -> Result<(), String> {
+    pub async fn create_namespace(&self, ns: &[String], props: &Properties) -> Result<(), String> {
         let body = serde_json::json!({
             "namespace": ns,
             "properties": props,
@@ -327,11 +317,7 @@ impl RestCatalog {
         Ok(tables)
     }
 
-    pub async fn table_exists(
-        &self,
-        ns: &[String],
-        table: &str,
-    ) -> Result<bool, String> {
+    pub async fn table_exists(&self, ns: &[String], table: &str) -> Result<bool, String> {
         let path = format!("namespaces/{}/tables/{}", ns.join("."), table);
         self.head(&path).await
     }
@@ -391,11 +377,7 @@ impl RestCatalog {
         Ok(())
     }
 
-    pub async fn drop_table(
-        &self,
-        ns: &[String],
-        table: &str,
-    ) -> Result<(), String> {
+    pub async fn drop_table(&self, ns: &[String], table: &str) -> Result<(), String> {
         let path = format!(
             "namespaces/{}/tables/{}?purgeRequested=true",
             ns.join("."),
@@ -406,10 +388,7 @@ impl RestCatalog {
 
     // ---- View ops ----
 
-    pub async fn list_views(
-        &self,
-        ns: &[String],
-    ) -> Result<Vec<String>, String> {
+    pub async fn list_views(&self, ns: &[String]) -> Result<Vec<String>, String> {
         let path = format!("namespaces/{}/views", ns.join("."));
         let v = self.get(&path).await?;
         let views: Vec<String> = v
@@ -426,20 +405,12 @@ impl RestCatalog {
         Ok(views)
     }
 
-    pub async fn view_exists(
-        &self,
-        ns: &[String],
-        view: &str,
-    ) -> Result<bool, String> {
+    pub async fn view_exists(&self, ns: &[String], view: &str) -> Result<bool, String> {
         let path = format!("namespaces/{}/views/{}", ns.join("."), view);
         self.head(&path).await
     }
 
-    pub async fn load_view(
-        &self,
-        ns: &[String],
-        view: &str,
-    ) -> Result<serde_json::Value, String> {
+    pub async fn load_view(&self, ns: &[String], view: &str) -> Result<serde_json::Value, String> {
         let path = format!("namespaces/{}/views/{}", ns.join("."), view);
         self.get(&path).await
     }
@@ -492,11 +463,7 @@ impl RestCatalog {
         Ok(())
     }
 
-    pub async fn drop_view(
-        &self,
-        ns: &[String],
-        view: &str,
-    ) -> Result<(), String> {
+    pub async fn drop_view(&self, ns: &[String], view: &str) -> Result<(), String> {
         let path = format!("namespaces/{}/views/{}", ns.join("."), view);
         self.delete_raw(&path).await
     }
@@ -520,7 +487,9 @@ impl CatalogPool {
     }
 
     pub fn get(&self) -> &Arc<RestCatalog> {
-        let idx = self.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let idx = self
+            .counter
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         &self.catalogs[idx as usize % self.catalogs.len()]
     }
 

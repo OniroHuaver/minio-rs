@@ -205,7 +205,10 @@ mod tests {
         let state = TuiState::new(CancellationToken::new());
         state.set_phase("Benchmarking", "GET /bucket/key");
         assert_eq!(*state.phase.lock().expect("lock poisoned"), "Benchmarking");
-        assert_eq!(*state.phase_detail.lock().expect("lock poisoned"), "GET /bucket/key");
+        assert_eq!(
+            *state.phase_detail.lock().expect("lock poisoned"),
+            "GET /bucket/key"
+        );
     }
 
     #[test]

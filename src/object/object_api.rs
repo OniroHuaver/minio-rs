@@ -74,11 +74,7 @@ pub trait ObjectAPI: Send + Sync {
     ) -> MinioResult<ObjectInfo>;
 
     /// GET object (returns full data)
-    async fn get_object(
-        &self,
-        bucket: &str,
-        object: &str,
-    ) -> MinioResult<(Vec<u8>, ObjectInfo)>;
+    async fn get_object(&self, bucket: &str, object: &str) -> MinioResult<(Vec<u8>, ObjectInfo)>;
 
     /// GET object (range read)
     async fn get_object_range(

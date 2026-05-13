@@ -92,9 +92,8 @@ async fn sign_request(
     let canonical_headers = format!(
         "content-type:{content_type}\nhost:{host}\nx-amz-content-sha256:{payload_hash}\nx-amz-date:{amz_date}\n"
     );
-    let canonical_request = format!(
-        "POST\n{canonical_uri}\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
-    );
+    let canonical_request =
+        format!("POST\n{canonical_uri}\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}");
 
     let service = "s3tables";
     let credential_scope = format!("{date_stamp}/{region}/{service}/aws4_request");
@@ -103,7 +102,10 @@ async fn sign_request(
         hex::encode(Sha256::digest(canonical_request.as_bytes()))
     );
 
-    let k_date = hmac_sha256(format!("AWS4{secret_key}").as_bytes(), date_stamp.as_bytes())?;
+    let k_date = hmac_sha256(
+        format!("AWS4{secret_key}").as_bytes(),
+        date_stamp.as_bytes(),
+    )?;
     let k_region = hmac_sha256(&k_date, region.as_bytes())?;
     let k_service = hmac_sha256(&k_region, service.as_bytes())?;
     let k_signing = hmac_sha256(&k_service, b"aws4_request")?;

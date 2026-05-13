@@ -3,21 +3,21 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use axum::http::header;
 use axum::{
     extract::{Path, Query, State},
     http::{HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
 };
-use axum::http::header;
 use bytes::Bytes;
 use uuid::Uuid;
 
 use crate::object::object_api::CompletedPart;
 use crate::s3::error::to_s3_error_code;
-use crate::s3::request::{extract_metadata, CompleteMultipartUploadBody};
+use crate::s3::request::{CompleteMultipartUploadBody, extract_metadata};
 use crate::s3::response::{
-    s3_error_response, s3_xml_response,
     CompleteMultipartUploadResultXml, InitiateMultipartUploadResultXml, S3_XMLNS,
+    s3_error_response, s3_xml_response,
 };
 use crate::s3::state::AppState;
 
@@ -35,13 +35,8 @@ pub async fn multipart_post_handler(
     }
     if query.contains_key("uploadId") {
         let upload_id = query.get("uploadId").cloned().unwrap_or_default();
-        return complete_multipart_upload_handler(
-            State(state),
-            Path(params),
-            upload_id,
-            body,
-        )
-        .await;
+        return complete_multipart_upload_handler(State(state), Path(params), upload_id, body)
+            .await;
     }
     let request_id = Uuid::new_v4().to_string();
     s3_error_response(
@@ -107,10 +102,7 @@ pub async fn upload_part_handler(
     let key = params.get("key").cloned().unwrap_or_default();
     let resource = format!("/{}/{}", bucket, key);
 
-    let part_number: u32 = match query
-        .get("partNumber")
-        .and_then(|v| v.parse().ok())
-    {
+    let part_number: u32 = match query.get("partNumber").and_then(|v| v.parse().ok()) {
         Some(n) if (1..=10000).contains(&n) => n,
         _ => {
             return s3_error_response(

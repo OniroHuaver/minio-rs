@@ -18,15 +18,24 @@ pub struct ZipBenchmark {
 
 impl ZipBenchmark {
     pub fn new(common: Common, entries: usize) -> Self {
-        Self { common, entries: entries.max(1) }
+        Self {
+            common,
+            entries: entries.max(1),
+        }
     }
 }
 
-fn build_zip_bytes(prefix: &str, entries: usize, entry_size: usize, rng: &mut impl Rng) -> std::io::Result<Vec<u8>> {
+fn build_zip_bytes(
+    prefix: &str,
+    entries: usize,
+    entry_size: usize,
+    rng: &mut impl Rng,
+) -> std::io::Result<Vec<u8>> {
     let mut buf = Vec::new();
     {
         let mut zw = ZipWriter::new(std::io::Cursor::new(&mut buf));
-        let opts = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        let opts =
+            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
         for i in 0..entries {
             let name = format!("{prefix}/f-{i:06}.bin");
             zw.start_file(name, opts)?;
@@ -44,7 +53,11 @@ impl Benchmark for ZipBenchmark {
     async fn prepare(&self, ctx: &CancellationToken) -> crate::generator::Result<()> {
         let client = (self.common.client_factory)(0);
         if !ctx.is_cancelled() {
-            let _ = client.create_bucket().bucket(&self.common.bucket).send().await;
+            let _ = client
+                .create_bucket()
+                .bucket(&self.common.bucket)
+                .send()
+                .await;
         }
         Ok(())
     }
@@ -87,7 +100,9 @@ impl Benchmark for ZipBenchmark {
                         break;
                     }
 
-                    let Ok(_permit) = sem.acquire().await else { return; };
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
@@ -99,9 +114,10 @@ impl Benchmark for ZipBenchmark {
                         crate::generator::ObjSize::Random { max } => {
                             rng.gen_range(1..=(*max).max(1)) as usize
                         }
-                        crate::generator::ObjSize::Bucketed { buckets, .. } => {
-                            buckets.first().map(|(s, _)| (*s).max(1) as usize).unwrap_or(4096)
-                        }
+                        crate::generator::ObjSize::Bucketed { buckets, .. } => buckets
+                            .first()
+                            .map(|(s, _)| (*s).max(1) as usize)
+                            .unwrap_or(4096),
                     };
 
                     let zip_vec = match build_zip_bytes(&prefix, entries, entry_size, &mut rng) {

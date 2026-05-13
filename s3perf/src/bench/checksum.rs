@@ -129,21 +129,42 @@ mod tests {
 
     #[test]
     fn test_from_str_case_insensitive() {
-        assert_eq!("crc32".parse::<ChecksumType>().unwrap(), ChecksumType::CRC32);
-        assert_eq!("CRC32".parse::<ChecksumType>().unwrap(), ChecksumType::CRC32);
-        assert_eq!("Crc32".parse::<ChecksumType>().unwrap(), ChecksumType::CRC32);
+        assert_eq!(
+            "crc32".parse::<ChecksumType>().unwrap(),
+            ChecksumType::CRC32
+        );
+        assert_eq!(
+            "CRC32".parse::<ChecksumType>().unwrap(),
+            ChecksumType::CRC32
+        );
+        assert_eq!(
+            "Crc32".parse::<ChecksumType>().unwrap(),
+            ChecksumType::CRC32
+        );
     }
 
     #[test]
     fn test_from_str_crc32_fo() {
-        assert_eq!("CRC32-FO".parse::<ChecksumType>().unwrap(), ChecksumType::CRC32);
-        assert_eq!("crc32-fo".parse::<ChecksumType>().unwrap(), ChecksumType::CRC32);
+        assert_eq!(
+            "CRC32-FO".parse::<ChecksumType>().unwrap(),
+            ChecksumType::CRC32
+        );
+        assert_eq!(
+            "crc32-fo".parse::<ChecksumType>().unwrap(),
+            ChecksumType::CRC32
+        );
     }
 
     #[test]
     fn test_from_str_crc32c_fo() {
-        assert_eq!("CRC32C-FO".parse::<ChecksumType>().unwrap(), ChecksumType::CRC32C);
-        assert_eq!("crc32c-fo".parse::<ChecksumType>().unwrap(), ChecksumType::CRC32C);
+        assert_eq!(
+            "CRC32C-FO".parse::<ChecksumType>().unwrap(),
+            ChecksumType::CRC32C
+        );
+        assert_eq!(
+            "crc32c-fo".parse::<ChecksumType>().unwrap(),
+            ChecksumType::CRC32C
+        );
     }
 
     #[test]
@@ -154,9 +175,18 @@ mod tests {
 
     #[test]
     fn test_from_str_xxhash() {
-        assert_eq!("XXHASH64".parse::<ChecksumType>().unwrap(), ChecksumType::XXH64);
-        assert_eq!("XXHASH3".parse::<ChecksumType>().unwrap(), ChecksumType::XXH3);
-        assert_eq!("XXHASH128".parse::<ChecksumType>().unwrap(), ChecksumType::XXH128);
+        assert_eq!(
+            "XXHASH64".parse::<ChecksumType>().unwrap(),
+            ChecksumType::XXH64
+        );
+        assert_eq!(
+            "XXHASH3".parse::<ChecksumType>().unwrap(),
+            ChecksumType::XXH3
+        );
+        assert_eq!(
+            "XXHASH128".parse::<ChecksumType>().unwrap(),
+            ChecksumType::XXH128
+        );
     }
 
     #[test]

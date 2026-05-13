@@ -11,10 +11,10 @@
 use std::sync::Arc;
 
 use axum::{
+    Router,
     extract::DefaultBodyLimit,
     middleware,
     routing::{delete, get, head, post, put},
-    Router,
 };
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
@@ -64,7 +64,10 @@ pub fn router(state: Arc<AppState>) -> Router {
     // ── Merge and apply common layers ────────────────────────────────────
     metrics_router
         .merge(s3_router)
-        .layer(middleware::from_fn_with_state(state.clone(), sigv4_middleware))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            sigv4_middleware,
+        ))
         // 5 GiB body limit
         .layer(DefaultBodyLimit::max(5 * 1024 * 1024 * 1024))
         .layer(TraceLayer::new_for_http())

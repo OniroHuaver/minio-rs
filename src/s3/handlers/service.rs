@@ -10,14 +10,12 @@ use uuid::Uuid;
 
 use crate::s3::error::to_s3_error_code;
 use crate::s3::response::{
-    s3_error_response, s3_xml_response, BucketEntry, BucketsList, ListAllMyBucketsResult, Owner,
-    S3_XMLNS,
+    BucketEntry, BucketsList, ListAllMyBucketsResult, Owner, S3_XMLNS, s3_error_response,
+    s3_xml_response,
 };
 use crate::s3::state::AppState;
 
-pub async fn list_buckets_handler(
-    State(state): State<Arc<AppState>>,
-) -> Response {
+pub async fn list_buckets_handler(State(state): State<Arc<AppState>>) -> Response {
     let request_id = Uuid::new_v4().to_string();
 
     match state.object_api.list_buckets().await {

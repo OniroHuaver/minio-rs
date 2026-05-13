@@ -30,7 +30,9 @@ async fn range_first_byte() {
     let data = make_data(512);
     client.put_object("range", "data.bin", &data).await;
 
-    let resp = client.get_object_range("range", "data.bin", "bytes=0-0").await;
+    let resp = client
+        .get_object_range("range", "data.bin", "bytes=0-0")
+        .await;
     assert_eq!(resp.status(), 206, "bytes=0-0 → 206");
     // NOTE: current handler does not set Content-Range header on 206 responses.
     // TODO: add Content-Range header to range responses per RFC 7233.
@@ -45,7 +47,9 @@ async fn range_prefix() {
     let data = make_data(512);
     client.put_object("range", "data.bin", &data).await;
 
-    let resp = client.get_object_range("range", "data.bin", "bytes=0-99").await;
+    let resp = client
+        .get_object_range("range", "data.bin", "bytes=0-99")
+        .await;
     assert_eq!(resp.status(), 206);
     let body = resp.bytes().await.unwrap();
     assert_eq!(&body[..], &data[..100]);
@@ -59,7 +63,9 @@ async fn range_middle() {
     let data = make_data(512);
     client.put_object("range", "data.bin", &data).await;
 
-    let resp = client.get_object_range("range", "data.bin", "bytes=100-199").await;
+    let resp = client
+        .get_object_range("range", "data.bin", "bytes=100-199")
+        .await;
     assert_eq!(resp.status(), 206);
     let body = resp.bytes().await.unwrap();
     assert_eq!(&body[..], &data[100..200]);
@@ -74,7 +80,9 @@ async fn range_beyond_end_saturated() {
     client.put_object("range", "data.bin", &data).await;
 
     // Range extends beyond object: should saturate to available data
-    let resp = client.get_object_range("range", "data.bin", "bytes=200-499").await;
+    let resp = client
+        .get_object_range("range", "data.bin", "bytes=200-499")
+        .await;
     assert_eq!(resp.status(), 206, "bytes=200-499 on 256-byte object → 206");
     let body = resp.bytes().await.unwrap();
     assert_eq!(&body[..], &data[200..]);
@@ -90,7 +98,9 @@ async fn range_end_before_start_ignored() {
     client.put_object("range", "data.bin", &data).await;
 
     // bytes=100-50: start > end. Should return 200 (ignore range) or 416 (invalid).
-    let resp = client.get_object_range("range", "data.bin", "bytes=100-50").await;
+    let resp = client
+        .get_object_range("range", "data.bin", "bytes=100-50")
+        .await;
     assert_eq!(resp.status(), 200, "bytes=100-50 should be ignored → 200");
 }
 
@@ -117,9 +127,15 @@ async fn malformed_range_header_ignored() {
     let data = make_data(256);
     client.put_object("range", "data.bin", &data).await;
 
-    let resp = client.get_object_range("range", "data.bin", "garbage").await;
+    let resp = client
+        .get_object_range("range", "data.bin", "garbage")
+        .await;
     // Malformed Range: parse_range returns None → full object 200
-    assert_eq!(resp.status(), 200, "malformed Range should be ignored → 200");
+    assert_eq!(
+        resp.status(),
+        200,
+        "malformed Range should be ignored → 200"
+    );
     assert_eq!(resp.bytes().await.unwrap().as_ref(), data.as_slice());
 }
 
@@ -133,7 +149,9 @@ async fn range_on_zero_byte_object() {
     create_bucket(&client, "range-zero").await;
     client.put_object("range-zero", "empty.bin", &[]).await;
 
-    let resp = client.get_object_range("range-zero", "empty.bin", "bytes=0-0").await;
+    let resp = client
+        .get_object_range("range-zero", "empty.bin", "bytes=0-0")
+        .await;
     // Range on 0-byte object with closed range [0,0]:
     // parse_range returns Some((0,0)), get_object_range(offset=0, length=1)
     // May return 200 or 416 depending on how the storage layer handles it
@@ -156,7 +174,9 @@ async fn range_open_end() {
     let data = make_data(512);
     client.put_object("range", "data.bin", &data).await;
 
-    let resp = client.get_object_range("range", "data.bin", "bytes=400-").await;
+    let resp = client
+        .get_object_range("range", "data.bin", "bytes=400-")
+        .await;
     assert_eq!(resp.status(), 206);
     let body = resp.bytes().await.unwrap();
     assert_eq!(&body[..], &data[400..]);
@@ -170,7 +190,9 @@ async fn range_suffix() {
     let data = make_data(512);
     client.put_object("range", "data.bin", &data).await;
 
-    let resp = client.get_object_range("range", "data.bin", "bytes=-100").await;
+    let resp = client
+        .get_object_range("range", "data.bin", "bytes=-100")
+        .await;
     assert_eq!(resp.status(), 206);
     let body = resp.bytes().await.unwrap();
     assert_eq!(&body[..], &data[412..]);
@@ -184,7 +206,9 @@ async fn range_entire_object_via_range() {
     let data = make_data(256);
     client.put_object("range", "data.bin", &data).await;
 
-    let resp = client.get_object_range("range", "data.bin", "bytes=0-").await;
+    let resp = client
+        .get_object_range("range", "data.bin", "bytes=0-")
+        .await;
     assert_eq!(resp.status(), 206);
     assert_eq!(resp.bytes().await.unwrap().as_ref(), data.as_slice());
 }
@@ -197,6 +221,8 @@ async fn range_completely_beyond_should_416() {
     let data = make_data(256);
     client.put_object("range", "data.bin", &data).await;
 
-    let resp = client.get_object_range("range", "data.bin", "bytes=999-").await;
+    let resp = client
+        .get_object_range("range", "data.bin", "bytes=999-")
+        .await;
     assert_eq!(resp.status(), 416, "Unsatisfiable Range → 416");
 }

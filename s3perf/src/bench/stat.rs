@@ -13,7 +13,10 @@ pub struct StatBenchmark {
 
 impl StatBenchmark {
     pub fn new(common: Common) -> Self {
-        Self { common, objects: Mutex::new(Vec::new()) }
+        Self {
+            common,
+            objects: Mutex::new(Vec::new()),
+        }
     }
 }
 
@@ -21,14 +24,20 @@ impl StatBenchmark {
 impl Benchmark for StatBenchmark {
     async fn prepare(&self, ctx: &CancellationToken) -> crate::generator::Result<()> {
         let client = (self.common.client_factory)(0);
-        let _ = client.create_bucket().bucket(&self.common.bucket).send().await;
+        let _ = client
+            .create_bucket()
+            .bucket(&self.common.bucket)
+            .send()
+            .await;
 
         let sem = Arc::new(tokio::sync::Semaphore::new(self.common.concurrency));
         let mut handles = Vec::new();
         let keys = Arc::new(Mutex::new(Vec::new()));
 
         for _i in 0..self.common.objects {
-            if ctx.is_cancelled() { break; }
+            if ctx.is_cancelled() {
+                break;
+            }
             let client = client.clone();
             let bucket = self.common.bucket.clone();
             let sem = sem.clone();
@@ -37,18 +46,30 @@ impl Benchmark for StatBenchmark {
             let mut source = (self.common.source)();
 
             handles.push(tokio::spawn(async move {
-                let Ok(_permit) = sem.acquire().await else { return; };
-                if ctx.is_cancelled() { return; }
+                let Ok(_permit) = sem.acquire().await else {
+                    return;
+                };
+                if ctx.is_cancelled() {
+                    return;
+                }
                 let obj = source.object();
                 let key = obj.name.clone();
                 if let Ok(body) = crate::bench::body::byte_stream_from_object(obj).await {
-                    let _ = client.put_object().bucket(&bucket).key(&key).body(body).send().await;
+                    let _ = client
+                        .put_object()
+                        .bucket(&bucket)
+                        .key(&key)
+                        .body(body)
+                        .send()
+                        .await;
                 }
                 keys.lock().unwrap().push(key);
             }));
         }
 
-        for h in handles { let _ = h.await; }
+        for h in handles {
+            let _ = h.await;
+        }
         *self.objects.lock().unwrap() = super::take_from_arc_mutex(keys)
             .map_err(|e| crate::generator::Error::Bench(e.to_string()))?;
         Ok(())
@@ -90,7 +111,9 @@ impl Benchmark for StatBenchmark {
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
-                    let Ok(_permit) = sem.acquire().await else { return; };
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
@@ -137,7 +160,9 @@ impl Benchmark for StatBenchmark {
             _ = ctx.cancelled() => {}
             _ = tokio::time::sleep(dur) => {}
         }
-        for h in handles { h.abort(); }
+        for h in handles {
+            h.abort();
+        }
         Ok(())
     }
 

@@ -472,8 +472,7 @@ impl XlMeta {
                 "data too short, insufficient for header length".into(),
             ));
         }
-        let header =
-            XlMetaHeader::from_bytes(&bytes[..8]).map_err(MinioError::XlMetaFormat)?;
+        let header = XlMetaHeader::from_bytes(&bytes[..8]).map_err(MinioError::XlMetaFormat)?;
         if header.major != constants::XL_VERSION_MAJOR {
             return Err(MinioError::XlMetaFormat(format!(
                 "unsupported major version: {}.{} (current: {}.{})",

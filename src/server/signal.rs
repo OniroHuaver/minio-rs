@@ -109,7 +109,11 @@ async fn try_signalfd() -> Result<(), std::io::Error> {
             }
         }) {
             Ok(Ok(signo)) => {
-                let name = if signo == libc::SIGTERM as u32 { "SIGTERM" } else { "SIGINT" };
+                let name = if signo == libc::SIGTERM as u32 {
+                    "SIGTERM"
+                } else {
+                    "SIGINT"
+                };
                 tracing::info!("received {name} via signalfd, initiating graceful shutdown…");
                 return Ok(());
             }

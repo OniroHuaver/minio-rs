@@ -15,15 +15,15 @@ mod influxdb;
 mod server;
 mod tui;
 
+use bench::s3_client::S3Config;
+use bench::sse::SseConfig;
+use bench::HostSelect;
 use clap::Parser;
 use cli::app::{parse_duration, parse_obj_size, parse_size, Cli, Commands};
 use cli::{
     execute_run_yaml, run_delete, run_get, run_list, run_mixed, run_put, run_stat, run_zip,
     BenchConfig,
 };
-use bench::s3_client::S3Config;
-use bench::sse::SseConfig;
-use bench::HostSelect;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -50,7 +50,10 @@ async fn main() -> anyhow::Result<()> {
         ca_pem: None,
     };
 
-    let host_select: HostSelect = cli.host_select.parse().map_err(|e: String| anyhow::anyhow!(e))?;
+    let host_select: HostSelect = cli
+        .host_select
+        .parse()
+        .map_err(|e: String| anyhow::anyhow!(e))?;
     let hosts: Vec<String> = cli
         .hosts
         .as_deref()
@@ -80,7 +83,10 @@ async fn main() -> anyhow::Result<()> {
         autoterm: cli.autoterm,
         autoterm_dur: parse_duration(&cli.autoterm_dur).map_err(|e| anyhow::anyhow!(e))?,
         autoterm_pct: cli.autoterm_pct / 100.0,
-        output: cli.benchdata.as_ref().map(|p| p.to_string_lossy().to_string()),
+        output: cli
+            .benchdata
+            .as_ref()
+            .map(|p| p.to_string_lossy().to_string()),
         host_select,
         hosts,
         no_prefix: cli.noprefix,
@@ -111,19 +117,14 @@ async fn main() -> anyhow::Result<()> {
             range,
             list_existing,
         } => {
-            let range_bounds = range
-                .as_deref()
-                .and_then(|r| {
-                    let parts: Vec<&str> = r.split('-').collect();
-                    if parts.len() == 2 {
-                        Some((
-                            parts[0].parse().unwrap_or(0),
-                            parts[1].parse().unwrap_or(0),
-                        ))
-                    } else {
-                        None
-                    }
-                });
+            let range_bounds = range.as_deref().and_then(|r| {
+                let parts: Vec<&str> = r.split('-').collect();
+                if parts.len() == 2 {
+                    Some((parts[0].parse().unwrap_or(0), parts[1].parse().unwrap_or(0)))
+                } else {
+                    None
+                }
+            });
             run_get(&bc, versions, range_bounds, list_existing).await?;
         }
 
@@ -209,80 +210,194 @@ async fn main() -> anyhow::Result<()> {
         }
 
         Commands::Merge { files } => {
-            let paths: Vec<String> = files.iter().map(|f| f.to_string_lossy().to_string()).collect();
+            let paths: Vec<String> = files
+                .iter()
+                .map(|f| f.to_string_lossy().to_string())
+                .collect();
             cli::merge_files(&paths)?;
         }
 
         Commands::Client { listen_addr } => {
-            client::run_client(&listen_addr).await.map_err(|e| anyhow::anyhow!("{e}"))?;
+            client::run_client(&listen_addr)
+                .await
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
         }
 
         Commands::Iceberg(sub) => match sub {
             cli::app::IcebergCommand::CatalogRead {
-                ns_list_distrib: _, ns_head_distrib: _, ns_get_distrib: _,
-                table_list_distrib: _, table_head_distrib: _, table_get_distrib: _,
-                view_list_distrib: _, view_head_distrib: _, view_get_distrib: _,
-                page_size, namespace_width, namespace_depth, tables_per_ns, views_per_ns,
-                columns, properties, base_location, external_catalog, catalog_name,
+                ns_list_distrib: _,
+                ns_head_distrib: _,
+                ns_get_distrib: _,
+                table_list_distrib: _,
+                table_head_distrib: _,
+                table_get_distrib: _,
+                view_list_distrib: _,
+                view_head_distrib: _,
+                view_get_distrib: _,
+                page_size,
+                namespace_width,
+                namespace_depth,
+                tables_per_ns,
+                views_per_ns,
+                columns,
+                properties,
+                base_location,
+                external_catalog,
+                catalog_name,
             } => {
                 cli::run_iceberg_read(
-                    &bc, cli.remote_hosts.clone(),
-                    page_size, namespace_width, namespace_depth,
-                    tables_per_ns, views_per_ns, columns, properties,
-                    base_location, external_catalog, catalog_name,
-                ).await?;
+                    &bc,
+                    cli.remote_hosts.clone(),
+                    page_size,
+                    namespace_width,
+                    namespace_depth,
+                    tables_per_ns,
+                    views_per_ns,
+                    columns,
+                    properties,
+                    base_location,
+                    external_catalog,
+                    catalog_name,
+                )
+                .await?;
             }
             cli::app::IcebergCommand::CatalogCommits {
-                table_commits_throughput, view_commits_throughput,
-                max_retries, retry_backoff_ms, backoff_max_ms,
-                namespace_width, namespace_depth, tables_per_ns, views_per_ns,
-                columns, properties, base_location, external_catalog, catalog_name,
+                table_commits_throughput,
+                view_commits_throughput,
+                max_retries,
+                retry_backoff_ms,
+                backoff_max_ms,
+                namespace_width,
+                namespace_depth,
+                tables_per_ns,
+                views_per_ns,
+                columns,
+                properties,
+                base_location,
+                external_catalog,
+                catalog_name,
             } => {
                 cli::run_iceberg_commits(
-                    &bc, cli.remote_hosts.clone(),
-                    table_commits_throughput, view_commits_throughput,
-                    max_retries, retry_backoff_ms, backoff_max_ms,
-                    namespace_width, namespace_depth, tables_per_ns, views_per_ns,
-                    columns, properties, base_location, external_catalog, catalog_name,
-                ).await?;
+                    &bc,
+                    cli.remote_hosts.clone(),
+                    table_commits_throughput,
+                    view_commits_throughput,
+                    max_retries,
+                    retry_backoff_ms,
+                    backoff_max_ms,
+                    namespace_width,
+                    namespace_depth,
+                    tables_per_ns,
+                    views_per_ns,
+                    columns,
+                    properties,
+                    base_location,
+                    external_catalog,
+                    catalog_name,
+                )
+                .await?;
             }
             cli::app::IcebergCommand::CatalogMixed {
-                ns_list_distrib: _, ns_head_distrib: _, ns_get_distrib: _,
-                table_list_distrib: _, table_head_distrib: _, table_get_distrib: _,
-                view_list_distrib: _, view_head_distrib: _, view_get_distrib: _,
-                ns_update_distrib: _, table_update_distrib: _, view_update_distrib: _,
-                max_retries, retry_backoff_ms, backoff_max_ms, page_size,
-                namespace_width, namespace_depth, tables_per_ns, views_per_ns,
-                columns, properties, base_location, external_catalog, catalog_name,
+                ns_list_distrib: _,
+                ns_head_distrib: _,
+                ns_get_distrib: _,
+                table_list_distrib: _,
+                table_head_distrib: _,
+                table_get_distrib: _,
+                view_list_distrib: _,
+                view_head_distrib: _,
+                view_get_distrib: _,
+                ns_update_distrib: _,
+                table_update_distrib: _,
+                view_update_distrib: _,
+                max_retries,
+                retry_backoff_ms,
+                backoff_max_ms,
+                page_size,
+                namespace_width,
+                namespace_depth,
+                tables_per_ns,
+                views_per_ns,
+                columns,
+                properties,
+                base_location,
+                external_catalog,
+                catalog_name,
             } => {
                 cli::run_iceberg_mixed(
-                    &bc, cli.remote_hosts.clone(),
-                    max_retries, retry_backoff_ms, backoff_max_ms, page_size,
-                    namespace_width, namespace_depth, tables_per_ns, views_per_ns,
-                    columns, properties, base_location, external_catalog, catalog_name,
-                ).await?;
+                    &bc,
+                    cli.remote_hosts.clone(),
+                    max_retries,
+                    retry_backoff_ms,
+                    backoff_max_ms,
+                    page_size,
+                    namespace_width,
+                    namespace_depth,
+                    tables_per_ns,
+                    views_per_ns,
+                    columns,
+                    properties,
+                    base_location,
+                    external_catalog,
+                    catalog_name,
+                )
+                .await?;
             }
             cli::app::IcebergCommand::CatalogWrite { page_size } => {
                 cli::run_iceberg_catalog_write_stub(page_size).await?;
             }
             cli::app::IcebergCommand::Sustained {
-                num_files, rows_per_file, files_per_commit, tpcds, scale_factor,
-                tpcds_table, cache_dir, skip_upload, simulate_read,
-                read_concurrent, read_rps_limit,
-                max_retries, retry_backoff_ms, backoff_max_ms,
-                namespace_width, namespace_depth, tables_per_ns,
-                columns, properties, base_location, external_catalog, catalog_name,
+                num_files,
+                rows_per_file,
+                files_per_commit,
+                tpcds,
+                scale_factor,
+                tpcds_table,
+                cache_dir,
+                skip_upload,
+                simulate_read,
+                read_concurrent,
+                read_rps_limit,
+                max_retries,
+                retry_backoff_ms,
+                backoff_max_ms,
+                namespace_width,
+                namespace_depth,
+                tables_per_ns,
+                columns,
+                properties,
+                base_location,
+                external_catalog,
+                catalog_name,
                 ..
             } => {
                 cli::run_iceberg_sustained(
-                    &bc, cli.remote_hosts.clone(),
-                    num_files, rows_per_file, files_per_commit, tpcds, scale_factor,
-                    tpcds_table, cache_dir, skip_upload, simulate_read,
-                    read_concurrent, read_rps_limit,
-                    max_retries, retry_backoff_ms, backoff_max_ms,
-                    namespace_width, namespace_depth, tables_per_ns,
-                    columns, properties, base_location, external_catalog, catalog_name,
-                ).await?;
+                    &bc,
+                    cli.remote_hosts.clone(),
+                    num_files,
+                    rows_per_file,
+                    files_per_commit,
+                    tpcds,
+                    scale_factor,
+                    tpcds_table,
+                    cache_dir,
+                    skip_upload,
+                    simulate_read,
+                    read_concurrent,
+                    read_rps_limit,
+                    max_retries,
+                    retry_backoff_ms,
+                    backoff_max_ms,
+                    namespace_width,
+                    namespace_depth,
+                    tables_per_ns,
+                    columns,
+                    properties,
+                    base_location,
+                    external_catalog,
+                    catalog_name,
+                )
+                .await?;
             }
         },
     }

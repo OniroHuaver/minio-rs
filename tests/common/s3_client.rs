@@ -266,13 +266,15 @@ impl S3Client {
         dst_bucket: &str,
         dst_key: &str,
     ) -> reqwest::Response {
-        let url = format!("{}/{}/{}", self.endpoint, dst_bucket, urlencode_key(dst_key));
+        let url = format!(
+            "{}/{}/{}",
+            self.endpoint,
+            dst_bucket,
+            urlencode_key(dst_key)
+        );
         self.client
             .put(&url)
-            .header(
-                "x-amz-copy-source",
-                format!("/{}/{}", src_bucket, src_key),
-            )
+            .header("x-amz-copy-source", format!("/{}/{}", src_bucket, src_key))
             .send()
             .await
             .expect("copy_object")
@@ -287,14 +289,16 @@ impl S3Client {
         dst_key: &str,
         meta: &[(&str, &str)],
     ) -> reqwest::Response {
-        let url = format!("{}/{}/{}", self.endpoint, dst_bucket, urlencode_key(dst_key));
+        let url = format!(
+            "{}/{}/{}",
+            self.endpoint,
+            dst_bucket,
+            urlencode_key(dst_key)
+        );
         let mut req = self
             .client
             .put(&url)
-            .header(
-                "x-amz-copy-source",
-                format!("/{}/{}", src_bucket, src_key),
-            )
+            .header("x-amz-copy-source", format!("/{}/{}", src_bucket, src_key))
             .header("x-amz-metadata-directive", "REPLACE");
         for (k, v) in meta {
             let header_name = format!("x-amz-meta-{}", k);
@@ -313,10 +317,7 @@ impl S3Client {
         // Build XML body
         let mut objects_xml = String::new();
         for key in keys {
-            objects_xml.push_str(&format!(
-                "<Object><Key>{}</Key></Object>",
-                key
-            ));
+            objects_xml.push_str(&format!("<Object><Key>{}</Key></Object>", key));
         }
         let quiet_xml = if quiet {
             "<Quiet>true</Quiet>".to_string()

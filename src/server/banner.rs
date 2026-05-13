@@ -59,8 +59,14 @@ pub fn print_banner(address: &str, console_address: Option<&str>, disk_infos: &[
     lines.push(format!("│    Drives:  {:<46}│", disk_count));
     lines.push(format!("│    Data:    {:<46}│", data));
     lines.push(format!("│    Parity:  {:<46}│", parity));
-    lines.push(format!("│    Write Quorum:  {}/{}  {:<34}│", wq, disk_count, ""));
-    lines.push(format!("│    Read Quorum:   {}/{}  {:<34}│", rq, disk_count, ""));
+    lines.push(format!(
+        "│    Write Quorum:  {}/{}  {:<34}│",
+        wq, disk_count, ""
+    ));
+    lines.push(format!(
+        "│    Read Quorum:   {}/{}  {:<34}│",
+        rq, disk_count, ""
+    ));
 
     let efficiency = if disk_count > 0 {
         data as f64 * 100.0 / disk_count as f64

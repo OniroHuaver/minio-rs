@@ -53,7 +53,9 @@ pub fn drive_group(disk_infos: &[DiskInfo]) -> MetricsGroup {
     .unwrap();
 
     for d in disk_infos {
-        total.with_label_values(&[&d.mount_path]).set(d.total as f64);
+        total
+            .with_label_values(&[&d.mount_path])
+            .set(d.total as f64);
         free.with_label_values(&[&d.mount_path]).set(d.free as f64);
     }
 
@@ -185,9 +187,13 @@ impl SystemCollector {
         // Approximate start time (reverse from uptime; accurate enough for metrics)
         #[allow(clippy::cast_possible_truncation)]
         {
-            self.start_time
-                .set(std::time::UNIX_EPOCH.elapsed().unwrap_or_default().as_secs_f64()
-                    - uptime_secs);
+            self.start_time.set(
+                std::time::UNIX_EPOCH
+                    .elapsed()
+                    .unwrap_or_default()
+                    .as_secs_f64()
+                    - uptime_secs,
+            );
         }
     }
 }
@@ -201,8 +207,14 @@ fn get_total_memory() -> u64 {
     let mut len = std::mem::size_of::<u64>();
     // SAFETY: mib, val, and len are correctly sized for the sysctl call.
     unsafe {
-        if libc::sysctl(mib.as_mut_ptr(), 2, &mut val as *mut _ as _, &mut len, std::ptr::null_mut(), 0)
-            == 0
+        if libc::sysctl(
+            mib.as_mut_ptr(),
+            2,
+            &mut val as *mut _ as _,
+            &mut len,
+            std::ptr::null_mut(),
+            0,
+        ) == 0
         {
             val
         } else {
@@ -263,8 +275,7 @@ fn get_free_memory() -> u64 {
         )
     };
     if ret == libc::KERN_SUCCESS {
-        let free_pages =
-            u64::from(stat.free_count) + u64::from(stat.inactive_count);
+        let free_pages = u64::from(stat.free_count) + u64::from(stat.inactive_count);
         free_pages * page_size
     } else {
         0

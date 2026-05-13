@@ -15,14 +15,19 @@ impl ConnectionState {
     }
 
     pub fn is_active(&self) -> bool {
-        matches!(self, ConnectionState::Connected | ConnectionState::Reconnecting)
+        matches!(
+            self,
+            ConnectionState::Connected | ConnectionState::Reconnecting
+        )
     }
 
     /// Whether the wire write loop may send application frames (handshake or active).
     pub fn allows_outgoing_wire(&self) -> bool {
         matches!(
             self,
-            ConnectionState::Connecting | ConnectionState::Connected | ConnectionState::Reconnecting
+            ConnectionState::Connecting
+                | ConnectionState::Connected
+                | ConnectionState::Reconnecting
         )
     }
 

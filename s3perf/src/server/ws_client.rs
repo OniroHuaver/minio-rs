@@ -18,8 +18,9 @@ impl ClientWs {
     /// Negotiate handshake (ServerInfo announcement + acknowledgement).
     pub async fn connect(host: &str, server_info: &ServerInfo) -> Result<Self, String> {
         let url = format!("ws://{host}/ws");
-        let (mut ws, _resp) =
-            connect_async(&url).await.map_err(|e| format!("connect failed ({host}): {e}"))?;
+        let (mut ws, _resp) = connect_async(&url)
+            .await
+            .map_err(|e| format!("connect failed ({host}): {e}"))?;
 
         let info_json =
             serde_json::to_string(server_info).map_err(|e| format!("serialize error: {e}"))?;

@@ -10,10 +10,7 @@ use crate::grid::message::HandlerId;
 ///
 /// Takes raw payload bytes, returns response bytes or a remote error.
 pub type SingleHandlerFn = Arc<
-    dyn Fn(
-            Vec<u8>,
-        )
-            -> Pin<Box<dyn Future<Output = Result<Vec<u8>, RemoteErr>> + Send>>
+    dyn Fn(Vec<u8>) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, RemoteErr>> + Send>>
         + Send
         + Sync,
 >;

@@ -40,7 +40,10 @@ pub fn build_registry(
         let mut g = sys_groups;
         g.push(Arc::new(cluster::health_group(disk_infos, total_disks)));
         g.push(Arc::new(cluster::usage_group(object_api)));
-        g.push(Arc::new(cluster::erasure_set_group(disk_infos, total_disks)));
+        g.push(Arc::new(cluster::erasure_set_group(
+            disk_infos,
+            total_disks,
+        )));
         g.push(Arc::new(api_group));
         g
     };

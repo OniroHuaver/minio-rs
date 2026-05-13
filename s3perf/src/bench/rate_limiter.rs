@@ -4,7 +4,7 @@
 //! 在每次 S3 请求前调用 [`RateLimiter::wait`]。
 
 use std::sync::{Arc, Mutex};
-use tokio::time::{Duration, Instant, sleep};
+use tokio::time::{sleep, Duration, Instant};
 
 /// 基于固定间隔算法的简单速率限制器。
 ///
@@ -33,11 +33,7 @@ impl RateLimiter {
     /// `rps` 为每秒允许的最大请求数。
     /// 当 `rps <= 0` 时，限速器不生效，`wait()` 立即返回。
     pub fn new(rps: f64) -> Self {
-        let interval = if rps > 0.0 {
-            Some(1.0 / rps)
-        } else {
-            None
-        };
+        let interval = if rps > 0.0 { Some(1.0 / rps) } else { None };
         Self {
             interval,
             last: Mutex::new(None),

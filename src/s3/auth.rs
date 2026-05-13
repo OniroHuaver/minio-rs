@@ -53,7 +53,9 @@ pub async fn sigv4_middleware(
             let (_, headers, body) = s3_error_response(
                 StatusCode::FORBIDDEN,
                 "SignatureDoesNotMatch",
-                &format!("The request signature we calculated does not match the signature you provided. Check your key and signing method."),
+                &format!(
+                    "The request signature we calculated does not match the signature you provided. Check your key and signing method."
+                ),
                 "no-request-id",
                 req.uri().path(),
             );
@@ -87,15 +89,11 @@ fn validate_sigv4(
 
     let auth_params = parse_auth_params(parts[1])?;
 
-    let credential = auth_params
-        .get("Credential")
-        .ok_or("missing Credential")?;
+    let credential = auth_params.get("Credential").ok_or("missing Credential")?;
     let signed_headers_str = auth_params
         .get("SignedHeaders")
         .ok_or("missing SignedHeaders")?;
-    let provided_signature = auth_params
-        .get("Signature")
-        .ok_or("missing Signature")?;
+    let provided_signature = auth_params.get("Signature").ok_or("missing Signature")?;
 
     // Parse credential scope: AKID/YYYYMMDD/region/service/aws4_request
     let scope_parts: Vec<&str> = credential.split('/').collect();

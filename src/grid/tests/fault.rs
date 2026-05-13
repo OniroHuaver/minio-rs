@@ -6,12 +6,12 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::grid::connection::auth_validate_token;
+use crate::grid::ConnectionState;
 use crate::grid::connection::Connection;
+use crate::grid::connection::auth_validate_token;
 use crate::grid::debug::DebugMsg;
 use crate::grid::error::GridError;
-use crate::grid::handler::{single_handler_fn, HandlerRegistry};
-use crate::grid::ConnectionState;
+use crate::grid::handler::{HandlerRegistry, single_handler_fn};
 
 const HANDLER_ECHO: u8 = 100;
 
@@ -105,7 +105,7 @@ async fn test_out_queue_drop_causes_connection_closed() {
     // Simulate outbound death by taking the out_rx and dropping it.
     // The channel tx remains in conn_a, but rx is gone → sends will fail.
     let _rx = conn_a.take_out_rx(); // Second take returns None — the first was taken by make_pair.
-                                    // Actually, make_pair already took the rx. Let's use a different approach.
+    // Actually, make_pair already took the rx. Let's use a different approach.
 
     // Kill outbound via debug: this sets the flag that write_task checks.
     conn_a.debug_msg(DebugMsg::KillOutbound);
@@ -153,7 +153,10 @@ async fn test_ping_interval_override() {
     // Override ping interval. In simulated_pair, ping_task isn't running,
     // so this tests the debug flag is stored correctly.
     conn_a.debug_msg(DebugMsg::SetClientPingDuration(5000));
-    let ms = conn_a.inner.debug_ping_interval_ms.load(std::sync::atomic::Ordering::SeqCst);
+    let ms = conn_a
+        .inner
+        .debug_ping_interval_ms
+        .load(std::sync::atomic::Ordering::SeqCst);
     assert_eq!(ms, 5000);
 
     // Requests still work after debug operations.
@@ -177,12 +180,18 @@ async fn test_block_inbound_then_unblock() {
 
     // Block inbound → no effect on simulated_pair (dispatch is direct).
     conn_a.debug_msg(DebugMsg::BlockInboundMessages(true));
-    let blocked = conn_a.inner.debug_block_inbound.load(std::sync::atomic::Ordering::SeqCst);
+    let blocked = conn_a
+        .inner
+        .debug_block_inbound
+        .load(std::sync::atomic::Ordering::SeqCst);
     assert!(blocked);
 
     // Unblock.
     conn_a.debug_msg(DebugMsg::BlockInboundMessages(false));
-    let unblocked = conn_a.inner.debug_block_inbound.load(std::sync::atomic::Ordering::SeqCst);
+    let unblocked = conn_a
+        .inner
+        .debug_block_inbound
+        .load(std::sync::atomic::Ordering::SeqCst);
     assert!(!unblocked);
 
     // Requests still work.
@@ -200,6 +209,16 @@ async fn test_shutdown_sets_both_kill_flags() {
     let (conn_a, _conn_b) = make_pair(handlers).await;
 
     conn_a.debug_msg(DebugMsg::Shutdown);
-    assert!(conn_a.inner.debug_kill_inbound.load(std::sync::atomic::Ordering::SeqCst));
-    assert!(conn_a.inner.debug_kill_outbound.load(std::sync::atomic::Ordering::SeqCst));
+    assert!(
+        conn_a
+            .inner
+            .debug_kill_inbound
+            .load(std::sync::atomic::Ordering::SeqCst)
+    );
+    assert!(
+        conn_a
+            .inner
+            .debug_kill_outbound
+            .load(std::sync::atomic::Ordering::SeqCst)
+    );
 }

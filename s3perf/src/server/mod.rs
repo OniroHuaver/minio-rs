@@ -77,16 +77,17 @@ pub async fn run_server_benchmark(
         return Err("no remote benchmarking agents specified".into());
     }
 
-    let hosts: Vec<_> = client_hosts
-        .iter()
-        .flat_map(|h| parse_hosts(h))
-        .collect();
+    let hosts: Vec<_> = client_hosts.iter().flat_map(|h| parse_hosts(h)).collect();
 
     if hosts.is_empty() {
         return Err("parsed hosts is empty".into());
     }
 
-    info!("distributed benchmark: {} across {} agents", command_name, hosts.len());
+    info!(
+        "distributed benchmark: {} across {} agents",
+        command_name,
+        hosts.len()
+    );
 
     let mut conns = Connections::new(hosts);
     conns.connect_all().await?;

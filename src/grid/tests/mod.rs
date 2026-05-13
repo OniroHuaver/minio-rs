@@ -7,16 +7,16 @@ pub mod harness;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::grid::connection::auth_validate_token;
+use crate::grid::ConnectionState;
 use crate::grid::connection::Connection;
+use crate::grid::connection::auth_validate_token;
 use crate::grid::error::GridError;
-use crate::grid::handler::{single_handler_fn, HandlerRegistry};
+use crate::grid::handler::{HandlerRegistry, single_handler_fn};
 use crate::grid::manager::Manager;
-use crate::grid::message::{Flags, Message, Op, HANDLER_INVALID};
+use crate::grid::message::{Flags, HANDLER_INVALID, Message, Op};
 use crate::grid::msg_types::{
     Bytes, ConnectReq, ConnectResp, MSS, MuxConnectError, PongMsg, TestRequest, TestResponse,
 };
-use crate::grid::ConnectionState;
 
 // ── Handler constants ──────────────────────────────────────────
 
@@ -30,9 +30,7 @@ const HANDLER_SLOW: u8 = 102;
 ///
 /// Both sides share the same handler registry so conn_a's requests
 /// are dispatched by conn_b using the same registered handlers.
-async fn simulated_pair(
-    handlers: Arc<HandlerRegistry>,
-) -> (Connection, Connection) {
+async fn simulated_pair(handlers: Arc<HandlerRegistry>) -> (Connection, Connection) {
     let conn_a = Connection::new(
         [1u8; 16],
         "node1:9000".into(),
@@ -144,7 +142,11 @@ fn test_message_large_payload() {
 #[test]
 fn test_op_try_from_all_valid() {
     for val in 0u8..=17u8 {
-        assert!(Op::try_from(val).is_ok(), "Op value {} should be valid", val);
+        assert!(
+            Op::try_from(val).is_ok(),
+            "Op value {} should be valid",
+            val
+        );
     }
 }
 
@@ -316,7 +318,10 @@ fn test_mux_connect_error_roundtrip() {
 
 #[test]
 fn test_mss_roundtrip() {
-    let mss = MSS::with_entries([("vol".into(), "bucket".into()), ("path".into(), "obj1".into())]);
+    let mss = MSS::with_entries([
+        ("vol".into(), "bucket".into()),
+        ("path".into(), "obj1".into()),
+    ]);
     let data = rmp_serde::to_vec(&mss).unwrap();
     let decoded: MSS = rmp_serde::from_slice(&data).unwrap();
     assert_eq!(decoded.get("vol").map(|s| s.as_str()), Some("bucket"));
@@ -333,7 +338,10 @@ fn test_bytes_roundtrip() {
 
 #[test]
 fn test_test_request_roundtrip() {
-    let req = TestRequest { org_num: 42, org_string: "hello".into() };
+    let req = TestRequest {
+        org_num: 42,
+        org_string: "hello".into(),
+    };
     let data = rmp_serde::to_vec(&req).unwrap();
     let decoded: TestRequest = rmp_serde::from_slice(&data).unwrap();
     assert_eq!(decoded.org_num, 42);
@@ -345,7 +353,10 @@ fn test_test_response_roundtrip() {
     let resp = TestResponse {
         org_num: 7,
         org_string: "world".into(),
-        embedded: Some(TestRequest { org_num: 99, org_string: "nested".into() }),
+        embedded: Some(TestRequest {
+            org_num: 99,
+            org_string: "nested".into(),
+        }),
     };
     let data = rmp_serde::to_vec(&resp).unwrap();
     let decoded: TestResponse = rmp_serde::from_slice(&data).unwrap();
@@ -475,7 +486,9 @@ async fn test_single_roundtrip_error() {
     handlers.singles.write().await.insert(
         HANDLER_ERROR,
         single_handler_fn(|_payload: Vec<u8>| async move {
-            Err(crate::grid::RemoteErr { msg: "intentional error".to_string() })
+            Err(crate::grid::RemoteErr {
+                msg: "intentional error".to_string(),
+            })
         }),
     );
 

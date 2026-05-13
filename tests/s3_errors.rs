@@ -21,8 +21,14 @@ use common::helpers::create_bucket;
 
 /// Assert that a response body is a valid S3 XML error.
 fn assert_s3_error(body: &str, expected_code: &str, _expected_status: u16) {
-    assert!(body.contains("<?xml"), "error response should have XML declaration");
-    assert!(body.contains("<Error>"), "error response should have Error root element");
+    assert!(
+        body.contains("<?xml"),
+        "error response should have XML declaration"
+    );
+    assert!(
+        body.contains("<Error>"),
+        "error response should have Error root element"
+    );
     assert!(
         body.contains(&format!("<Code>{expected_code}</Code>")),
         "error code should be {expected_code}, body: {body}"
@@ -46,8 +52,15 @@ async fn head_nonexistent_bucket_404() {
     let resp = client.head_bucket("no-bucket-404").await;
     assert_eq!(resp.status(), 404);
     // HEAD responses don't have a body (HTTP spec), but Content-Type is set
-    let ct = resp.headers().get("content-type").and_then(|v| v.to_str().ok());
-    assert_eq!(ct, Some("application/xml"), "HEAD error should have Content-Type");
+    let ct = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok());
+    assert_eq!(
+        ct,
+        Some("application/xml"),
+        "HEAD error should have Content-Type"
+    );
 }
 
 #[tokio::test]
@@ -150,7 +163,9 @@ async fn bad_digest_on_wrong_md5() {
     hasher.update(b"wrong data");
     let wrong_md5 = base64::engine::general_purpose::STANDARD.encode(&hasher.finalize());
 
-    let resp = client.put_object_with_md5("errors", "bad-digest.bin", b"real data", &wrong_md5).await;
+    let resp = client
+        .put_object_with_md5("errors", "bad-digest.bin", b"real data", &wrong_md5)
+        .await;
     assert_eq!(resp.status(), 400);
     let body = resp.text().await.unwrap();
     assert_s3_error(&body, "BadDigest", 400);
@@ -166,8 +181,15 @@ async fn error_response_content_type_is_xml() {
     create_bucket(&client, "errors").await;
     let resp = client.get_object("errors", "nope.txt").await;
     assert_eq!(resp.status(), 404);
-    let ct = resp.headers().get("content-type").and_then(|v| v.to_str().ok());
-    assert_eq!(ct, Some("application/xml"), "S3 error responses should be application/xml");
+    let ct = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok());
+    assert_eq!(
+        ct,
+        Some("application/xml"),
+        "S3 error responses should be application/xml"
+    );
 }
 
 // ============================================================================
@@ -182,7 +204,10 @@ async fn error_includes_request_id() {
     assert_eq!(resp.status(), 404);
     let body = resp.text().await.unwrap();
     // RequestId should be a non-empty UUID
-    assert!(body.contains("<RequestId>"), "error should contain RequestId");
+    assert!(
+        body.contains("<RequestId>"),
+        "error should contain RequestId"
+    );
     let rid = extract_xml_text(&body, "RequestId").unwrap_or_default();
     assert!(!rid.is_empty(), "RequestId should not be empty");
     assert!(rid.len() >= 32, "RequestId should be a UUID, got: {rid}");
@@ -199,7 +224,10 @@ async fn error_includes_resource() {
     assert_eq!(resp.status(), 404);
     let body = resp.text().await.unwrap();
     let resource = extract_xml_text(&body, "Resource").unwrap_or_default();
-    assert!(resource.contains("no-bucket"), "Resource should include bucket name");
+    assert!(
+        resource.contains("no-bucket"),
+        "Resource should include bucket name"
+    );
 }
 
 // ============================================================================

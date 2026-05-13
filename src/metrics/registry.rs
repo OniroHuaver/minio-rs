@@ -51,11 +51,7 @@ impl MetricsRegistry {
 
     /// Gather metric families for the given V3 path, optionally filtering
     /// by `bucket` label values (comma-separated).
-    pub fn gather(
-        &self,
-        path: &str,
-        bucket_filter: Option<&HashSet<String>>,
-    ) -> Vec<MetricFamily> {
+    pub fn gather(&self, path: &str, bucket_filter: Option<&HashSet<String>>) -> Vec<MetricFamily> {
         let path = path.trim_end_matches('/');
         let groups: Vec<&Arc<MetricsGroup>> = if path.is_empty() || path == "/" {
             self.groups.iter().collect()

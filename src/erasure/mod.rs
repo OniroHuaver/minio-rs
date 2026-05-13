@@ -18,8 +18,8 @@
 
 pub mod bitrot;
 
-use crate::base::error::{MinioError, MinioResult};
 use crate::base::erasure::ErasureParams;
+use crate::base::error::{MinioError, MinioResult};
 use reed_solomon_erasure::galois_8::ReedSolomon;
 
 /// Erasure Coding engine
@@ -44,9 +44,7 @@ impl Erasure {
             ));
         }
         if data_blocks + parity_blocks > 256 {
-            return Err(MinioError::Internal(
-                "M + N must not exceed 256".into(),
-            ));
+            return Err(MinioError::Internal("M + N must not exceed 256".into()));
         }
 
         let encoder = ReedSolomon::new(data_blocks, parity_blocks)
@@ -83,9 +81,7 @@ impl Erasure {
         // Calculate shard size (round up)
         let shard_size = (data.len() + m - 1) / m;
         // Build equal-length shards (zero-padded)
-        let mut shards: Vec<Vec<u8>> = (0..total)
-            .map(|_| vec![0u8; shard_size])
-            .collect();
+        let mut shards: Vec<Vec<u8>> = (0..total).map(|_| vec![0u8; shard_size]).collect();
 
         // Fill data shards
         for (i, chunk) in data.chunks(shard_size).enumerate() {
@@ -126,12 +122,7 @@ impl Erasure {
         }
 
         // Ensure all shards have equal length
-        let max_len = shards
-            .iter()
-            .flatten()
-            .map(|s| s.len())
-            .max()
-            .unwrap_or(0);
+        let max_len = shards.iter().flatten().map(|s| s.len()).max().unwrap_or(0);
 
         let mut padded: Vec<Option<Vec<u8>>> = shards
             .iter()
@@ -184,13 +175,7 @@ mod tests {
         let partial_shards: Vec<Option<Vec<u8>>> = partial
             .iter()
             .enumerate()
-            .map(|(i, s)| {
-                if i < 2 {
-                    None
-                } else {
-                    Some(s.clone())
-                }
-            })
+            .map(|(i, s)| if i < 2 { None } else { Some(s.clone()) })
             .collect();
 
         let decoded = ec.decode(&partial_shards).expect("decode with 2 missing");

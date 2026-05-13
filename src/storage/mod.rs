@@ -19,10 +19,10 @@ mod test;
 
 // Re-exports
 pub use format::{
-    calculate_part_size_from_idx, hash_deterministic_string, is_xl_meta_erasure_info_valid,
-    is_xl_meta_format_valid, read_xl_meta, write_xl_meta, write_xl_meta_no_data, ChecksumInfo,
-    ErasureInfo, ObjectPartInfo, StatInfo, XlMetaDataDirDecoder, XlMetaV1Object,
+    ChecksumInfo, ErasureInfo, ObjectPartInfo, StatInfo, XlMetaDataDirDecoder, XlMetaV1Object,
     XlMetaV2DeleteMarker, XlMetaV2Object, XlMetaV2Version, XlMetaV2VersionHeader,
+    calculate_part_size_from_idx, hash_deterministic_string, is_xl_meta_erasure_info_valid,
+    is_xl_meta_format_valid, read_xl_meta, write_xl_meta, write_xl_meta_no_data,
 };
 pub use xl_storage::XlStorage;
 

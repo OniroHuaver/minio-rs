@@ -73,7 +73,11 @@ async fn test_bucket_not_found() {
     let (_server, client) = setup().await;
 
     let resp = client.head_bucket("no-such-bucket").await;
-    assert_eq!(resp.status(), 404, "HEAD non-existent bucket should return 404");
+    assert_eq!(
+        resp.status(),
+        404,
+        "HEAD non-existent bucket should return 404"
+    );
 }
 
 // ============================================================================
@@ -96,7 +100,11 @@ async fn test_put_get_small_file() {
     let resp = client.get_object(bucket, key).await;
     assert_eq!(resp.status(), 200, "get_object should return 200");
     let body = resp.bytes().await.expect("get_object body");
-    assert_eq!(body.as_ref(), data.as_slice(), "GET data must match PUT data");
+    assert_eq!(
+        body.as_ref(),
+        data.as_slice(),
+        "GET data must match PUT data"
+    );
 }
 
 #[tokio::test]
@@ -115,7 +123,11 @@ async fn test_put_get_large_file() {
     let resp = client.get_object(bucket, key).await;
     assert_eq!(resp.status(), 200, "get_object should return 200");
     let body = resp.bytes().await.expect("get_object body");
-    assert_eq!(body.as_ref(), data.as_slice(), "GET data must match PUT data");
+    assert_eq!(
+        body.as_ref(),
+        data.as_slice(),
+        "GET data must match PUT data"
+    );
 }
 
 #[tokio::test]
@@ -158,10 +170,7 @@ async fn test_head_object() {
     let resp = client.head_object(bucket, key).await;
     assert_eq!(resp.status(), 200, "head_object should return 200");
     let head_etag = resp.headers().get("etag").and_then(|v| v.to_str().ok());
-    assert_eq!(
-        head_etag, put_etag,
-        "HEAD etag should match PUT etag"
-    );
+    assert_eq!(head_etag, put_etag, "HEAD etag should match PUT etag");
 }
 
 // ============================================================================
@@ -222,7 +231,11 @@ async fn test_get_object_range() {
         "range request should return 206 Partial Content"
     );
     let body = resp.bytes().await.expect("range body");
-    assert_eq!(body.as_ref(), &data[..100], "range body should match bytes 0-99");
+    assert_eq!(
+        body.as_ref(),
+        &data[..100],
+        "range body should match bytes 0-99"
+    );
 }
 
 #[tokio::test]
@@ -233,10 +246,18 @@ async fn test_object_not_found() {
     create_bucket(&client, bucket).await;
 
     let resp = client.get_object(bucket, "no-such-key.txt").await;
-    assert_eq!(resp.status(), 404, "GET non-existent object should return 404");
+    assert_eq!(
+        resp.status(),
+        404,
+        "GET non-existent object should return 404"
+    );
 
     let resp = client.head_object(bucket, "no-such-key.txt").await;
-    assert_eq!(resp.status(), 404, "HEAD non-existent object should return 404");
+    assert_eq!(
+        resp.status(),
+        404,
+        "HEAD non-existent object should return 404"
+    );
 }
 
 // ============================================================================
@@ -261,10 +282,7 @@ async fn test_list_objects_v2_multiple_objects() {
 
     for i in 0..5 {
         let key = format!("obj{}", i);
-        assert!(
-            body.contains(&key),
-            "list response should contain `{key}`"
-        );
+        assert!(body.contains(&key), "list response should contain `{key}`");
     }
 }
 
@@ -286,7 +304,10 @@ async fn test_list_objects_v2_prefix() {
 
     assert!(body.contains("a/alpha.txt"), "should contain a/alpha.txt");
     assert!(body.contains("a/apple.txt"), "should contain a/apple.txt");
-    assert!(!body.contains("b/banana.txt"), "should NOT contain b/banana.txt");
+    assert!(
+        !body.contains("b/banana.txt"),
+        "should NOT contain b/banana.txt"
+    );
 }
 
 #[tokio::test]

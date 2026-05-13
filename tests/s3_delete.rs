@@ -25,10 +25,15 @@ async fn delete_then_full_existence_chain() {
     let (_server, client) = setup().await;
     create_bucket(&client, "chain").await;
 
-    client.put_object("chain", "target.txt", b"to be deleted").await;
+    client
+        .put_object("chain", "target.txt", b"to be deleted")
+        .await;
 
     // Verify exists
-    assert_eq!(client.head_object("chain", "target.txt").await.status(), 200);
+    assert_eq!(
+        client.head_object("chain", "target.txt").await.status(),
+        200
+    );
     assert_eq!(client.get_object("chain", "target.txt").await.status(), 200);
 
     // Delete
@@ -47,7 +52,10 @@ async fn delete_then_full_existence_chain() {
     let resp = client.list_objects_v2("chain", "", "", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(!body.contains("target.txt"), "deleted object should not appear in listing");
+    assert!(
+        !body.contains("target.txt"),
+        "deleted object should not appear in listing"
+    );
 }
 
 #[tokio::test]
@@ -56,8 +64,12 @@ async fn delete_one_object_others_intact() {
     create_bucket(&client, "intact").await;
 
     client.put_object("intact", "keep1.txt", b"keep me").await;
-    client.put_object("intact", "remove.txt", b"delete me").await;
-    client.put_object("intact", "keep2.txt", b"keep me too").await;
+    client
+        .put_object("intact", "remove.txt", b"delete me")
+        .await;
+    client
+        .put_object("intact", "keep2.txt", b"keep me too")
+        .await;
 
     client.delete_object("intact", "remove.txt").await;
 
@@ -71,7 +83,10 @@ async fn delete_one_object_others_intact() {
     assert_eq!(resp.bytes().await.unwrap().as_ref(), b"keep me too");
 
     // Deleted object should be gone
-    assert_eq!(client.get_object("intact", "remove.txt").await.status(), 404);
+    assert_eq!(
+        client.get_object("intact", "remove.txt").await.status(),
+        404
+    );
 }
 
 // ============================================================================
@@ -111,7 +126,10 @@ async fn delete_then_recreate_same_key_multiple_times() {
         assert_eq!(resp.bytes().await.unwrap().as_ref(), data.as_slice());
 
         client.delete_object("recreate-m", "cycle.txt").await;
-        assert_eq!(client.get_object("recreate-m", "cycle.txt").await.status(), 404);
+        assert_eq!(
+            client.get_object("recreate-m", "cycle.txt").await.status(),
+            404
+        );
     }
 }
 
@@ -126,7 +144,9 @@ async fn delete_all_objects_then_delete_bucket() {
 
     // PUT many objects
     for i in 0..10 {
-        client.put_object("cleanup", &format!("obj{}", i), b"data").await;
+        client
+            .put_object("cleanup", &format!("obj{}", i), b"data")
+            .await;
     }
 
     // DELETE all objects one by one
@@ -139,8 +159,10 @@ async fn delete_all_objects_then_delete_bucket() {
     let resp = client.list_objects_v2("cleanup", "", "", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(body.contains("<KeyCount>0</KeyCount>") || !body.contains("<Contents>"),
-        "all objects should be gone after delete");
+    assert!(
+        body.contains("<KeyCount>0</KeyCount>") || !body.contains("<Contents>"),
+        "all objects should be gone after delete"
+    );
 
     // Delete the empty bucket
     let resp = client.delete_bucket("cleanup").await;
@@ -168,7 +190,9 @@ async fn delete_bucket_non_empty_current_behavior() {
 async fn delete_bucket_recreate_and_verify_empty() {
     let (_server, client) = setup().await;
     create_bucket(&client, "recreate-bucket").await;
-    client.put_object("recreate-bucket", "old.txt", b"old").await;
+    client
+        .put_object("recreate-bucket", "old.txt", b"old")
+        .await;
 
     // Delete the bucket (non-empty — current behavior allows this)
     client.delete_bucket("recreate-bucket").await;
@@ -180,7 +204,10 @@ async fn delete_bucket_recreate_and_verify_empty() {
     let resp = client.list_objects_v2("recreate-bucket", "", "", 0).await;
     assert_eq!(resp.status(), 200);
     let body = resp.text().await.unwrap();
-    assert!(body.contains("<KeyCount>0</KeyCount>"), "recreated bucket should be empty");
+    assert!(
+        body.contains("<KeyCount>0</KeyCount>"),
+        "recreated bucket should be empty"
+    );
 }
 
 // ============================================================================
@@ -193,9 +220,15 @@ async fn delete_same_object_twice() {
     create_bucket(&client, "idem").await;
 
     client.put_object("idem", "twice.txt", b"data").await;
-    assert_eq!(client.delete_object("idem", "twice.txt").await.status(), 204);
+    assert_eq!(
+        client.delete_object("idem", "twice.txt").await.status(),
+        204
+    );
     // Second delete should also return 204 (idempotent per S3 spec)
-    assert_eq!(client.delete_object("idem", "twice.txt").await.status(), 204);
+    assert_eq!(
+        client.delete_object("idem", "twice.txt").await.status(),
+        204
+    );
 }
 
 #[tokio::test]
@@ -207,6 +240,12 @@ async fn delete_object_then_operations_on_it() {
     client.delete_object("after-del", "del.txt").await;
 
     // All operations on deleted object should fail with 404
-    assert_eq!(client.get_object("after-del", "del.txt").await.status(), 404);
-    assert_eq!(client.head_object("after-del", "del.txt").await.status(), 404);
+    assert_eq!(
+        client.get_object("after-del", "del.txt").await.status(),
+        404
+    );
+    assert_eq!(
+        client.head_object("after-del", "del.txt").await.status(),
+        404
+    );
 }

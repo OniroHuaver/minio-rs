@@ -36,7 +36,9 @@ async fn valid_md5_small_object() {
 
     let data = b"hello content-md5 world!";
     let md5 = md5_base64(data);
-    let resp = client.put_object_with_md5("md5-ok", "valid.bin", data, &md5).await;
+    let resp = client
+        .put_object_with_md5("md5-ok", "valid.bin", data, &md5)
+        .await;
     assert_eq!(resp.status(), 200, "valid MD5 should return 200");
 }
 
@@ -47,7 +49,9 @@ async fn valid_md5_large_object() {
 
     let data = (0..256 * 1024).map(|i| (i % 256) as u8).collect::<Vec<_>>();
     let md5 = md5_base64(&data);
-    let resp = client.put_object_with_md5("md5-large", "large.bin", &data, &md5).await;
+    let resp = client
+        .put_object_with_md5("md5-large", "large.bin", &data, &md5)
+        .await;
     assert_eq!(resp.status(), 200);
 }
 
@@ -58,7 +62,9 @@ async fn valid_md5_zero_bytes() {
 
     let data: Vec<u8> = vec![];
     let md5 = md5_base64(&data);
-    let resp = client.put_object_with_md5("md5-zero", "empty.bin", &data, &md5).await;
+    let resp = client
+        .put_object_with_md5("md5-zero", "empty.bin", &data, &md5)
+        .await;
     assert_eq!(resp.status(), 200, "valid MD5 on zero-byte object → 200");
 }
 
@@ -73,10 +79,19 @@ async fn invalid_md5_bad_digest() {
 
     let data = b"actual data";
     let wrong_md5 = md5_base64(b"different data");
-    let resp = client.put_object_with_md5("md5-bad", "bad.bin", data, &wrong_md5).await;
-    assert_eq!(resp.status(), 400, "mismatched MD5 should return 400 Bad Request");
+    let resp = client
+        .put_object_with_md5("md5-bad", "bad.bin", data, &wrong_md5)
+        .await;
+    assert_eq!(
+        resp.status(),
+        400,
+        "mismatched MD5 should return 400 Bad Request"
+    );
     let body = resp.text().await.unwrap();
-    assert!(body.contains("BadDigest"), "error should be BadDigest, got: {body}");
+    assert!(
+        body.contains("BadDigest"),
+        "error should be BadDigest, got: {body}"
+    );
 }
 
 #[tokio::test]
@@ -90,7 +105,11 @@ async fn malformed_md5_header() {
         .await;
     // The handler decodes the MD5; if decoding fails, the checksum check
     // is skipped (the header is treated as absent). So this should pass.
-    assert_eq!(resp.status(), 200, "malformed MD5 header should be ignored → 200");
+    assert_eq!(
+        resp.status(),
+        200,
+        "malformed MD5 header should be ignored → 200"
+    );
 }
 
 #[tokio::test]

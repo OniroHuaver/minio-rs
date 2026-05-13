@@ -31,11 +31,12 @@ async fn create_bucket_with_location_header() {
     let (_server, client) = setup().await;
     let resp = client.create_bucket("loc-bucket").await;
     assert_eq!(resp.status(), 200);
-    let location = resp
-        .headers()
-        .get("location")
-        .and_then(|v| v.to_str().ok());
-    assert_eq!(location, Some("/loc-bucket"), "Location header should be /{{bucket}}");
+    let location = resp.headers().get("location").and_then(|v| v.to_str().ok());
+    assert_eq!(
+        location,
+        Some("/loc-bucket"),
+        "Location header should be /{{bucket}}"
+    );
 }
 
 #[tokio::test]
@@ -85,9 +86,15 @@ async fn create_duplicate_bucket_xml_error() {
     assert_eq!(resp.status(), 409);
     let body = resp.text().await.unwrap();
     assert!(body.contains("<?xml"), "should have XML declaration");
-    assert!(body.contains("<Code>BucketAlreadyExists</Code>"), "error code should be BucketAlreadyExists");
+    assert!(
+        body.contains("<Code>BucketAlreadyExists</Code>"),
+        "error code should be BucketAlreadyExists"
+    );
     assert!(body.contains("<Message>"), "should have Message");
-    assert!(body.contains("<Resource>/conflict-xml</Resource>"), "should have Resource path");
+    assert!(
+        body.contains("<Resource>/conflict-xml</Resource>"),
+        "should have Resource path"
+    );
     assert!(body.contains("<RequestId>"), "should have RequestId");
 }
 
@@ -114,7 +121,10 @@ async fn create_bucket_after_delete_verify_list() {
     // Verify it appears in the bucket list
     let resp = client.list_buckets().await;
     let body = resp.text().await.unwrap();
-    assert!(body.contains("<Name>recycle</Name>"), "re-created bucket should be listed");
+    assert!(
+        body.contains("<Name>recycle</Name>"),
+        "re-created bucket should be listed"
+    );
 }
 
 #[tokio::test]
@@ -164,7 +174,11 @@ async fn head_bucket_not_found_xml_body() {
         .headers()
         .get("content-type")
         .and_then(|v| v.to_str().ok());
-    assert_eq!(ct, Some("application/xml"), "HEAD error should have Content-Type: application/xml");
+    assert_eq!(
+        ct,
+        Some("application/xml"),
+        "HEAD error should have Content-Type: application/xml"
+    );
 }
 
 // ============================================================================
@@ -184,7 +198,11 @@ async fn delete_bucket_not_found_204() {
     let (_server, client) = setup().await;
     // S3 spec: deleting a non-existent bucket should be idempotent 204
     let resp = client.delete_bucket("ghost-bucket").await;
-    assert_eq!(resp.status(), 204, "DeleteBucket non-existent → 204 (idempotent)");
+    assert_eq!(
+        resp.status(),
+        204,
+        "DeleteBucket non-existent → 204 (idempotent)"
+    );
 }
 
 #[tokio::test]
@@ -196,7 +214,10 @@ async fn delete_bucket_then_verify_gone() {
     assert_eq!(resp.status(), 404, "HEAD after DELETE should be 404");
     let resp = client.list_buckets().await;
     let body = resp.text().await.unwrap();
-    assert!(!body.contains("<Name>gone</Name>"), "list should NOT contain deleted bucket");
+    assert!(
+        !body.contains("<Name>gone</Name>"),
+        "list should NOT contain deleted bucket"
+    );
 }
 
 #[tokio::test]
@@ -230,15 +251,28 @@ async fn list_buckets_xml_structure() {
         .headers()
         .get("content-type")
         .and_then(|v| v.to_str().ok());
-    assert_eq!(ct, Some("application/xml"), "Content-Type should be application/xml");
+    assert_eq!(
+        ct,
+        Some("application/xml"),
+        "Content-Type should be application/xml"
+    );
     let body = resp.text().await.unwrap();
     assert!(body.contains("<?xml"), "should have XML declaration");
-    assert!(body.contains("<ListAllMyBucketsResult"), "should have root element");
-    assert!(body.contains("xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\""), "should have S3 namespace");
+    assert!(
+        body.contains("<ListAllMyBucketsResult"),
+        "should have root element"
+    );
+    assert!(
+        body.contains("xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\""),
+        "should have S3 namespace"
+    );
     assert!(body.contains("<Owner>"), "should have Owner");
     assert!(body.contains("<Buckets>"), "should have Buckets wrapper");
     assert!(body.contains("<Bucket>"), "should have Bucket entries");
-    assert!(body.contains("<Name>xml-test</Name>"), "should contain bucket name");
+    assert!(
+        body.contains("<Name>xml-test</Name>"),
+        "should contain bucket name"
+    );
     assert!(body.contains("<CreationDate>"), "should have CreationDate");
 }
 
@@ -250,7 +284,10 @@ async fn list_buckets_empty() {
     let body = resp.text().await.unwrap();
     // Should still be valid XML with empty Buckets list (<Buckets/> self-closing)
     assert!(body.contains("<Buckets"), "should have Buckets wrapper");
-    assert!(body.contains("<ListAllMyBucketsResult"), "should have root element");
+    assert!(
+        body.contains("<ListAllMyBucketsResult"),
+        "should have root element"
+    );
 }
 
 // ============================================================================
@@ -275,15 +312,25 @@ async fn get_bucket_location_xml_structure() {
         .headers()
         .get("content-type")
         .and_then(|v| v.to_str().ok());
-    assert_eq!(ct, Some("application/xml"), "Content-Type should be application/xml");
+    assert_eq!(
+        ct,
+        Some("application/xml"),
+        "Content-Type should be application/xml"
+    );
     let body = resp.text().await.unwrap();
     assert!(body.contains("<?xml"), "should have XML declaration");
     assert!(
         body.contains("xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\""),
         "should have S3 xmlns"
     );
-    assert!(body.contains("<LocationConstraint"), "should have LocationConstraint root");
-    assert!(body.contains("</LocationConstraint>"), "should close LocationConstraint");
+    assert!(
+        body.contains("<LocationConstraint"),
+        "should have LocationConstraint root"
+    );
+    assert!(
+        body.contains("</LocationConstraint>"),
+        "should close LocationConstraint"
+    );
 }
 
 #[tokio::test]
@@ -323,7 +370,11 @@ async fn get_bucket_location_multiple_buckets_same_region() {
     }
     for name in &buckets {
         let resp = client.get_bucket_location(name).await;
-        assert_eq!(resp.status(), 200, "GetBucketLocation for '{name}' should succeed");
+        assert_eq!(
+            resp.status(),
+            200,
+            "GetBucketLocation for '{name}' should succeed"
+        );
     }
 }
 

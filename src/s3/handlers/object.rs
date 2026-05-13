@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, Query, State},
-    http::{header, HeaderMap, HeaderValue, StatusCode},
+    http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{IntoResponse, Response},
 };
 use base64::Engine;
@@ -14,8 +14,10 @@ use uuid::Uuid;
 
 use crate::object::object_api::MetadataDirective;
 use crate::s3::error::to_s3_error_code;
-use crate::s3::request::{extract_metadata, parse_range, percent_decode, RangeSpec};
-use crate::s3::response::{format_http_timestamp, s3_error_response, s3_xml_response, CopyObjectResultXml, S3_XMLNS};
+use crate::s3::request::{RangeSpec, extract_metadata, parse_range, percent_decode};
+use crate::s3::response::{
+    CopyObjectResultXml, S3_XMLNS, format_http_timestamp, s3_error_response, s3_xml_response,
+};
 use crate::s3::state::AppState;
 
 /// Maximum object size allowed (5 GiB).
@@ -49,15 +51,8 @@ pub async fn put_object_handler(
         .get("x-amz-copy-source")
         .and_then(|v| v.to_str().ok())
     {
-        return copy_object_dispatch(
-            state,
-            &bucket,
-            &key,
-            copy_source,
-            &headers,
-            &request_id,
-        )
-        .await;
+        return copy_object_dispatch(state, &bucket, &key, copy_source, &headers, &request_id)
+            .await;
     }
 
     // Validate object size (max 5 GiB)
@@ -166,12 +161,7 @@ pub async fn get_object_handler(
                 Err(e) => Err(e),
             }
         }
-        None => {
-            state
-                .object_api
-                .get_object(&bucket, &key)
-                .await
-        }
+        None => state.object_api.get_object(&bucket, &key).await,
     };
 
     match result {
@@ -194,10 +184,7 @@ pub async fn get_object_handler(
                 HeaderValue::from_str(&format_http_timestamp(info.mod_time)).unwrap(),
             );
             // Cache-Control
-            resp_headers.insert(
-                header::CACHE_CONTROL,
-                HeaderValue::from_static("no-store"),
-            );
+            resp_headers.insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
             // User metadata (x-amz-meta-*)
             for (k, v) in &info.user_metadata {
                 let header_name = format!("x-amz-meta-{}", k);
@@ -256,10 +243,7 @@ pub async fn head_object_handler(
                 header::LAST_MODIFIED,
                 HeaderValue::from_str(&format_http_timestamp(info.mod_time)).unwrap(),
             );
-            resp_headers.insert(
-                header::CACHE_CONTROL,
-                HeaderValue::from_static("no-store"),
-            );
+            resp_headers.insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
             // User metadata
             for (k, v) in &info.user_metadata {
                 let header_name = format!("x-amz-meta-{}", k);
@@ -329,9 +313,7 @@ async fn copy_object_dispatch(
     let resource = format!("/{}/{}", dst_bucket, dst_key);
 
     // Parse x-amz-copy-source: "/src-bucket/src-key" (both may be percent-encoded)
-    let source = copy_source
-        .strip_prefix('/')
-        .unwrap_or(copy_source);
+    let source = copy_source.strip_prefix('/').unwrap_or(copy_source);
     let (src_bucket, src_key) = match source.split_once('/') {
         Some((b, k)) if !b.is_empty() => {
             let bucket_decoded = percent_decode(b);
@@ -366,7 +348,14 @@ async fn copy_object_dispatch(
 
     match state
         .object_api
-        .copy_object(&src_bucket, &src_key, dst_bucket, dst_key, &metadata, directive)
+        .copy_object(
+            &src_bucket,
+            &src_key,
+            dst_bucket,
+            dst_key,
+            &metadata,
+            directive,
+        )
         .await
     {
         Ok(info) => {

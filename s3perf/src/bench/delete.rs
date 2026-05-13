@@ -13,7 +13,11 @@ pub struct DeleteBenchmark {
 
 impl DeleteBenchmark {
     pub fn new(common: Common, batch_size: usize) -> Self {
-        Self { common, objects: Mutex::new(Vec::new()), batch_size }
+        Self {
+            common,
+            objects: Mutex::new(Vec::new()),
+            batch_size,
+        }
     }
 }
 
@@ -34,7 +38,9 @@ impl Benchmark for DeleteBenchmark {
         let keys = Arc::new(Mutex::new(Vec::new()));
 
         for _i in 0..self.common.objects {
-            if ctx.is_cancelled() { break; }
+            if ctx.is_cancelled() {
+                break;
+            }
             let client = client.clone();
             let bucket = self.common.bucket.clone();
             let sem = sem.clone();
@@ -43,12 +49,22 @@ impl Benchmark for DeleteBenchmark {
             let mut source = (self.common.source)();
 
             handles.push(tokio::spawn(async move {
-                let Ok(_permit) = sem.acquire().await else { return; };
-                if ctx.is_cancelled() { return; }
+                let Ok(_permit) = sem.acquire().await else {
+                    return;
+                };
+                if ctx.is_cancelled() {
+                    return;
+                }
                 let obj = source.object();
                 let key = obj.name.clone();
                 if let Ok(body) = crate::bench::body::byte_stream_from_object(obj).await {
-                    let _ = client.put_object().bucket(&bucket).key(&key).body(body).send().await;
+                    let _ = client
+                        .put_object()
+                        .bucket(&bucket)
+                        .key(&key)
+                        .body(body)
+                        .send()
+                        .await;
                 }
                 keys.lock().unwrap().push(key);
             }));
@@ -105,7 +121,9 @@ impl Benchmark for DeleteBenchmark {
                         break; // 对象删完就停
                     }
 
-                    let Ok(_permit) = sem.acquire().await else { return; };
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
                     if ctx.is_cancelled() {
                         break;
                     }

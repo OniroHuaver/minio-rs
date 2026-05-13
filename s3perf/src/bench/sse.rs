@@ -44,15 +44,10 @@ impl SseConfig {
     /// - `None`：直接返回，无变化
     /// - `SseS3`：添加 `x-amz-server-side-encryption: AES256` 请求头
     /// - `SseC`：添加 SSE-C 请求头（algorithm + key）
-    pub fn apply_to_put_request(
-        &self,
-        builder: PutObjectFluentBuilder,
-    ) -> PutObjectFluentBuilder {
+    pub fn apply_to_put_request(&self, builder: PutObjectFluentBuilder) -> PutObjectFluentBuilder {
         match self {
             Self::None => builder,
-            Self::SseS3 => {
-                builder.server_side_encryption(ServerSideEncryption::Aes256)
-            }
+            Self::SseS3 => builder.server_side_encryption(ServerSideEncryption::Aes256),
             Self::SseC { key } => {
                 use base64::Engine;
                 let engine = base64::engine::general_purpose::STANDARD;
@@ -70,10 +65,7 @@ impl SseConfig {
     ///
     /// - `None` / `SseS3`：无变化（SSE-S3 加密的对象可直接读取）
     /// - `SseC`：添加 SSE-C 解密所需的请求头
-    pub fn apply_to_get_request(
-        &self,
-        builder: GetObjectFluentBuilder,
-    ) -> GetObjectFluentBuilder {
+    pub fn apply_to_get_request(&self, builder: GetObjectFluentBuilder) -> GetObjectFluentBuilder {
         match self {
             Self::None => builder,
             Self::SseS3 => builder,

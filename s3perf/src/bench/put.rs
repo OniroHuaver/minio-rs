@@ -85,7 +85,9 @@ impl Benchmark for PutBenchmark {
                         break;
                     }
 
-                    let Ok(_permit) = sem.acquire().await else { return; };
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
@@ -114,7 +116,8 @@ impl Benchmark for PutBenchmark {
                             }
                         };
                         let digest = md5::compute(&bytes);
-                        let content_md5 = base64::engine::general_purpose::STANDARD.encode(digest.0);
+                        let content_md5 =
+                            base64::engine::general_purpose::STANDARD.encode(digest.0);
                         let body = ByteStream::from(bytes);
                         let req = common.sse.apply_to_put_request(
                             client

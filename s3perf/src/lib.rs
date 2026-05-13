@@ -21,10 +21,10 @@ pub use bench::s3_client::S3Config;
 pub use bench::sse::SseConfig;
 pub use bench::HostSelect;
 pub use cli::app::{parse_duration, parse_obj_size, parse_size};
-pub use cli::BenchConfig;
 pub use cli::runner::{
     execute_run_yaml, run_append, run_benchmark, run_delete, run_fanout, run_get, run_list,
     run_mixed, run_multipart, run_multipart_put, run_put, run_retention, run_snowball, run_stat,
     run_versioned, run_zip,
 };
+pub use cli::BenchConfig;
 pub use generator::ObjSize;

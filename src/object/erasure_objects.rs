@@ -12,7 +12,7 @@ use uuid::Uuid;
 use crate::object::ns_lock::NsLockMap;
 use crate::object::object_api::{
     CompletedPart, DeleteObjectsResult, ListObjectsResult, MetadataDirective, MultipartInfo,
-    ObjectInfo, ObjectAPI, VersioningConfig,
+    ObjectAPI, ObjectInfo, VersioningConfig,
 };
 use crate::object::set::ErasureSet;
 
@@ -167,7 +167,10 @@ impl ObjectAPI for ErasureObjects {
         data: &[u8],
         metadata: &[(String, String)],
     ) -> MinioResult<ObjectInfo> {
-        let _guard = self.ns_lock.lock(&Self::lock_resource(bucket, object)).await;
+        let _guard = self
+            .ns_lock
+            .lock(&Self::lock_resource(bucket, object))
+            .await;
         self.check_write_quorum().await?;
 
         let path = Self::object_path(bucket, object);
@@ -230,7 +233,10 @@ impl ObjectAPI for ErasureObjects {
             name: object.to_string(),
             version_id: header.version_id.clone(),
             size: data.len() as i64,
-            etag: header.parts.first().map_or(String::new(), |p| p.etag.clone()),
+            etag: header
+                .parts
+                .first()
+                .map_or(String::new(), |p| p.etag.clone()),
             mod_time: header.mod_time,
             content_type: header
                 .meta_sys
@@ -248,7 +254,10 @@ impl ObjectAPI for ErasureObjects {
 
     /// GET object — full six-layer read path
     async fn get_object(&self, bucket: &str, object: &str) -> MinioResult<(Vec<u8>, ObjectInfo)> {
-        let _guard = self.ns_lock.rlock(&Self::lock_resource(bucket, object)).await;
+        let _guard = self
+            .ns_lock
+            .rlock(&Self::lock_resource(bucket, object))
+            .await;
         self.check_read_quorum().await?;
 
         let path = Self::object_path(bucket, object);
@@ -278,7 +287,10 @@ impl ObjectAPI for ErasureObjects {
                 name: object.to_string(),
                 version_id: header.version_id.clone(),
                 size: data.len() as i64,
-                etag: header.parts.first().map_or(String::new(), |p| p.etag.clone()),
+                etag: header
+                    .parts
+                    .first()
+                    .map_or(String::new(), |p| p.etag.clone()),
                 mod_time: header.mod_time,
                 content_type: header
                     .meta_sys
@@ -317,7 +329,10 @@ impl ObjectAPI for ErasureObjects {
             name: object.to_string(),
             version_id: header.version_id.clone(),
             size: data.len() as i64,
-            etag: header.parts.first().map_or(String::new(), |p| p.etag.clone()),
+            etag: header
+                .parts
+                .first()
+                .map_or(String::new(), |p| p.etag.clone()),
             mod_time: header.mod_time,
             content_type: header
                 .meta_sys
@@ -355,7 +370,10 @@ impl ObjectAPI for ErasureObjects {
 
     /// HEAD object (metadata only)
     async fn stat_object(&self, bucket: &str, object: &str) -> MinioResult<ObjectInfo> {
-        let _guard = self.ns_lock.rlock(&Self::lock_resource(bucket, object)).await;
+        let _guard = self
+            .ns_lock
+            .rlock(&Self::lock_resource(bucket, object))
+            .await;
         self.check_read_quorum().await?;
 
         let path = Self::object_path(bucket, object);
@@ -378,7 +396,10 @@ impl ObjectAPI for ErasureObjects {
             name: object.to_string(),
             version_id: header.version_id.clone(),
             size: header.parts.iter().map(|p| p.actual_size).sum(),
-            etag: header.parts.first().map_or(String::new(), |p| p.etag.clone()),
+            etag: header
+                .parts
+                .first()
+                .map_or(String::new(), |p| p.etag.clone()),
             mod_time: header.mod_time,
             content_type: header
                 .meta_sys
@@ -396,7 +417,10 @@ impl ObjectAPI for ErasureObjects {
 
     /// DELETE object — write DeleteMarker
     async fn delete_object(&self, bucket: &str, object: &str) -> MinioResult<()> {
-        let _guard = self.ns_lock.lock(&Self::lock_resource(bucket, object)).await;
+        let _guard = self
+            .ns_lock
+            .lock(&Self::lock_resource(bucket, object))
+            .await;
         self.check_write_quorum().await?;
 
         let path = Self::object_path(bucket, object);
@@ -432,7 +456,9 @@ impl ObjectAPI for ErasureObjects {
         if successes < self.set.params().write_quorum() {
             // Rollback: remove the newly written xl.meta from disks that succeeded;
             // the quorum disks still hold the pre-delete version.
-            self.set.delete_xl_meta(bucket, &path, &meta_results).await?;
+            self.set
+                .delete_xl_meta(bucket, &path, &meta_results)
+                .await?;
             return Err(MinioError::InsufficientWriteQuorum {
                 required: self.set.params().write_quorum(),
                 actual: successes,
@@ -461,7 +487,8 @@ impl ObjectAPI for ErasureObjects {
             }
             MetadataDirective::Replace => metadata.to_vec(),
         };
-        self.put_object(dst_bucket, dst_object, &data, &final_metadata).await
+        self.put_object(dst_bucket, dst_object, &data, &final_metadata)
+            .await
     }
 
     async fn delete_objects(
@@ -494,9 +521,9 @@ impl ObjectAPI for ErasureObjects {
         _continuation_token: Option<&str>,
     ) -> MinioResult<ListObjectsResult> {
         let online = self.set.online_disks().await;
-        let disk = online.first().ok_or_else(|| {
-            MinioError::Internal("no online disk".into())
-        })?;
+        let disk = online
+            .first()
+            .ok_or_else(|| MinioError::Internal("no online disk".into()))?;
 
         // List entries from disk directory
         let entries = disk.list_dir(bucket, prefix, max_keys).await?;
@@ -521,7 +548,9 @@ impl ObjectAPI for ErasureObjects {
                         // TODO: read xl.meta for accurate metadata (size, etag, mod_time, etc.)
                         if let Ok(bytes) = disk.read_all(bucket, &meta_path).await {
                             if let Ok(meta) = XlMeta::from_bytes(&bytes) {
-                                let is_deleted = meta.versions.iter()
+                                let is_deleted = meta
+                                    .versions
+                                    .iter()
                                     .rev()
                                     .next()
                                     .map(|v| matches!(v, XlMetaEntry::Delete { .. }))
@@ -569,7 +598,9 @@ impl ObjectAPI for ErasureObjects {
         _object: &str,
         _metadata: &[(String, String)],
     ) -> MinioResult<MultipartInfo> {
-        Err(MinioError::Internal("multipart not implemented for erasure mode".into()))
+        Err(MinioError::Internal(
+            "multipart not implemented for erasure mode".into(),
+        ))
     }
 
     async fn put_object_part(
@@ -580,7 +611,9 @@ impl ObjectAPI for ErasureObjects {
         _part_number: u32,
         _data: &[u8],
     ) -> MinioResult<String> {
-        Err(MinioError::Internal("multipart not implemented for erasure mode".into()))
+        Err(MinioError::Internal(
+            "multipart not implemented for erasure mode".into(),
+        ))
     }
 
     async fn complete_multipart_upload(
@@ -590,7 +623,9 @@ impl ObjectAPI for ErasureObjects {
         _upload_id: &str,
         _parts: &[CompletedPart],
     ) -> MinioResult<ObjectInfo> {
-        Err(MinioError::Internal("multipart not implemented for erasure mode".into()))
+        Err(MinioError::Internal(
+            "multipart not implemented for erasure mode".into(),
+        ))
     }
 
     async fn get_bucket_versioning(&self, _bucket: &str) -> MinioResult<Option<VersioningConfig>> {
@@ -598,7 +633,9 @@ impl ObjectAPI for ErasureObjects {
     }
 
     async fn set_bucket_versioning(&self, _bucket: &str, _status: &str) -> MinioResult<()> {
-        Err(MinioError::Internal("versioning not implemented for erasure mode".into()))
+        Err(MinioError::Internal(
+            "versioning not implemented for erasure mode".into(),
+        ))
     }
 
     async fn abort_multipart_upload(
@@ -607,7 +644,9 @@ impl ObjectAPI for ErasureObjects {
         _object: &str,
         _upload_id: &str,
     ) -> MinioResult<()> {
-        Err(MinioError::Internal("multipart not implemented for erasure mode".into()))
+        Err(MinioError::Internal(
+            "multipart not implemented for erasure mode".into(),
+        ))
     }
 }
 

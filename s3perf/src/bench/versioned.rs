@@ -119,7 +119,8 @@ impl Benchmark for VersionedBenchmark {
         // 并发上传对象，记录 (name, version_id)
         let sem = Arc::new(tokio::sync::Semaphore::new(self.common.concurrency));
         let mut handles = Vec::new();
-        let objects: Arc<Mutex<HashMap<String, Vec<String>>>> = Arc::new(Mutex::new(HashMap::new()));
+        let objects: Arc<Mutex<HashMap<String, Vec<String>>>> =
+            Arc::new(Mutex::new(HashMap::new()));
 
         for _ in 0..self.common.objects {
             if ctx.is_cancelled() {
@@ -133,7 +134,9 @@ impl Benchmark for VersionedBenchmark {
             let mut source = (self.common.source)();
 
             handles.push(tokio::spawn(async move {
-                let Ok(_permit) = sem.acquire().await else { return; };
+                let Ok(_permit) = sem.acquire().await else {
+                    return;
+                };
                 if ctx.is_cancelled() {
                     return;
                 }
@@ -220,7 +223,9 @@ impl Benchmark for VersionedBenchmark {
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
-                    let Ok(_permit) = sem.acquire().await else { return; };
+                    let Ok(_permit) = sem.acquire().await else {
+                        return;
+                    };
                     if ctx.is_cancelled() || tokio::time::Instant::now() >= deadline {
                         break;
                     }
@@ -326,21 +331,22 @@ impl Benchmark for VersionedBenchmark {
                         }
                         "PUT" => {
                             let payload = source.object();
-                            let result = match crate::bench::body::byte_stream_from_object(payload).await {
-                                Ok(body) => {
-                                    client
-                                        .put_object()
-                                        .bucket(&bucket)
-                                        .key(&key)
-                                        .body(body)
-                                        .send()
-                                        .await
-                                }
-                                Err(_) => {
-                                    common.release_host_index(hidx);
-                                    continue;
-                                }
-                            };
+                            let result =
+                                match crate::bench::body::byte_stream_from_object(payload).await {
+                                    Ok(body) => {
+                                        client
+                                            .put_object()
+                                            .bucket(&bucket)
+                                            .key(&key)
+                                            .body(body)
+                                            .send()
+                                            .await
+                                    }
+                                    Err(_) => {
+                                        common.release_host_index(hidx);
+                                        continue;
+                                    }
+                                };
                             let end = Utc::now();
                             let (err, size, new_vid) = match result {
                                 Ok(output) => {

@@ -16,10 +16,7 @@ pub struct HttpStats {
 impl HttpStats {
     pub fn new() -> Self {
         let requests = CounterVec::new(
-            Opts::new(
-                "s3_requests_total",
-                "Total number of S3 API requests",
-            ),
+            Opts::new("s3_requests_total", "Total number of S3 API requests"),
             &["method", "status"],
         )
         .unwrap();
