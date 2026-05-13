@@ -82,7 +82,7 @@ pub enum Commands {
 ### 2.4 设计决策
 
 - 为什么不用 `clap` 的多值参数 + `--address` 直接挂在 `minio` 顶层？因为原版 MinIO 有 `server` / `gateway` / `admin` 等多个子命令，保持 `minio server` 结构为后续扩展留空间。
-- `console-address` 标记为 `Option`：Phase 1 不实现控制台，但命令行参数先占位，解析后打印提示信息。
+- `console-address` 标记为 `Option`：Phase 1 不实现控制台，但命令行参数先占位，解析后打印提示信息。Console 完整设计见 [`docs/console_spec.md`](console_spec.md)。
 - 磁盘参数设为 `required = true`，clap 会自动输出错误信息。
 
 ---
@@ -437,7 +437,7 @@ local-ip-address = "0.6"           # 用于 banner 中自动检测本机 IP
 | `cmd.rs` | `Commands` enum 预留其他子命令 | `gateway`、`admin`、`update` |
 | `disk.rs` | `CheckDiskResult` 预留 `healing` 字段 | `HealFormat` 格式化流程、磁盘替换 |
 | `server.rs` | `ErasureObjects` 单 set → 多 set | 多池路由、Set 拓扑发现 |
-| `banner.rs` | Console 地址字段预留 | 输出 Console URL 和 admin 凭据 |
+| `banner.rs` | Console 地址字段预留 | 输出 Console URL 和 admin 凭据（设计见 [`docs/console_spec.md`](console_spec.md)） |
 | `lib.rs` | `endpoint`/`layout`/`net` 模块骨架 | 分布式启动的 endpoint 解析 |
 
 ---

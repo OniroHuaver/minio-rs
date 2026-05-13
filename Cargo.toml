@@ -41,15 +41,17 @@ highway = "0.8"
 reed-solomon-erasure = "6"
 
 # HTTP
-axum = "0.7"
+axum = { version = "0.7", features = ["ws"] }
 tower = "0.5"
 tower-http = { version = "0.5", features = ["cors", "trace"] }
 hyper = "1"
 bytes = "1"
 
-# gRPC (Phase 2)
-tonic = "0.12"
-prost = "0.13"
+# Grid RPC (WebSocket transport)
+bitflags = { version = "2", features = ["serde"] }
+tokio-tungstenite = { version = "0.24" }
+futures-util = "0.3"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
 
 # Auth
 jsonwebtoken = "9"

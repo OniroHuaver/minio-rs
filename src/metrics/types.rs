@@ -17,7 +17,7 @@ pub enum MetricType {
 /// Human-readable metadata for a single metric.
 #[derive(Debug, Clone, Serialize)]
 pub struct MetricInfo {
-    /// Fully-qualified Prometheus metric name (e.g. `minio_system_drive_total_bytes`).
+    /// Fully-qualified Prometheus metric name (e.g. `system_drive_total_bytes`).
     pub name: String,
     /// Help string for the metric.
     pub help: String,

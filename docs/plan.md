@@ -48,7 +48,8 @@ mc rm local/testbucket/hello.txt
 
 ### 子任务
 
-- [ ] **2.1** `grid`: websocket 节点间 RPC (远程磁盘读/写)
+- [x] **2.1** `grid`: 消息协议、Connection、Manager、Handler 基础框架
+- [ ] **2.1a** `grid` 测试架构 — DebugMsg 故障注入 + TestGrid 多节点沙盒（见 `docs/grid_spec.md`）
 - [ ] **2.2** `storage`: storageRESTClient — 通过 RPC 访问远程磁盘
 - [ ] **2.3** 分布式锁 (dsync) — 写操作互斥
 - [ ] **2.4** `object`: ServerPool 路由 — SipHash 选 Set + 多池选择
@@ -76,7 +77,8 @@ minio server \
 - [ ] **3.3** `iam`: 策略评估引擎 (类 AWS IAM Policy)
 - [ ] **3.4** `s3`: 认证中间件 — AWS SigV4 签名验证
 - [ ] **3.5** Bucket 元数据 — lifecycle、encryption、versioning 配置
-- [ ] **3.6** 集成测试 — 多用户 / 策略边界 / STS 凭证
+- [ ] **3.6** `console`: Web 管理控制台 — 登录/会话/用户/策略/Bucket 管理的 REST API + SPA 静态文件 (设计见 [`docs/console_spec.md`](console_spec.md))
+- [ ] **3.7** 集成测试 — 多用户 / 策略边界 / STS 凭证
 
 ### 验证标准
 

@@ -28,6 +28,9 @@ credentials.json
 /data/
 /tmp/
 
+# === 运行时锁文件 ===
+.minio.lock
+
 # === 编辑器临时文件 ===
 *.tmp
 *.bak

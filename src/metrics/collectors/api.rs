@@ -9,13 +9,13 @@ use crate::metrics::types::{MetricInfo, MetricType};
 pub fn requests_group(http_stats: &HttpStats) -> (MetricsGroup, HttpStats) {
     let infos = vec![
         MetricInfo {
-            name: "minio_s3_requests_total".into(),
+            name: "s3_requests_total".into(),
             help: "Total number of S3 API requests".into(),
             metric_type: MetricType::Counter,
             labels: vec!["method".into(), "status".into()],
         },
         MetricInfo {
-            name: "minio_s3_requests_duration_seconds".into(),
+            name: "s3_requests_duration_seconds".into(),
             help: "S3 API request duration in seconds (histogram)".into(),
             metric_type: MetricType::Histogram,
             labels: vec!["method".into()],

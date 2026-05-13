@@ -26,13 +26,13 @@ use crate::storage::DiskInfo;
 pub fn drive_group(disk_infos: &[DiskInfo]) -> MetricsGroup {
     let infos = vec![
         MetricInfo {
-            name: "minio_system_drive_total_bytes".into(),
+            name: "system_drive_total_bytes".into(),
             help: "Total bytes on the drive".into(),
             metric_type: MetricType::Gauge,
             labels: vec!["drive".into()],
         },
         MetricInfo {
-            name: "minio_system_drive_free_bytes".into(),
+            name: "system_drive_free_bytes".into(),
             help: "Free bytes on the drive".into(),
             metric_type: MetricType::Gauge,
             labels: vec!["drive".into()],
@@ -42,12 +42,12 @@ pub fn drive_group(disk_infos: &[DiskInfo]) -> MetricsGroup {
     let group = MetricsGroup::new("/system/drive", infos);
 
     let total = GaugeVec::new(
-        Opts::new("minio_system_drive_total_bytes", "Total bytes on the drive"),
+        Opts::new("system_drive_total_bytes", "Total bytes on the drive"),
         &["drive"],
     )
     .unwrap();
     let free = GaugeVec::new(
-        Opts::new("minio_system_drive_free_bytes", "Free bytes on the drive"),
+        Opts::new("system_drive_free_bytes", "Free bytes on the drive"),
         &["drive"],
     )
     .unwrap();
@@ -77,12 +77,12 @@ impl SystemCollector {
     pub fn new() -> (MetricsGroup, MetricsGroup, Self) {
         // memory
         let mem_total = Gauge::with_opts(Opts::new(
-            "minio_system_memory_total_bytes",
+            "system_memory_total_bytes",
             "Total system memory in bytes",
         ))
         .unwrap();
         let mem_free = Gauge::with_opts(Opts::new(
-            "minio_system_memory_free_bytes",
+            "system_memory_free_bytes",
             "Free system memory in bytes",
         ))
         .unwrap();
@@ -91,13 +91,13 @@ impl SystemCollector {
             "/system/memory",
             vec![
                 MetricInfo {
-                    name: "minio_system_memory_total_bytes".into(),
+                    name: "system_memory_total_bytes".into(),
                     help: "Total system memory in bytes".into(),
                     metric_type: MetricType::Gauge,
                     labels: vec![],
                 },
                 MetricInfo {
-                    name: "minio_system_memory_free_bytes".into(),
+                    name: "system_memory_free_bytes".into(),
                     help: "Free system memory in bytes".into(),
                     metric_type: MetricType::Gauge,
                     labels: vec![],
@@ -109,12 +109,12 @@ impl SystemCollector {
 
         // process
         let start = Gauge::with_opts(Opts::new(
-            "minio_system_process_starttime_seconds",
+            "system_process_starttime_seconds",
             "Process start time as Unix timestamp",
         ))
         .unwrap();
         let up = Gauge::with_opts(Opts::new(
-            "minio_system_process_uptime_seconds",
+            "system_process_uptime_seconds",
             "Process uptime in seconds",
         ))
         .unwrap();
@@ -123,13 +123,13 @@ impl SystemCollector {
             "/system/process",
             vec![
                 MetricInfo {
-                    name: "minio_system_process_starttime_seconds".into(),
+                    name: "system_process_starttime_seconds".into(),
                     help: "Process start time as Unix timestamp".into(),
                     metric_type: MetricType::Gauge,
                     labels: vec![],
                 },
                 MetricInfo {
-                    name: "minio_system_process_uptime_seconds".into(),
+                    name: "system_process_uptime_seconds".into(),
                     help: "Process uptime in seconds".into(),
                     metric_type: MetricType::Gauge,
                     labels: vec![],
@@ -297,7 +297,7 @@ pub fn build_system_groups(
 
     // CPU is a static placeholder until per-core polling is implemented.
     let cpu_gauge = Gauge::with_opts(Opts::new(
-        "minio_system_cpu_usage_percent",
+        "system_cpu_usage_percent",
         "CPU usage percentage (0-100)",
     ))
     .unwrap();
@@ -305,7 +305,7 @@ pub fn build_system_groups(
     let cpu_group = MetricsGroup::new(
         "/system/cpu",
         vec![MetricInfo {
-            name: "minio_system_cpu_usage_percent".into(),
+            name: "system_cpu_usage_percent".into(),
             help: "CPU usage percentage (0–100)".into(),
             metric_type: MetricType::Gauge,
             labels: vec![],

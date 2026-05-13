@@ -114,7 +114,6 @@ async fn mc_cat_nonexistent_file() {
 // ============================================================================
 // mc rm (remove object)
 // ============================================================================
-
 #[tokio::test]
 async fn mc_rm_delete_object() {
     let (_server, mc) = setup_mc().await;

@@ -17,7 +17,7 @@ impl HttpStats {
     pub fn new() -> Self {
         let requests = CounterVec::new(
             Opts::new(
-                "minio_s3_requests_total",
+                "s3_requests_total",
                 "Total number of S3 API requests",
             ),
             &["method", "status"],
@@ -26,7 +26,7 @@ impl HttpStats {
 
         let duration = HistogramVec::new(
             HistogramOpts::new(
-                "minio_s3_requests_duration_seconds",
+                "s3_requests_duration_seconds",
                 "S3 API request duration in seconds",
             )
             .buckets(vec![

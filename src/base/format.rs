@@ -4,14 +4,14 @@
 //!
 //! ```text
 //! ┌─────────────────────────────────────────────────┐
-//! │ Header (8 bytes)                                 │
+//! │ Header (8 bytes)                                │
 //! │  "XL2 " (4B magic) + major(2B) + minor(2B)      │
 //! ├─────────────────────────────────────────────────┤
-//! │ Body: MessagePack Array of Version Entries        │
+//! │ Body: MessagePack Array of Version Entries      │
 //! │  ┌─────────────────────────────────────────┐    │
-//! │  │ Entry Type 1: Object (VersionData)       │    │
-//! │  │ Entry Type 2: Delete (DeleteMarker)      │    │
-//! │  │ Entry Type 3: Legacy (V1 placeholder)    │    │
+//! │  │ Entry Type 1: Object (VersionData)       │   │
+//! │  │ Entry Type 2: Delete (DeleteMarker)      │   │
+//! │  │ Entry Type 3: Legacy (V1 placeholder)    │   │
 //! │  └─────────────────────────────────────────┘    │
 //! └─────────────────────────────────────────────────┘
 //! ```
@@ -27,6 +27,7 @@ use crate::base::error::{MinioError, MinioResult};
 /// Version entry type for xl.meta
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
+#[non_exhaustive]
 pub enum VersionType {
     /// Version with full object data
     Object = 1,
@@ -34,6 +35,266 @@ pub enum VersionType {
     Delete = 2,
     /// V1 format placeholder
     Legacy = 3,
+}
+
+impl TryFrom<u8> for VersionType {
+    type Error = u8;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(VersionType::Object),
+            2 => Ok(VersionType::Delete),
+            3 => Ok(VersionType::Legacy),
+            other => Err(other),
+        }
+    }
+}
+
+// Supported erasure coding algorithms
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+#[non_exhaustive]
+pub enum ErasureAlgo {
+    Invalid = 0,
+    ReedSolomon = 1,
+}
+
+// Supported checksum algorithms
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+#[non_exhaustive]
+pub enum ChecksumAlgo {
+    Invalid = 0,
+    HighwayHash = 1,
+    Last = 2,
+}
+
+mod serde_xl_object_wire {
+    use super::{ChecksumAlgo, ErasureAlgo};
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    pub fn ser_ec<S>(v: &ErasureAlgo, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        (*v as u8).serialize(serializer)
+    }
+
+    pub fn de_ec<'de, D>(deserializer: D) -> Result<ErasureAlgo, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let b = u8::deserialize(deserializer)?;
+        match b {
+            0 => Ok(ErasureAlgo::Invalid),
+            1 => Ok(ErasureAlgo::ReedSolomon),
+            _ => Err(serde::de::Error::custom(format!(
+                "unknown EcAlgo wire value {b}"
+            ))),
+        }
+    }
+
+    pub fn ser_cs<S>(v: &ChecksumAlgo, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        (*v as u8).serialize(serializer)
+    }
+
+    pub fn de_cs<'de, D>(deserializer: D) -> Result<ChecksumAlgo, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let b = u8::deserialize(deserializer)?;
+        match b {
+            0 => Ok(ChecksumAlgo::Invalid),
+            1 => Ok(ChecksumAlgo::HighwayHash),
+            2 => Ok(ChecksumAlgo::Last),
+            _ => Err(serde::de::Error::custom(format!(
+                "unknown CSumAlgo wire value {b}"
+            ))),
+        }
+    }
+}
+
+/// Delete marker journal entry
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct XlMetaV2DeleteMarker {
+    #[serde(rename = "ID")]
+    pub version_id: [u8; 16],
+    #[serde(rename = "MTime")]
+    pub mod_time: i64,
+    #[serde(rename = "MetaSys", default, skip_serializing_if = "Vec::is_empty")]
+    pub meta_sys: Vec<(String, Vec<u8>)>,
+}
+
+/// Object version journal entry
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct XlMetaV2Object {
+    #[serde(rename = "ID")]
+    pub version_id: [u8; 16],
+    #[serde(rename = "DDir")]
+    pub data_dir: [u8; 16],
+    #[serde(
+        rename = "EcAlgo",
+        serialize_with = "serde_xl_object_wire::ser_ec",
+        deserialize_with = "serde_xl_object_wire::de_ec"
+    )]
+    pub erasure_algorithm: ErasureAlgo,
+    #[serde(rename = "EcM")]
+    pub erasure_m: i32,
+    #[serde(rename = "EcN")]
+    pub erasure_n: i32,
+    #[serde(rename = "EcBSize")]
+    pub erasure_block_size: i64,
+    #[serde(rename = "EcIndex")]
+    pub erasure_index: i32,
+    #[serde(rename = "EcDist")]
+    pub erasure_dist: Vec<u8>,
+    #[serde(
+        rename = "CSumAlgo",
+        serialize_with = "serde_xl_object_wire::ser_cs",
+        deserialize_with = "serde_xl_object_wire::de_cs"
+    )]
+    pub checksum_algo: ChecksumAlgo,
+    #[serde(rename = "PartNums")]
+    pub part_numbers: Vec<i32>,
+    #[serde(rename = "PartETags")]
+    pub part_etags: Vec<String>,
+    #[serde(rename = "PartSizes")]
+    pub part_sizes: Vec<i64>,
+    #[serde(rename = "PartASizes", default, skip_serializing_if = "Vec::is_empty")]
+    pub part_actual_sizes: Vec<i64>,
+    #[serde(rename = "PartIdx", default, skip_serializing_if = "Vec::is_empty")]
+    pub part_indices: Vec<Vec<u8>>,
+    #[serde(rename = "Size")]
+    pub size: i64,
+    #[serde(rename = "MTime")]
+    pub mod_time: i64,
+    #[serde(rename = "MetaSys", default, skip_serializing_if = "Vec::is_empty")]
+    pub meta_sys: Vec<(String, Vec<u8>)>,
+    #[serde(rename = "MetaUsr", default, skip_serializing_if = "Vec::is_empty")]
+    pub meta_user: Vec<(String, String)>,
+}
+
+/// Version journal entry (discriminated union by Type field)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct XlMetaV2Version {
+    #[serde(rename = "Type")]
+    pub version_type: u8,
+    #[serde(rename = "V1Obj", default, skip_serializing_if = "Option::is_none")]
+    pub object_v1: Option<XlMetaV1ObjectPlaceholder>,
+    #[serde(rename = "V2Obj", default, skip_serializing_if = "Option::is_none")]
+    pub object_v2: Option<XlMetaV2Object>,
+    #[serde(rename = "DelObj", default, skip_serializing_if = "Option::is_none")]
+    pub delete_marker: Option<XlMetaV2DeleteMarker>,
+    #[serde(rename = "v")]
+    pub written_by_version: u64,
+}
+
+impl XlMetaV2Version {
+    /// Validates that `Type` matches exactly one of `V1Obj` / `V2Obj` / `DelObj`.
+    pub fn validate(&self) -> MinioResult<()> {
+        let n = self.object_v1.is_some() as usize
+            + self.object_v2.is_some() as usize
+            + self.delete_marker.is_some() as usize;
+        if n != 1 {
+            return Err(MinioError::XlMetaFormat(format!(
+                "xl.meta V2 version entry: expected exactly one payload variant, found {n}"
+            )));
+        }
+        let vt = VersionType::try_from(self.version_type).map_err(|b| {
+            MinioError::XlMetaFormat(format!("xl.meta V2 version entry: unknown Type {b}"))
+        })?;
+        let ok = match (
+            vt,
+            self.object_v1.is_some(),
+            self.object_v2.is_some(),
+            self.delete_marker.is_some(),
+        ) {
+            (VersionType::Object, true, false, false)
+            | (VersionType::Object, false, true, false) => true,
+            (VersionType::Delete, false, false, true) => true,
+            (VersionType::Legacy, true, false, false) => true,
+            _ => false,
+        };
+        if !ok {
+            return Err(MinioError::XlMetaFormat(format!(
+                "xl.meta V2 version entry: Type {vt:?} does not match payload fields"
+            )));
+        }
+        Ok(())
+    }
+}
+
+/// V1 object placeholder (for legacy format compatibility)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct XlMetaV1ObjectPlaceholder {
+    #[serde(rename = "data")]
+    pub data: Vec<u8>,
+}
+
+/// Bit flags for object version
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct XlFlags(u8);
+
+impl XlFlags {
+    pub const FREE_VERSION: Self = Self(1 << 0);
+    pub const USES_DATA_DIR: Self = Self(1 << 1);
+    pub const INLINE_DATA: Self = Self(1 << 2);
+
+    pub fn is_set(self, flag: XlFlags) -> bool {
+        self.0 & flag.0 != 0
+    }
+
+    pub fn set(&mut self, flag: XlFlags) {
+        self.0 |= flag.0;
+    }
+
+    pub fn clear(&mut self, flag: XlFlags) {
+        self.0 &= !flag.0;
+    }
+}
+
+/// Compact version header (always present in the shallow version list)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct XlMetaV2VersionHeader {
+    #[serde(rename = "VersionID")]
+    pub version_id: [u8; 16],
+    #[serde(rename = "ModTime")]
+    pub mod_time: i64,
+    #[serde(rename = "Signature")]
+    pub signature: [u8; 4],
+    #[serde(rename = "Type")]
+    pub version_type: u8,
+    #[serde(rename = "Flags")]
+    pub flags: u8,
+    #[serde(rename = "EcN")]
+    pub ec_n: u8,
+    #[serde(rename = "EcM")]
+    pub ec_m: u8,
+}
+
+/// Shallow version entry used in the top-level xlMetaV2 versions list.
+/// The full version data is stored as a separate msgpack blob in `meta`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct XlMetaV2ShallowVersion {
+    pub header: XlMetaV2VersionHeader,
+    pub meta: Vec<u8>,
+}
+
+/// Inline data for small objects, indexed by version ID (16-byte UUID bytes).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct XlMetaInlineData {
+    pub entries: Vec<([u8; 16], Vec<u8>)>,
+}
+
+/// Top-level xl.meta V2 structure
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct XlMetaV2 {
+    pub versions: Vec<XlMetaV2ShallowVersion>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<XlMetaInlineData>,
 }
 
 /// xl.meta file header
@@ -85,9 +346,9 @@ impl XlMetaHeader {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct XlMetaVersionHeader {
     pub version_id: String,
-    pub mod_time: i64,           // Unix timestamp (nanoseconds)
+    pub mod_time: i64, // Unix timestamp (nanoseconds)
     pub signature: Vec<u8>,
-    pub r#type: u8,              // VersionType
+    pub r#type: u8, // VersionType
     pub flags: u8,
     /// Total object size (0 means sum over Parts)
     #[serde(default)]
@@ -98,8 +359,8 @@ pub struct XlMetaVersionHeader {
     pub erasure_block_size: i64,
     pub erasure_dist: Vec<u8>,
     pub parts: Vec<ObjectPart>,
-    pub meta_sys: Vec<(String, Vec<u8>)>,   // System metadata
-    pub meta_user: Vec<(String, Vec<u8>)>,  // User metadata
+    pub meta_sys: Vec<(String, Vec<u8>)>,  // System metadata
+    pub meta_user: Vec<(String, Vec<u8>)>, // User metadata
 }
 
 impl XlMetaVersionHeader {
@@ -141,8 +402,8 @@ impl XlMetaVersionHeader {
             erasure_dist: &self.erasure_dist,
             parts: &self.parts,
         };
-        let canonical = rmp_serde::to_vec(&sig_data)
-            .map_err(|e| MinioError::MessagePack(e.to_string()))?;
+        let canonical =
+            rmp_serde::to_vec(&sig_data).map_err(|e| MinioError::MessagePack(e.to_string()))?;
         let mut hasher = Sha256::new();
         hasher.update(&canonical);
         Ok(hasher.finalize().to_vec())
@@ -199,8 +460,7 @@ impl XlMeta {
         let header = XlMetaHeader::default();
         let mut buf = Vec::with_capacity(4096);
         buf.extend_from_slice(&header.to_bytes());
-        let body =
-            rmp_serde::to_vec(self).map_err(|e| MinioError::MessagePack(e.to_string()))?;
+        let body = rmp_serde::to_vec(self).map_err(|e| MinioError::MessagePack(e.to_string()))?;
         buf.extend_from_slice(&body);
         Ok(buf)
     }
@@ -212,8 +472,8 @@ impl XlMeta {
                 "data too short, insufficient for header length".into(),
             ));
         }
-        let header = XlMetaHeader::from_bytes(&bytes[..8])
-            .map_err(|e| MinioError::XlMetaFormat(e))?;
+        let header =
+            XlMetaHeader::from_bytes(&bytes[..8]).map_err(MinioError::XlMetaFormat)?;
         if header.major != constants::XL_VERSION_MAJOR {
             return Err(MinioError::XlMetaFormat(format!(
                 "unsupported major version: {}.{} (current: {}.{})",
@@ -257,7 +517,10 @@ impl XlMeta {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos() as u64;
-        let tmp_suffix = format!(".xl.meta.{:x}.tmp", (std::process::id() as u64).wrapping_mul(ts));
+        let tmp_suffix = format!(
+            ".xl.meta.{:x}.tmp",
+            (std::process::id() as u64).wrapping_mul(ts)
+        );
         let tmp_path = dir.join(tmp_suffix);
         std::fs::write(&tmp_path, &data)?;
         std::fs::rename(&tmp_path, path).map_err(|e| {
@@ -278,6 +541,7 @@ impl XlMeta {
 /// Version entry (enum variant)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
+#[non_exhaustive]
 pub enum XlMetaEntry {
     #[serde(rename = "1")]
     Object {
@@ -300,6 +564,68 @@ pub enum XlMetaEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_xl_meta_v2_version_validate_ok_object_v2() {
+        let v = XlMetaV2Version {
+            version_type: VersionType::Object as u8,
+            object_v1: None,
+            object_v2: Some(XlMetaV2Object {
+                version_id: [0u8; 16],
+                data_dir: [0u8; 16],
+                erasure_algorithm: ErasureAlgo::ReedSolomon,
+                erasure_m: 2,
+                erasure_n: 4,
+                erasure_block_size: 1024,
+                erasure_index: 0,
+                erasure_dist: vec![],
+                checksum_algo: ChecksumAlgo::HighwayHash,
+                part_numbers: vec![],
+                part_etags: vec![],
+                part_sizes: vec![],
+                part_actual_sizes: vec![],
+                part_indices: vec![],
+                size: 0,
+                mod_time: 0,
+                meta_sys: vec![],
+                meta_user: vec![],
+            }),
+            delete_marker: None,
+            written_by_version: 1,
+        };
+        v.validate().expect("valid object v2 entry");
+    }
+
+    #[test]
+    fn test_xl_meta_v2_version_validate_rejects_multi_payload() {
+        let v = XlMetaV2Version {
+            version_type: VersionType::Object as u8,
+            object_v1: Some(XlMetaV1ObjectPlaceholder { data: vec![1] }),
+            object_v2: Some(XlMetaV2Object {
+                version_id: [0u8; 16],
+                data_dir: [0u8; 16],
+                erasure_algorithm: ErasureAlgo::Invalid,
+                erasure_m: 0,
+                erasure_n: 0,
+                erasure_block_size: 0,
+                erasure_index: 0,
+                erasure_dist: vec![],
+                checksum_algo: ChecksumAlgo::Invalid,
+                part_numbers: vec![],
+                part_etags: vec![],
+                part_sizes: vec![],
+                part_actual_sizes: vec![],
+                part_indices: vec![],
+                size: 0,
+                mod_time: 0,
+                meta_sys: vec![],
+                meta_user: vec![],
+            }),
+            delete_marker: None,
+            written_by_version: 1,
+        };
+        assert!(v.validate().is_err());
+    }
 
     fn make_test_meta() -> XlMeta {
         let header = XlMetaVersionHeader {
@@ -335,10 +661,7 @@ mod tests {
         };
         XlMeta {
             versions: vec![
-                XlMetaEntry::Object {
-                    header,
-                    data: None,
-                },
+                XlMetaEntry::Object { header, data: None },
                 XlMetaEntry::Delete {
                     version_id: "deleted-version".into(),
                     mod_time: 1_700_000_000_000_000_000i64,
@@ -373,8 +696,14 @@ mod tests {
         let header = XlMetaHeader::default();
         let bytes = header.to_bytes();
         assert_eq!(&bytes[0..4], b"XL2 ");
-        assert_eq!(u16::from_be_bytes([bytes[4], bytes[5]]), constants::XL_VERSION_MAJOR);
-        assert_eq!(u16::from_be_bytes([bytes[6], bytes[7]]), constants::XL_VERSION_MINOR);
+        assert_eq!(
+            u16::from_be_bytes([bytes[4], bytes[5]]),
+            constants::XL_VERSION_MAJOR
+        );
+        assert_eq!(
+            u16::from_be_bytes([bytes[6], bytes[7]]),
+            constants::XL_VERSION_MINOR
+        );
 
         let parsed = XlMetaHeader::from_bytes(&bytes).expect("header parse failed");
         assert_eq!(parsed.major, header.major);
@@ -420,14 +749,20 @@ mod tests {
             index: 0,
         });
 
-        let sig1 = header.compute_signature().expect("signature computation failed");
-        let sig2 = header.compute_signature().expect("signature computation failed");
+        let sig1 = header
+            .compute_signature()
+            .expect("signature computation failed");
+        let sig2 = header
+            .compute_signature()
+            .expect("signature computation failed");
         assert_eq!(sig1, sig2);
         assert_eq!(sig1.len(), 32); // SHA256 = 32 bytes
 
         // Signature should change when a field is modified
         header.mod_time = 2000;
-        let sig3 = header.compute_signature().expect("signature computation failed");
+        let sig3 = header
+            .compute_signature()
+            .expect("signature computation failed");
         assert_ne!(sig1, sig3);
     }
 
@@ -442,8 +777,10 @@ mod tests {
         h2.meta_user = vec![("z".into(), b"w".to_vec())];
 
         assert_eq!(
-            h1.compute_signature().expect("signature computation failed"),
-            h2.compute_signature().expect("signature computation failed")
+            h1.compute_signature()
+                .expect("signature computation failed"),
+            h2.compute_signature()
+                .expect("signature computation failed")
         );
     }
 }

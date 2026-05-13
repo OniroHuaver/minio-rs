@@ -483,7 +483,44 @@ sudo chroot --userspec username:group /mnt/export/${USER} /bin/minio server /dat
 
 ---
 
-## 22. Rust 实现路线图
+## 22. Console / Web 管理控制台 (来自 console/)
+
+**功能概述**
+
+MinIO 提供基于 Web 的管理控制台（Console），支持可视化管理 Bucket、对象、用户、策略、配置、监控等。Console 在 Go 原版中是一个独立进程（默认监听 `:13333`），MinIO Server 在 `:9000` 检测到浏览器请求后 307 重定向到 Console 端口。
+
+**核心架构**
+
+- **前端**：React (TypeScript) SPA，编译后通过 `//go:embed` 嵌入 Console 二进制
+- **后端**：REST API（`/api/v1/*`），通过 STS 临时凭证代理 S3 操作
+- **认证**：表单登录 + OAuth2/IDP 登录 → STS AssumeRole → AES-GCM 加密的 session cookie
+- **中间件链**：Gzip → 审计日志 → 文件服务（API/WS/SPA 路由分发）→ 上下文注入 → 认证 → 安全头
+- **WebSocket**：`/ws` 提供实时对象浏览、监控指标、日志流
+
+**API 模块**
+
+| 模块 | 端点 |
+|------|------|
+| 认证 | `/api/v1/login`, `/logout`, `/session` |
+| 用户/组/策略 | `/api/v1/users`, `/groups`, `/policies` |
+| Bucket | `/api/v1/buckets/*` (CRUD + 版本控制 + 加密 + 复制 + 生命周期 + 事件) |
+| 对象 | `/api/v1/buckets/{name}/objects/*` (浏览/上下传/批量删除/分享/元数据) |
+| 配置 | `/api/v1/configs/*` (CRUD + 导入/导出 + 重置) |
+| 管理 | `/api/v1/service/restart`, `/profiling/*`, `/admin/info`, `/nodes` |
+| 站点复制 | `/api/v1/admin/site-replication` |
+| Tier/KMS/IDP | `/api/v1/admin/tiers`, `/kms/*`, `/idp/*` |
+
+**Rust 实现建议（Phase 3）**
+
+详见 [`docs/console_spec.md`](console_spec.md)。
+- Phase 3 采用内嵌模式（Console 路由挂载到 `:9000` 的 axum Router），降低部署复杂度
+- 认证从 AES-GCM 加密 token 改为 JWT，复用 S3 层的 `jsonwebtoken` 依赖
+- 前端 Phase 3 初期用最小 HTML 页面，后续嵌入上游 React SPA
+- Console API handler 放在 `src/console/` 模块，与现有 S3 路由合并
+
+---
+
+## 23. Rust 实现路线图
 
 | Phase | 子系统 | 说明 |
 |-------|--------|------|
